@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
+- Add `FlashGeometryHeuristicAnalyzer` that infers `FlashAttributes` (page/OOB geometry) for raw NAND dumps tagged as `FlashResource`, using YAFFS2, Linux MTD large-page OOB, small-page OOB density, and exact Hamming ECC verification as signals ([#737](https://github.com/redballoonsecurity/ofrak/pull/737))
 - Add cramfs unpacker and packer, using `fsck.cramfs` and `mkfs.cramfs` from `util-linux` 2.38.1 ([#719](https://github.com/redballoonsecurity/ofrak/pull/719))
 - Add ApkAnalyzer to extract package metadata from Android APKs using aapt ([#716](https://github.com/redballoonsecurity/ofrak/pull/716))
 - Add compression level config to `ZipPacker` via `ZipPackerConfig` ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))

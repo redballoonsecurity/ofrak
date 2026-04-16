@@ -47,7 +47,7 @@ LINUX_MTD_HAMMING_MAX_SECTORS = 8
 ECC_VERIFY_PAGE_CAP = 1024
 
 
-# Shared scan primitives
+# Shared value types
 
 
 @dataclass(frozen=True)
@@ -89,44 +89,6 @@ class ScanConfig:
     gap_sample_count: int = 10
     gap_sample_max_scan: int = 100
     entropy_enabled: bool = True
-
-
-# OOB classification helper
-
-
-class OobPageCategory(str, Enum):
-    """
-    Classification of a single page's spare area.
-    """
-
-    EMPTY = "EMPTY"  # oob is length 0
-    ALL_FF = "ALL_FF"  # fully erased
-    ECC_ONLY = "ECC_ONLY"  # matches Linux MTD large-page Hamming layout
-    TAGGED = "TAGGED"  # starts with FF 55 (YAFFS2 tag marker)
-    MIXED = "MIXED"  # anything else
-
-
-def classify_oob(oob: bytes) -> OobPageCategory:
-    """
-    Classify a page's OOB bytes against the common NAND spare-area conventions.
-
-    :param oob: the out-of-band / spare bytes for a single page
-
-    :return: the matching `OobPageCategory` (`MIXED` if nothing else fits)
-    """
-    n = len(oob)
-    if n == 0:
-        return OobPageCategory.EMPTY
-    if oob == b"\xff" * n:
-        return OobPageCategory.ALL_FF
-    if n >= LINUX_MTD_LARGE_PAGE_OOB_SIZE:
-        header_erased = oob[:LINUX_MTD_OOB_ECC_OFFSET] == b"\xff" * LINUX_MTD_OOB_ECC_OFFSET
-        ecc_region = oob[LINUX_MTD_OOB_ECC_OFFSET:LINUX_MTD_OOB_ECC_END]
-        if header_erased and ecc_region != b"\xff" * LINUX_MTD_OOB_ECC_LEN:
-            return OobPageCategory.ECC_ONLY
-        if oob[0] == 0xFF and oob[1] == YAFFS2_TAG_MARKER_VALUE:
-            return OobPageCategory.TAGGED
-    return OobPageCategory.MIXED
 
 
 # Detector framework (uniform scoring interface)
@@ -219,7 +181,106 @@ class PerPageOobDetector(Protocol):
         ...
 
 
-# Concrete per-page OOB detectors
+# Public entry point
+
+
+def evaluate_detectors(
+    data: bytes,
+    candidate: GeometryCandidate,
+    scan: ScanConfig,
+    detectors: Sequence[Detector],
+) -> List[DetectorEvidence]:
+    """
+    Run every detector against a candidate and return one evidence per detector.
+
+    The analyzer calls this entry point. Per-page detectors (anything exposing `check_page`)
+    are batched into a single shared scan loop; all other detectors are run individually.
+
+    :param data: the full flash image bytes
+    :param candidate: the candidate geometry under evaluation
+    :param scan: tunables for the evidence-collection pass
+    :param detectors: the ordered list of detectors to evaluate
+
+    :return: one `DetectorEvidence` per entry in `detectors`, in the same order
+    """
+    per_page: List[PerPageOobDetector] = [
+        cast(PerPageOobDetector, d) for d in detectors if hasattr(d, "check_page")
+    ]
+    other = [d for d in detectors if not hasattr(d, "check_page")]
+
+    results: List[DetectorEvidence] = []
+    if per_page:
+        results.extend(_scan_per_page_batched(data, candidate, scan, per_page))
+    results.extend(d.evaluate(data, candidate, scan) for d in other)
+
+    by_name = {ev.name: ev for ev in results}
+    return [by_name[d.spec.name] for d in detectors]
+
+
+def _scan_per_page_batched(
+    data: bytes,
+    candidate: GeometryCandidate,
+    scan: ScanConfig,
+    detectors: Sequence[PerPageOobDetector],
+) -> List[DetectorEvidence]:
+    """
+    Shared per-page loop for detectors that expose `check_page`.
+    """
+    pages_available = len(data) // candidate.total
+    pages_to_scan = min(scan.oob_scan_cap_pages, pages_available)
+    hits = [0] * len(detectors)
+    pages_examined = 0
+    for page in range(pages_to_scan):
+        base = page * candidate.total
+        oob_off = base + candidate.data_size
+        if oob_off + candidate.oob_size > len(data):
+            break
+        oob = data[oob_off : oob_off + candidate.oob_size]
+        for i, d in enumerate(detectors):
+            hits[i] += d.check_page(oob, candidate.data_size)
+        pages_examined += 1
+    return [
+        DetectorEvidence(d.spec, hits=h, pages_examined=pages_examined)
+        for d, h in zip(detectors, hits)
+    ]
+
+
+# Concrete detectors
+
+
+class OobPageCategory(str, Enum):
+    """
+    Classification of a single page's spare area.
+    """
+
+    EMPTY = "EMPTY"  # oob is length 0
+    ALL_FF = "ALL_FF"  # fully erased
+    ECC_ONLY = "ECC_ONLY"  # matches Linux MTD large-page Hamming layout
+    TAGGED = "TAGGED"  # starts with FF 55 (YAFFS2 tag marker)
+    MIXED = "MIXED"  # anything else
+
+
+def classify_oob(oob: bytes) -> OobPageCategory:
+    """
+    Classify a page's OOB bytes against the common NAND spare-area conventions.
+
+    :param oob: the out-of-band / spare bytes for a single page
+
+    :return: the matching `OobPageCategory` (`MIXED` if nothing else fits)
+    """
+    n = len(oob)
+    if n == 0:
+        return OobPageCategory.EMPTY
+    if oob == b"\xff" * n:
+        return OobPageCategory.ALL_FF
+    if n >= LINUX_MTD_LARGE_PAGE_OOB_SIZE:
+        header_erased = oob[:LINUX_MTD_OOB_ECC_OFFSET] == b"\xff" * LINUX_MTD_OOB_ECC_OFFSET
+        ecc_region = oob[LINUX_MTD_OOB_ECC_OFFSET:LINUX_MTD_OOB_ECC_END]
+        if header_erased and ecc_region != b"\xff" * LINUX_MTD_OOB_ECC_LEN:
+            return OobPageCategory.ECC_ONLY
+        if oob[0] == 0xFF and oob[1] == YAFFS2_TAG_MARKER_VALUE:
+            return OobPageCategory.TAGGED
+    return OobPageCategory.MIXED
 
 
 @dataclass(frozen=True)
@@ -499,70 +560,11 @@ class EccSyndromeExactDetector:
         return DetectorEvidence(self.spec, hits=matches, pages_examined=pages_checked)
 
 
+# Default detector list (instantiated once at import time)
+
 DEFAULT_DETECTORS: List[Detector] = [
     EccOnlyDetector(),
     Yaffs2PackedTagsDetector(),
     SmallPageEccDetector(),
     EccSyndromeExactDetector(),
 ]
-
-
-def _scan_per_page_batched(
-    data: bytes,
-    candidate: GeometryCandidate,
-    scan: ScanConfig,
-    detectors: Sequence[PerPageOobDetector],
-) -> List[DetectorEvidence]:
-    """
-    Shared per-page loop for detectors that expose `check_page`.
-    """
-    pages_available = len(data) // candidate.total
-    pages_to_scan = min(scan.oob_scan_cap_pages, pages_available)
-    hits = [0] * len(detectors)
-    pages_examined = 0
-    for page in range(pages_to_scan):
-        base = page * candidate.total
-        oob_off = base + candidate.data_size
-        if oob_off + candidate.oob_size > len(data):
-            break
-        oob = data[oob_off : oob_off + candidate.oob_size]
-        for i, d in enumerate(detectors):
-            hits[i] += d.check_page(oob, candidate.data_size)
-        pages_examined += 1
-    return [
-        DetectorEvidence(d.spec, hits=h, pages_examined=pages_examined)
-        for d, h in zip(detectors, hits)
-    ]
-
-
-def evaluate_detectors(
-    data: bytes,
-    candidate: GeometryCandidate,
-    scan: ScanConfig,
-    detectors: Sequence[Detector],
-) -> List[DetectorEvidence]:
-    """
-    Run every detector against a candidate and return one evidence per detector.
-
-    The analyzer calls this entry point. Per-page detectors (anything exposing `check_page`)
-    are batched into a single shared scan loop; all other detectors are run individually.
-
-    :param data: the full flash image bytes
-    :param candidate: the candidate geometry under evaluation
-    :param scan: tunables for the evidence-collection pass
-    :param detectors: the ordered list of detectors to evaluate
-
-    :return: one `DetectorEvidence` per entry in `detectors`, in the same order
-    """
-    per_page: List[PerPageOobDetector] = [
-        cast(PerPageOobDetector, d) for d in detectors if hasattr(d, "check_page")
-    ]
-    other = [d for d in detectors if not hasattr(d, "check_page")]
-
-    results: List[DetectorEvidence] = []
-    if per_page:
-        results.extend(_scan_per_page_batched(data, candidate, scan, per_page))
-    results.extend(d.evaluate(data, candidate, scan) for d in other)
-
-    by_name = {ev.name: ev for ev in results}
-    return [by_name[d.spec.name] for d in detectors]

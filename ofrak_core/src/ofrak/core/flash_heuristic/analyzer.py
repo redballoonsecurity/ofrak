@@ -24,6 +24,7 @@ from ofrak.core.flash_heuristic.detectors import (
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 
+
 # Constants
 
 # Standard NAND (data, OOB) geometries. Order matters: earlier entries win on ties.
@@ -41,6 +42,110 @@ DEFAULT_GEOMETRIES: Tuple[Tuple[int, int], ...] = (
 # Window size (in bytes) for checking erased / non-erased regions near page boundaries
 # during gap-evidence sampling.
 ERASED_SENTINEL_WINDOW = 16
+
+
+# Config
+
+
+@dataclass
+class ScoringWeights:
+    """
+    Scoring knobs for the tiebreakers that aren't detectors.
+
+    Per-detector weight and noise-floor live on each detector's `DetectorSpec`.
+
+    :param entropy_min_delta_bits: minimum data-minus-OOB entropy delta (bits/byte) required
+        before entropy contributes to the tiebreaker
+    :param entropy_min_data_entropy_bits: minimum mean data entropy (bits/byte) required
+        before entropy contributes to the tiebreaker
+    :param entropy_tiebreak_scale: integer multiplier applied to the entropy delta so it can
+        be compared in the same ranking vector as detector hit counts
+    :param gap_relative_min_hit_rate: fractional floor on gap hits per page scanned before the
+        gap signal is allowed to contribute
+    """
+
+    entropy_min_delta_bits: float = 0.3
+    entropy_min_data_entropy_bits: float = 4.0
+    entropy_tiebreak_scale: int = 100
+    gap_relative_min_hit_rate: float = 0.01
+
+
+@dataclass
+class FlashGeometryHeuristicAnalyzerConfig(ComponentConfig):
+    """
+    Config for `FlashGeometryHeuristicAnalyzer`.
+
+    To "train" the heuristic on new image families, supply a custom `detectors` list.
+
+    :param extra_geometries: additional `(data_size, oob_size)` pairs to consider beyond
+        `DEFAULT_GEOMETRIES`
+    :param scan: tunables for the evidence-collection pass
+    :param weights: tiebreaker thresholds for the entropy and gap signals
+    :param detectors: ordered list of detectors to run against each candidate geometry
+    """
+
+    extra_geometries: Tuple[Tuple[int, int], ...] = ()
+    scan: ScanConfig = field(default_factory=ScanConfig)
+    weights: ScoringWeights = field(default_factory=ScoringWeights)
+    detectors: Sequence[Detector] = field(default_factory=lambda: list(DEFAULT_DETECTORS))
+
+    def geometries(self) -> Tuple[Tuple[int, int], ...]:
+        return tuple(list(DEFAULT_GEOMETRIES) + list(self.extra_geometries))
+
+
+# OFRAK component
+
+
+class FlashGeometryHeuristicAnalyzer(
+    Analyzer[Optional[FlashGeometryHeuristicAnalyzerConfig], FlashAttributes]
+):
+    """
+    Infers `FlashAttributes` for a raw NAND dump tagged as `FlashResource`.
+
+    Ranks each standard `(data_size, oob_size)` geometry that evenly divides the file by
+    running a library of detectors (Linux MTD large-page OOB, YAFFS2 packed tags, small-page
+    ECC density, exact Linux MTD Hamming verification) plus entropy and OOB-aligned gap
+    tiebreakers.
+
+    The returned `FlashAttributes` describes one data block containing `DATA`
+    followed by `ALIGNMENT` of the OOB size, so the existing `FlashResourceUnpacker` strips
+    the spare region when unpacking.
+    """
+
+    targets = (FlashResource,)
+    outputs = (FlashAttributes,)
+
+    async def analyze(
+        self,
+        resource: Resource,
+        config: Optional[FlashGeometryHeuristicAnalyzerConfig] = None,
+    ) -> FlashAttributes:
+        config = config or FlashGeometryHeuristicAnalyzerConfig()
+        geometries = config.geometries()
+        data = await resource.get_data()
+
+        candidates = enumerate_candidates(len(data), geometries)
+        if not candidates:
+            raise AnalyzerError(
+                "No standard NAND geometry matches file size with a power-of-2 page count. "
+                f"File size: {len(data)} bytes."
+            )
+
+        evidence = [collect_evidence(data, c, config.scan, config.detectors) for c in candidates]
+
+        scored = [score_candidate(e, config.weights, geometries) for e in evidence]
+        winner = select_best(scored)
+        winning_candidate = winner.evidence.candidate
+
+        return FlashAttributes(
+            data_block_format=[
+                FlashField(FlashFieldType.DATA, winning_candidate.data_size),
+                FlashField(FlashFieldType.ALIGNMENT, winning_candidate.oob_size),
+            ]
+        )
+
+
+# Pipeline output types
 
 
 @dataclass
@@ -116,59 +221,7 @@ class GeometryScore:
         )
 
 
-# Config
-
-
-@dataclass
-class ScoringWeights:
-    """
-    Scoring knobs for the tiebreakers that aren't detectors.
-
-    Per-detector weight and noise-floor live on each detector's `DetectorSpec`.
-
-    :param entropy_min_delta_bits: minimum data-minus-OOB entropy delta (bits/byte) required
-        before entropy contributes to the tiebreaker
-    :param entropy_min_data_entropy_bits: minimum mean data entropy (bits/byte) required
-        before entropy contributes to the tiebreaker
-    :param entropy_tiebreak_scale: integer multiplier applied to the entropy delta so it can
-        be compared in the same ranking vector as detector hit counts
-    :param gap_relative_min_hit_rate: fractional floor on gap hits per page scanned before the
-        gap signal is allowed to contribute
-    """
-
-    entropy_min_delta_bits: float = 0.3
-    entropy_min_data_entropy_bits: float = 4.0
-    entropy_tiebreak_scale: int = 100
-    gap_relative_min_hit_rate: float = 0.01
-
-
-@dataclass
-class FlashGeometryHeuristicAnalyzerConfig(ComponentConfig):
-    """
-    Config for `FlashGeometryHeuristicAnalyzer`.
-
-    To "train" the heuristic on new image families, supply a custom `detectors` list.
-
-    :param extra_geometries: additional `(data_size, oob_size)` pairs to consider beyond
-        `DEFAULT_GEOMETRIES`
-    :param scan: tunables for the evidence-collection pass
-    :param weights: tiebreaker thresholds for the entropy and gap signals
-    :param detectors: ordered list of detectors to run against each candidate geometry
-    """
-
-    extra_geometries: Tuple[Tuple[int, int], ...] = ()
-    scan: ScanConfig = field(default_factory=ScanConfig)
-    weights: ScoringWeights = field(default_factory=ScoringWeights)
-    detectors: Sequence[Detector] = field(default_factory=lambda: list(DEFAULT_DETECTORS))
-
-    def geometries(self) -> Tuple[Tuple[int, int], ...]:
-        return tuple(list(DEFAULT_GEOMETRIES) + list(self.extra_geometries))
-
-
-# Candidate enumeration
-
-def _is_power_of_two(n: int) -> bool:
-    return n > 0 and (n & (n - 1)) == 0
+# Pipeline (called from `FlashGeometryHeuristicAnalyzer.analyze`, in order)
 
 
 def enumerate_candidates(
@@ -196,7 +249,112 @@ def enumerate_candidates(
     return out
 
 
-# Evidence collection
+def collect_evidence(
+    data: bytes,
+    candidate: GeometryCandidate,
+    scan: ScanConfig,
+    detectors: Optional[Sequence[Detector]] = None,
+) -> GeometryEvidence:
+    """
+    Gather per-detector evidence plus the entropy + gap tiebreak signals.
+
+    :param data: the full flash image bytes
+    :param candidate: the candidate geometry to evaluate
+    :param scan: tunables for the scan pass
+    :param detectors: detectors to run; defaults to `DEFAULT_DETECTORS`
+
+    :return: the aggregated `GeometryEvidence` for `candidate`
+    """
+    if detectors is None:
+        detectors = DEFAULT_DETECTORS
+
+    detector_evidence = evaluate_detectors(data, candidate, scan, detectors)
+    gap_hits, mean_data_entropy, mean_oob_entropy, pages_scanned = _scan_entropy_and_gap(
+        data, candidate, scan
+    )
+
+    return GeometryEvidence(
+        candidate=candidate,
+        pages_scanned=pages_scanned,
+        detector_evidence=detector_evidence,
+        gap_hits=gap_hits,
+        mean_data_entropy=mean_data_entropy,
+        mean_oob_entropy=mean_oob_entropy,
+    )
+
+
+def score_candidate(
+    evidence: GeometryEvidence,
+    weights: ScoringWeights,
+    geometries: Sequence[Tuple[int, int]],
+) -> GeometryScore:
+    """
+    Combine per-detector evidence and entropy/gap tiebreakers into a ranking vector.
+
+    :param evidence: the `GeometryEvidence` for the candidate
+    :param weights: tiebreaker thresholds for the entropy and gap signals
+    :param geometries: the ordered list of geometries (used to derive `preference_index`)
+
+    :return: the `GeometryScore` for the candidate
+    """
+    oob_signal = sum(ev.score() for ev in evidence.detector_evidence)
+
+    gap_min_hits = int(evidence.pages_scanned * weights.gap_relative_min_hit_rate)
+    gap_signal = evidence.gap_hits if evidence.gap_hits >= gap_min_hits else 0
+
+    # Entropy is a confirmation signal only.
+    has_existing_evidence = oob_signal > 0 or evidence.gap_hits > 0
+    entropy_signal = 0
+    if (
+        has_existing_evidence
+        and evidence.mean_data_entropy >= weights.entropy_min_data_entropy_bits
+        and evidence.entropy_data_minus_oob >= weights.entropy_min_delta_bits
+    ):
+        entropy_signal = int(evidence.entropy_data_minus_oob * weights.entropy_tiebreak_scale)
+
+    return GeometryScore(
+        evidence=evidence,
+        oob_signal_score=oob_signal,
+        entropy_signal_score=entropy_signal,
+        gap_signal_score=gap_signal,
+        preference_index=_geometry_preference_index(
+            evidence.candidate.data_size, evidence.candidate.oob_size, geometries
+        ),
+    )
+
+
+def select_best(scores: Sequence[GeometryScore]) -> GeometryScore:
+    """
+    Pick the winning candidate using `GeometryScore.sort_key`.
+
+    :param scores: the candidate scores to rank
+
+    :raises AnalyzerError: if `scores` is empty
+
+    :return: the highest-ranked `GeometryScore`
+    """
+    if not scores:
+        raise AnalyzerError("No geometry candidates to score.")
+    return sorted(scores, key=lambda s: s.sort_key)[0]
+
+
+# Private helpers
+
+
+def _is_power_of_two(n: int) -> bool:
+    return n > 0 and (n & (n - 1)) == 0
+
+
+def _geometry_preference_index(
+    data_size: int,
+    oob_size: int,
+    geometries: Sequence[Tuple[int, int]],
+) -> int:
+    try:
+        return list(geometries).index((data_size, oob_size))
+    except ValueError:
+        return len(geometries)
+
 
 def _shannon_entropy(buf: bytes) -> float:
     """
@@ -289,156 +447,3 @@ def _scan_entropy_and_gap(
         oob_entropy_sum / pages_scanned if (entropy_enabled and pages_scanned) else 0.0
     )
     return gap_hits, mean_data_entropy, mean_oob_entropy, pages_scanned
-
-
-def collect_evidence(
-    data: bytes,
-    candidate: GeometryCandidate,
-    scan: ScanConfig,
-    detectors: Optional[Sequence[Detector]] = None,
-) -> GeometryEvidence:
-    """
-    Gather per-detector evidence plus the entropy + gap tiebreak signals.
-
-    :param data: the full flash image bytes
-    :param candidate: the candidate geometry to evaluate
-    :param scan: tunables for the scan pass
-    :param detectors: detectors to run; defaults to `DEFAULT_DETECTORS`
-
-    :return: the aggregated `GeometryEvidence` for `candidate`
-    """
-    if detectors is None:
-        detectors = DEFAULT_DETECTORS
-
-    detector_evidence = evaluate_detectors(data, candidate, scan, detectors)
-    gap_hits, mean_data_entropy, mean_oob_entropy, pages_scanned = _scan_entropy_and_gap(
-        data, candidate, scan
-    )
-
-    return GeometryEvidence(
-        candidate=candidate,
-        pages_scanned=pages_scanned,
-        detector_evidence=detector_evidence,
-        gap_hits=gap_hits,
-        mean_data_entropy=mean_data_entropy,
-        mean_oob_entropy=mean_oob_entropy,
-    )
-
-
-# Scoring and selection
-
-def _geometry_preference_index(
-    data_size: int,
-    oob_size: int,
-    geometries: Sequence[Tuple[int, int]],
-) -> int:
-    try:
-        return list(geometries).index((data_size, oob_size))
-    except ValueError:
-        return len(geometries)
-
-
-def score_candidate(
-    evidence: GeometryEvidence,
-    weights: ScoringWeights,
-    geometries: Sequence[Tuple[int, int]],
-) -> GeometryScore:
-    """
-    Combine per-detector evidence and entropy/gap tiebreakers into a ranking vector.
-
-    :param evidence: the `GeometryEvidence` for the candidate
-    :param weights: tiebreaker thresholds for the entropy and gap signals
-    :param geometries: the ordered list of geometries (used to derive `preference_index`)
-
-    :return: the `GeometryScore` for the candidate
-    """
-    oob_signal = sum(ev.score() for ev in evidence.detector_evidence)
-
-    gap_min_hits = int(evidence.pages_scanned * weights.gap_relative_min_hit_rate)
-    gap_signal = evidence.gap_hits if evidence.gap_hits >= gap_min_hits else 0
-
-    # Entropy is a confirmation signal only.
-    has_existing_evidence = oob_signal > 0 or evidence.gap_hits > 0
-    entropy_signal = 0
-    if (
-        has_existing_evidence
-        and evidence.mean_data_entropy >= weights.entropy_min_data_entropy_bits
-        and evidence.entropy_data_minus_oob >= weights.entropy_min_delta_bits
-    ):
-        entropy_signal = int(evidence.entropy_data_minus_oob * weights.entropy_tiebreak_scale)
-
-    return GeometryScore(
-        evidence=evidence,
-        oob_signal_score=oob_signal,
-        entropy_signal_score=entropy_signal,
-        gap_signal_score=gap_signal,
-        preference_index=_geometry_preference_index(
-            evidence.candidate.data_size, evidence.candidate.oob_size, geometries
-        ),
-    )
-
-
-def select_best(scores: Sequence[GeometryScore]) -> GeometryScore:
-    """
-    Pick the winning candidate using `GeometryScore.sort_key`.
-
-    :param scores: the candidate scores to rank
-
-    :raises AnalyzerError: if `scores` is empty
-
-    :return: the highest-ranked `GeometryScore`
-    """
-    if not scores:
-        raise AnalyzerError("No geometry candidates to score.")
-    return sorted(scores, key=lambda s: s.sort_key)[0]
-
-
-# OFRAK component
-
-class FlashGeometryHeuristicAnalyzer(
-    Analyzer[Optional[FlashGeometryHeuristicAnalyzerConfig], FlashAttributes]
-):
-    """
-    Infers `FlashAttributes` for a raw NAND dump tagged as `FlashResource`.
-
-    Ranks each standard `(data_size, oob_size)` geometry that evenly divides the file by
-    running a library of detectors (Linux MTD large-page OOB, YAFFS2 packed tags, small-page
-    ECC density, exact Linux MTD Hamming verification) plus entropy and OOB-aligned gap
-    tiebreakers. 
-    
-    The returned `FlashAttributes` describes one data block containing `DATA`
-    followed by `ALIGNMENT` of the OOB size, so the existing `FlashResourceUnpacker` strips
-    the spare region when unpacking. 
-    """
-
-    targets = (FlashResource,)
-    outputs = (FlashAttributes,)
-
-    async def analyze(
-        self,
-        resource: Resource,
-        config: Optional[FlashGeometryHeuristicAnalyzerConfig] = None,
-    ) -> FlashAttributes:
-        config = config or FlashGeometryHeuristicAnalyzerConfig()
-        geometries = config.geometries()
-        data = await resource.get_data()
-
-        candidates = enumerate_candidates(len(data), geometries)
-        if not candidates:
-            raise AnalyzerError(
-                "No standard NAND geometry matches file size with a power-of-2 page count. "
-                f"File size: {len(data)} bytes."
-            )
-
-        evidence = [collect_evidence(data, c, config.scan, config.detectors) for c in candidates]
-
-        scored = [score_candidate(e, config.weights, geometries) for e in evidence]
-        winner = select_best(scored)
-        winning_candidate = winner.evidence.candidate
-
-        return FlashAttributes(
-            data_block_format=[
-                FlashField(FlashFieldType.DATA, winning_candidate.data_size),
-                FlashField(FlashFieldType.ALIGNMENT, winning_candidate.oob_size),
-            ]
-        )
