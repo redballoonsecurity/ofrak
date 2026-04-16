@@ -31,6 +31,7 @@ from ofrak.core.data import *
 from ofrak.core.dtb import *
 from ofrak.core.filesystem import *
 from ofrak.core.flash import *
+from ofrak.core.flash_heuristic.analyzer import *
 from ofrak.core.free_space import *
 from ofrak.core.run_script_modifier import *
 from ofrak.core.gzip import *
