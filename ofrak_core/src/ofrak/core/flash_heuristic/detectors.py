@@ -77,7 +77,7 @@ class ScanConfig:
     :param oob_scan_cap_pages: cap on total pages inspected by per-page detectors and the
         entropy / gap sampler
     :param ecc_verify_page_cap: cap on pages inspected by the exact-ECC verifier
-    :param ecc_verify_enabled: whether to run the exact-ECC verifier at all
+    :param ecc_verify_enabled: whether to run the exact-ECC verifier at all. This can be disabled since it is expensive.
     :param gap_sample_count: number of page boundaries charged against the gap-sampling budget
     :param gap_sample_max_scan: maximum page index that the gap sampler is allowed to consider
     :param entropy_enabled: whether to accumulate Shannon entropy of the data and OOB regions
