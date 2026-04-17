@@ -3,6 +3,10 @@ Tests for `FlashGeometryHeuristicAnalyzer`: verify it infers `FlashAttributes` f
 raw NAND dumps tagged as `FlashResource`, covering every default geometry, and that it raises
 `AnalyzerError` when the file size doesn't match any standard geometry.
 
+We are not using the existing flash test assets because the heuristics rely on attributes
+you might expect to see in real NAND dumps, such as YAFFS2 tags, Linux MTD large-page OOB.
+Test assets are not representative of real NAND dumps.
+
 Requirements Mapping:
 - REQ2.1
 - REQ2.2
