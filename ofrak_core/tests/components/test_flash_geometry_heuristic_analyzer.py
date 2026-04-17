@@ -28,8 +28,6 @@ from ofrak.core.flash_heuristic.detectors import (
     YAFFS2_TAG_MARKER_VALUE,
     _linux_mtd_hamming_ecc_256,
 )
-from ofrak.resource import Resource
-
 from ..unit.component.analyzer.analyzer_test_case import (
     AnalyzerTestCase,
     AnalyzerTests,
@@ -136,11 +134,7 @@ class FlashGeometryHeuristicAnalyzerTestCase(AnalyzerTestCase):
 class PopulatedFlashGeometryHeuristicAnalyzerTestCase(
     PopulatedAnalyzerTestCase, FlashGeometryHeuristicAnalyzerTestCase
 ):
-    ofrak_context: OFRAKContext
-    resource: Resource
-
-    def get_analyzer(self):
-        return self.ofrak_context.component_locator.get_by_type(self.analyzer_type)
+    pass
 
 
 @pytest.fixture
