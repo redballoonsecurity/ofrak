@@ -1,7 +1,7 @@
 """
 Tests for `FlashGeometryHeuristicAnalyzer`: verify it infers `FlashAttributes` from synthetic
-raw NAND dumps tagged as `FlashResource`, covering every default geometry, and that it raises
-`AnalyzerError` when the file size doesn't match any standard geometry.
+raw NAND dumps tagged as `FlashResource`, covering every default geometry, and that it returns
+no attributes (rather than raising) when the file size doesn't match any standard geometry.
 
 We are not using the existing flash test assets because the heuristics rely on attributes
 you might expect to see in real NAND dumps, such as YAFFS2 tags, Linux MTD large-page OOB.
@@ -19,8 +19,8 @@ from typing import List, Tuple
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak.component.analyzer import AnalyzerError
 from ofrak.core.flash import FlashAttributes, FlashField, FlashFieldType, FlashResource
+from ofrak_type.error import NotFoundError
 from ofrak.core.flash_heuristic.analyzer import FlashGeometryHeuristicAnalyzer
 from ofrak.core.flash_heuristic.detectors import (
     LINUX_MTD_OOB_ECC_END,
@@ -108,12 +108,14 @@ class SyntheticNand:
         return b"".join(pages)
 
 
-def _expected_attrs(data_size: int, oob_size: int) -> FlashAttributes:
-    return FlashAttributes(
-        data_block_format=[
-            FlashField(FlashFieldType.DATA, data_size),
-            FlashField(FlashFieldType.ALIGNMENT, oob_size),
-        ]
+def _expected_attrs(data_size: int, oob_size: int) -> Tuple[FlashAttributes, ...]:
+    return (
+        FlashAttributes(
+            data_block_format=[
+                FlashField(FlashFieldType.DATA, data_size),
+                FlashField(FlashFieldType.ALIGNMENT, oob_size),
+            ]
+        ),
     )
 
 
@@ -172,13 +174,15 @@ class TestFlashGeometryHeuristicAnalyzer(AnalyzerTests):
     """Run the standard `AnalyzerTests` suite against the heuristic analyzer (REQ2.1)."""
 
 
-async def test_no_matching_geometry_raises(ofrak_context: OFRAKContext, test_id: str):
+async def test_no_matching_geometry_returns_no_attrs(ofrak_context: OFRAKContext, test_id: str):
     """
-    Verify the analyzer raises `AnalyzerError` for a file whose size doesn't evenly divide
-    any standard NAND geometry into a power-of-two page count (REQ2.2).
+    Verify the analyzer degrades gracefully for a file whose size doesn't evenly divide any
+    standard NAND geometry into a power-of-two page count: it logs a warning and returns no
+    attributes instead of raising, so other analyzers (e.g. `BinwalkAnalyzer`) can still run
+    on the same resource (REQ2.2).
     """
     resource = await ofrak_context.create_root_resource(
         test_id, b"\x00" * 257, tags=(FlashResource,)
     )
-    with pytest.raises(AnalyzerError, match="No standard NAND geometry"):
+    with pytest.raises(NotFoundError):
         await resource.analyze(FlashAttributes)

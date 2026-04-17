@@ -2,6 +2,7 @@
 Heuristic OFRAK analyzer: infer `FlashAttributes` for raw NAND dumps tagged as `FlashResource`.
 """
 
+import logging
 import math
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
@@ -23,6 +24,8 @@ from ofrak.core.flash_heuristic.detectors import (
 )
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
+
+LOGGER = logging.getLogger(__name__)
 
 
 # Constants
@@ -98,7 +101,7 @@ class FlashGeometryHeuristicAnalyzerConfig(ComponentConfig):
 
 
 class FlashGeometryHeuristicAnalyzer(
-    Analyzer[Optional[FlashGeometryHeuristicAnalyzerConfig], FlashAttributes]
+    Analyzer[Optional[FlashGeometryHeuristicAnalyzerConfig], Tuple[FlashAttributes, ...]]
 ):
     """
     Infers `FlashAttributes` for a raw NAND dump tagged as `FlashResource`.
@@ -111,6 +114,10 @@ class FlashGeometryHeuristicAnalyzer(
     The returned `FlashAttributes` describes one data block containing `DATA`
     followed by `ALIGNMENT` of the OOB size, so the existing `FlashResourceUnpacker` strips
     the spare region when unpacking.
+
+    If no standard geometry evenly divides the file into a power-of-two page count, the
+    analyzer logs a warning and returns no attributes rather than raising, so that other
+    analyzers (e.g. `BinwalkAnalyzer`) can still run on the same resource.
     """
 
     targets = (FlashResource,)
@@ -120,17 +127,19 @@ class FlashGeometryHeuristicAnalyzer(
         self,
         resource: Resource,
         config: Optional[FlashGeometryHeuristicAnalyzerConfig] = None,
-    ) -> FlashAttributes:
+    ) -> Tuple[FlashAttributes, ...]:
         config = config or FlashGeometryHeuristicAnalyzerConfig()
         geometries = config.geometries()
         data = await resource.get_data()
 
         candidates = enumerate_candidates(len(data), geometries)
         if not candidates:
-            raise AnalyzerError(
-                "No standard NAND geometry matches file size with a power-of-2 page count. "
-                f"File size: {len(data)} bytes."
+            LOGGER.warning(
+                "No standard NAND geometry matches file size with a power-of-2 page count "
+                "(file size: %d bytes). Skipping FlashAttributes inference.",
+                len(data),
             )
+            return ()
 
         evidence = [collect_evidence(data, c, config.scan, config.detectors) for c in candidates]
 
@@ -138,11 +147,13 @@ class FlashGeometryHeuristicAnalyzer(
         winner = select_best(scored)
         winning_candidate = winner.evidence.candidate
 
-        return FlashAttributes(
-            data_block_format=[
-                FlashField(FlashFieldType.DATA, winning_candidate.data_size),
-                FlashField(FlashFieldType.ALIGNMENT, winning_candidate.oob_size),
-            ]
+        return (
+            FlashAttributes(
+                data_block_format=[
+                    FlashField(FlashFieldType.DATA, winning_candidate.data_size),
+                    FlashField(FlashFieldType.ALIGNMENT, winning_candidate.oob_size),
+                ]
+            ),
         )
 
 
