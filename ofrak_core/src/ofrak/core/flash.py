@@ -70,6 +70,14 @@ class FlashLogicalEccResource(GenericBinary):
     """
 
 
+@dataclass
+class FlashSpareAreaResource(GenericBinary):
+    """
+    Represents spare area data that is not part of the logical data.
+    Is meant to be used when we don't want to discard the spare area.
+    """
+
+
 #####################
 #     ATTRIBUTES    #
 #####################
@@ -105,6 +113,8 @@ class FlashFieldType(Enum):
     CHECKSUM = 6
     DELIMITER = 7
     TOTAL_SIZE = 8
+    SPARE = 9
+    SPARE_SIZE = 10
 
 
 @dataclass
@@ -420,6 +430,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
     children = (
         FlashLogicalDataResource,
         FlashLogicalEccResource,
+        FlashSpareAreaResource,
     )
 
     async def unpack(self, resource: Resource, config=None):
@@ -438,6 +449,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         offset = 0
         only_data = list()
         only_ecc = list()
+        only_spare = list()
         for block in flash_attr.iterate_through_all_blocks(data_len, True):
             block_size = flash_attr.get_block_size(block)
             block_end_offset = offset + block_size
@@ -498,6 +510,8 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     else:
                         # No ECC found in block, just add the data directly
                         only_data.append(block_data[block_data_range.start : block_data_range.end])
+                if field.field_type == FlashFieldType.SPARE:
+                    only_spare.append(block_data[field_range.start : field_range.end])
                 field_offset += field.size
             offset += block_size
 
@@ -515,6 +529,14 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                 data=b"".join(only_ecc),
                 attributes=[
                     ecc_attr,
+                ],
+            )
+        if only_spare:
+            await oob_resource.create_child(
+                tags=(FlashSpareAreaResource,),
+                data=b"".join(only_spare),
+                attributes=[
+                    flash_attr,
                 ],
             )
 

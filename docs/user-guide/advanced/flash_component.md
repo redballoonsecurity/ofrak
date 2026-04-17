@@ -55,6 +55,8 @@ class FlashFieldType(Enum):
     CHECKSUM = 6
     DELIMITER = 7
     TOTAL_SIZE = 8
+    SPARE = 9
+    SPARE_SIZE = 10
 ```
 
 - `DATA` is the "useful" information in the dump.
@@ -66,6 +68,8 @@ class FlashFieldType(Enum):
 - `CHECKSUM` ensures that the data is read as expected.
 - `DELIMITER` may be placed between fields in a block or to indicate what type of block it is.
 - `TOTAL_SIZE` indicates the size of the entire region that includes OOB data.
+- `SPARE` is opaque OOB data that should be preserved but not decoded or verified. When a block format contains a `SPARE` field, the unpacker concatenates the spare bytes from every block into a FlashSpareAreaResource sibling of FlashLogicalDataResource. 
+- `SPARE_SIZE` indicates the size of the `SPARE` field.
 
 This class can be overridden or augmented if other field types are encountered.
 
