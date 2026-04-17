@@ -31,6 +31,7 @@ from ofrak.resource import Resource
 # (256, 0) is appended last as a fallback for SPI NOR / raw images with no spare area:
 # it contributes zero OOB signal, so any geometry with real OOB evidence outranks it.
 DEFAULT_GEOMETRIES: Tuple[Tuple[int, int], ...] = (
+    # Most Common
     (2048, 64),
     (4096, 128),
     (512, 16),
