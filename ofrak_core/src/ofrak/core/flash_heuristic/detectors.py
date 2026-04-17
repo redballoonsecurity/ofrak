@@ -275,7 +275,7 @@ def classify_oob(oob: bytes) -> OobPageCategory:
     n = len(oob)
     if n == 0:
         return OobPageCategory.EMPTY
-    if oob == b"\xff" * n:
+    if all(b == 0xff for b in oob):
         return OobPageCategory.ALL_FF
     if n >= LINUX_MTD_LARGE_PAGE_OOB_SIZE:
         header_erased = oob[:LINUX_MTD_OOB_ECC_OFFSET] == b"\xff" * LINUX_MTD_OOB_ECC_OFFSET
