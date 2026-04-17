@@ -384,7 +384,7 @@ def _scan_entropy_and_gap(
     erased_window = b"\xff" * w
     erased_oob = b"\xff" * candidate.oob_size
 
-    pages_available = file_len // candidate.total
+    pages_available = file_len // candidate.total_chunk_size
     pages_to_scan = min(scan.oob_scan_cap_pages, pages_available)
 
     entropy_enabled = scan.entropy_enabled and candidate.oob_size > 0
@@ -393,7 +393,7 @@ def _scan_entropy_and_gap(
 
     pages_scanned = 0
     for page in range(pages_to_scan):
-        base = page * candidate.total
+        base = page * candidate.total_chunk_size
         oob_off = base + candidate.data_size
         if oob_off + candidate.oob_size > file_len:
             break

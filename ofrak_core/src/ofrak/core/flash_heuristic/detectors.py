@@ -65,7 +65,7 @@ class GeometryCandidate:
     num_pages: int
 
     @property
-    def total(self) -> int:
+    def total_chunk_size(self) -> int:
         return self.data_size + self.oob_size
 
 
@@ -230,12 +230,12 @@ def _scan_per_page_batched(
     """
     Shared per-page loop for detectors that expose `check_page`.
     """
-    pages_available = len(data) // candidate.total
+    pages_available = len(data) // candidate.total_chunk_size
     pages_to_scan = min(scan.oob_scan_cap_pages, pages_available)
     hits = [0] * len(detectors)
     pages_examined = 0
     for page in range(pages_to_scan):
-        base = page * candidate.total
+        base = page * candidate.total_chunk_size
         oob_off = base + candidate.data_size
         if oob_off + candidate.oob_size > len(data):
             break
@@ -478,8 +478,8 @@ def _verify_exact_ecc(
     ):
         return 0, 0
 
-    total = candidate.total
-    num_pages = len(data) // total
+    total_chunk_size = candidate.total_chunk_size
+    num_pages = len(data) // total_chunk_size
     pages_to_sample = min(page_cap, num_pages)
     if pages_to_sample <= 0:
         return 0, 0
@@ -502,7 +502,7 @@ def _verify_exact_ecc(
         page_idx = k * stride
         if page_idx >= num_pages:
             break
-        base = page_idx * total
+        base = page_idx * total_chunk_size
         data_start = base
         data_end = base + candidate.data_size
         oob_ecc = data[data_end + LINUX_MTD_OOB_ECC_OFFSET : data_end + LINUX_MTD_OOB_ECC_END]
