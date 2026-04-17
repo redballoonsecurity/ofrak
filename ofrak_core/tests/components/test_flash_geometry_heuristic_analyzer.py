@@ -37,74 +37,73 @@ from ..unit.component.analyzer.analyzer_test_case import (
 )
 
 
-# Synthetic NAND construction
+class SyntheticNand:
+    @staticmethod
+    def ecc_triplets(page_data: bytes) -> bytes:
+        """
+        Byte-exact Linux MTD soft-Hamming ECC for the first 8 * 256-byte sectors (24 bytes).
 
-
-def _ecc_triplets(page_data: bytes) -> bytes:
-    """
-    Byte-exact Linux MTD soft-Hamming ECC for the first 8 * 256-byte sectors (24 bytes).
-
-    The cap at 8 sectors is an analyzer-side heuristic, not a Linux convention: real Linux
-    only uses this `nand_oob_64` soft-Hamming layout for 2K pages, whereas 4K/8K NAND
-    typically uses BCH with a different OOB layout.
-    """
-    n_sectors = min(len(page_data) // 256, 8)
-    return b"".join(
-        _linux_mtd_hamming_ecc_256(page_data[s * 256 : (s + 1) * 256]) for s in range(n_sectors)
-    )
-
-
-def _small_page_oob(oob_size: int) -> bytes:
-    """
-    Synthesize a densely-populated small-page OOB (<=16 bytes)
-    byte 5 (BBM) is 0xFF and every other byte is non-0xFF.
-    """
-    oob = bytearray(random.randbytes(oob_size))
-    for i in range(oob_size):
-        if i == SMALL_PAGE_BBM_OFFSET:
-            continue
-        if oob[i] == 0xFF:
-            oob[i] = 0xFE
-    if oob_size > SMALL_PAGE_BBM_OFFSET:
-        oob[SMALL_PAGE_BBM_OFFSET] = 0xFF
-    return bytes(oob)
-
-
-def _large_page_oob(page_idx: int, data: bytes, oob_size: int) -> bytes:
-    """
-    Synthesize a large-page OOB (>=64 bytes). Odd-indexed pages use the YAFFS2 packed-tags-2
-    layout; even-indexed pages use the Linux MTD ECC-only layout. Every page carries the
-    byte-exact Hamming ECC for its first 8 * 256 data bytes at OOB[40:64]. Remaining bytes
-    beyond byte 64 are 0xFF padding.
-    """
-    oob = bytearray(b"\xff" * oob_size)
-    if page_idx % 2 == 1:
-        oob[1] = YAFFS2_TAG_MARKER_VALUE
-        # Packed tags 2: (seq_number, object_id, chunk_id, n_bytes). `n_bytes` must be in
-        # (0, data_size] to be accepted by `Yaffs2PackedTagsDetector`.
-        oob[YAFFS2_PACKED_TAGS2_OFFSET:YAFFS2_PACKED_TAGS2_END] = struct.pack(
-            "<IIII", page_idx + 1, 100 + page_idx, page_idx, max(1, len(data) // 2)
+        The cap at 8 sectors is an analyzer-side heuristic, not a Linux convention: real Linux
+        only uses this `nand_oob_64` soft-Hamming layout for 2K pages, whereas 4K/8K NAND
+        typically uses BCH with a different OOB layout.
+        """
+        n_sectors = min(len(page_data) // 256, 8)
+        return b"".join(
+            _linux_mtd_hamming_ecc_256(page_data[s * 256 : (s + 1) * 256]) for s in range(n_sectors)
         )
-    oob[LINUX_MTD_OOB_ECC_OFFSET:LINUX_MTD_OOB_ECC_END] = _ecc_triplets(data)
-    return bytes(oob)
 
+    @staticmethod
+    def small_page_oob(oob_size: int) -> bytes:
+        """
+        Synthesize a densely-populated small-page OOB (<=16 bytes)
+        byte 5 (BBM) is 0xFF and every other byte is non-0xFF.
+        """
+        oob = bytearray(random.randbytes(oob_size))
+        for i in range(oob_size):
+            if i == SMALL_PAGE_BBM_OFFSET:
+                continue
+            if oob[i] == 0xFF:
+                oob[i] = 0xFE
+        if oob_size > SMALL_PAGE_BBM_OFFSET:
+            oob[SMALL_PAGE_BBM_OFFSET] = 0xFF
+        return bytes(oob)
 
-def _build_synthetic_nand(data_size: int, oob_size: int, num_pages: int) -> bytes:
-    """
-    Build a raw NAND image of `num_pages` physical pages sized `(data_size + oob_size)` each.
-    Relies on the module-level `random` state; seed via the `_seeded_random` fixture.
-    """
-    pages: List[bytes] = []
-    for i in range(num_pages):
-        data = random.randbytes(data_size)
-        if oob_size == 0:
-            oob = b""
-        elif oob_size <= SMALL_PAGE_OOB_MAX:
-            oob = _small_page_oob(oob_size=oob_size)
-        else:
-            oob = _large_page_oob(page_idx=i, data=data, oob_size=oob_size)
-        pages.append(data + oob)
-    return b"".join(pages)
+    @staticmethod
+    def large_page_oob(page_idx: int, data: bytes, oob_size: int) -> bytes:
+        """
+        Synthesize a large-page OOB (>=64 bytes). Odd-indexed pages use the YAFFS2 packed-tags-2
+        layout; even-indexed pages use the Linux MTD ECC-only layout. Every page carries the
+        byte-exact Hamming ECC for its first 8 * 256 data bytes at OOB[40:64]. Remaining bytes
+        beyond byte 64 are 0xFF padding.
+        """
+        oob = bytearray(b"\xff" * oob_size)
+        if page_idx % 2 == 1:
+            oob[1] = YAFFS2_TAG_MARKER_VALUE
+            # Packed tags 2: (seq_number, object_id, chunk_id, n_bytes). `n_bytes` must be in
+            # (0, data_size] to be accepted by `Yaffs2PackedTagsDetector`.
+            oob[YAFFS2_PACKED_TAGS2_OFFSET:YAFFS2_PACKED_TAGS2_END] = struct.pack(
+                "<IIII", page_idx + 1, 100 + page_idx, page_idx, max(1, len(data) // 2)
+            )
+        oob[LINUX_MTD_OOB_ECC_OFFSET:LINUX_MTD_OOB_ECC_END] = SyntheticNand.ecc_triplets(data)
+        return bytes(oob)
+
+    @staticmethod
+    def build(data_size: int, oob_size: int, num_pages: int) -> bytes:
+        """
+        Build a raw NAND image of `num_pages` physical pages sized `(data_size + oob_size)` each.
+        Relies on the module-level `random` state; seed via the `_seeded_random` fixture.
+        """
+        pages: List[bytes] = []
+        for i in range(num_pages):
+            data = random.randbytes(data_size)
+            if oob_size == 0:
+                oob = b""
+            elif oob_size <= SMALL_PAGE_OOB_MAX:
+                oob = SyntheticNand.small_page_oob(oob_size=oob_size)
+            else:
+                oob = SyntheticNand.large_page_oob(page_idx=i, data=data, oob_size=oob_size)
+            pages.append(data + oob)
+        return b"".join(pages)
 
 
 def _expected_attrs(data_size: int, oob_size: int) -> FlashAttributes:
@@ -158,7 +157,7 @@ async def test_case(
     request, _seeded_random, ofrak_context: OFRAKContext, test_id: str
 ) -> PopulatedFlashGeometryHeuristicAnalyzerTestCase:
     data_size, oob_size, num_pages, _id = request.param
-    resource_contents = _build_synthetic_nand(data_size, oob_size, num_pages)
+    resource_contents = SyntheticNand.build(data_size, oob_size, num_pages)
     resource = await ofrak_context.create_root_resource(
         test_id, resource_contents, tags=(FlashResource,)
     )
