@@ -132,7 +132,6 @@ class FlashGeometryHeuristicAnalyzer(
             )
 
         evidence = [collect_evidence(data, c, config.scan, config.detectors) for c in candidates]
-
         scored = [score_candidate(e, config.weights, geometries) for e in evidence]
         winner = select_best(scored)
         winning_candidate = winner.evidence.candidate
