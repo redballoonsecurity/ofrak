@@ -172,19 +172,6 @@ class GeometryEvidence:
     def entropy_data_minus_oob(self) -> float:
         return self.mean_data_entropy - self.mean_oob_entropy
 
-    def find_detector(self, name: str) -> Optional[DetectorEvidence]:
-        """
-        Look up a detector's evidence by name.
-
-        :param name: the `DetectorSpec.name` of the detector to find
-
-        :return: the matching `DetectorEvidence` or `None` if the detector was not run
-        """
-        for ev in self.detector_evidence:
-            if ev.name == name:
-                return ev
-        return None
-
 
 @dataclass
 class GeometryScore:

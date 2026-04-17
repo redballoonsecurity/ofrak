@@ -9,7 +9,7 @@ entry in the detector list identically.
 import struct
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Protocol, Sequence, Tuple, cast
+from typing import List, Protocol, Sequence, Tuple, Union, cast
 
 
 # Constants shared with detectors
@@ -149,18 +149,18 @@ class DetectorEvidence:
         return self.hits * self.spec.weight
 
 
-class Detector(Protocol):
+class GlobalDetector(Protocol):
     """
-    Anything that scores a geometry candidate.
+    Detector that runs its own pass over the whole image via `evaluate`.
     """
 
     @property
-    def spec(self) -> DetectorSpec:
+    def spec(self) -> DetectorSpec:  # pragma: no cover
         ...
 
     def evaluate(
         self, data: bytes, candidate: GeometryCandidate, scan: ScanConfig
-    ) -> DetectorEvidence:
+    ) -> DetectorEvidence:  # pragma: no cover
         ...
 
 
@@ -168,17 +168,19 @@ class PerPageOobDetector(Protocol):
     """
     Detector whose per-page hit decision depends only on a page's OOB.
 
-    Implementations supply `check_page`; `evaluate_detectors` batches per-page detectors into
-    one shared scan loop. Their `evaluate` method (required by `Detector`) just runs the same
-    batched scan with a single-detector list, so standalone calls produce the same result.
+    Implementations supply `check_page` and `evaluate_detectors` batches them into one shared
+    scan loop via `_scan_per_page_batched`.
     """
 
     @property
-    def spec(self) -> DetectorSpec:
+    def spec(self) -> DetectorSpec:  # pragma: no cover
         ...
 
-    def check_page(self, oob: bytes, data_size: int) -> int:
+    def check_page(self, oob: bytes, data_size: int) -> int:  # pragma: no cover
         ...
+
+
+Detector = Union[GlobalDetector, PerPageOobDetector]
 
 
 # Public entry point
@@ -206,7 +208,9 @@ def evaluate_detectors(
     per_page: List[PerPageOobDetector] = [
         cast(PerPageOobDetector, d) for d in detectors if hasattr(d, "check_page")
     ]
-    other = [d for d in detectors if not hasattr(d, "check_page")]
+    other: List[GlobalDetector] = [
+        cast(GlobalDetector, d) for d in detectors if not hasattr(d, "check_page")
+    ]
 
     results: List[DetectorEvidence] = []
     if per_page:
@@ -295,11 +299,6 @@ class EccOnlyDetector:
     def check_page(self, oob: bytes, data_size: int) -> int:
         return 1 if classify_oob(oob) == OobPageCategory.ECC_ONLY else 0
 
-    def evaluate(
-        self, data: bytes, candidate: GeometryCandidate, scan: ScanConfig
-    ) -> DetectorEvidence:
-        return _scan_per_page_batched(data, candidate, scan, [self])[0]
-
 
 @dataclass(frozen=True)
 class Yaffs2PackedTagsDetector:
@@ -321,11 +320,6 @@ class Yaffs2PackedTagsDetector:
         except struct.error:
             return 0
         return 1 if 0 < n_bytes <= data_size else 0
-
-    def evaluate(
-        self, data: bytes, candidate: GeometryCandidate, scan: ScanConfig
-    ) -> DetectorEvidence:
-        return _scan_per_page_batched(data, candidate, scan, [self])[0]
 
 
 @dataclass(frozen=True)
@@ -364,11 +358,6 @@ class SmallPageEccDetector:
             return 0
         ff_outside = sum(1 for i, b in enumerate(oob) if b == 0xFF and i != self.bbm_offset)
         return 1 if ff_outside <= self.max_ff_outside_bbm else 0
-
-    def evaluate(
-        self, data: bytes, candidate: GeometryCandidate, scan: ScanConfig
-    ) -> DetectorEvidence:
-        return _scan_per_page_batched(data, candidate, scan, [self])[0]
 
 
 # Linux MTD soft-Hamming ECC over a 256-byte sector. Mirrors Linux
@@ -541,7 +530,7 @@ def _verify_exact_ecc(
 @dataclass(frozen=True)
 class EccSyndromeExactDetector:
     """
-    Detector wrapper around `_verify_exact_ecc`.
+    `GlobalDetector` wrapper around `_verify_exact_ecc`.
     """
 
     spec: DetectorSpec = DetectorSpec(
