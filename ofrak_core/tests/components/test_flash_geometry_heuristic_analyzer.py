@@ -1,0 +1,200 @@
+"""
+Tests for `FlashGeometryHeuristicAnalyzer`: verify it infers `FlashAttributes` from synthetic
+raw NAND dumps tagged as `FlashResource`, covering every default geometry, and that it raises
+`AnalyzerError` when the file size doesn't match any standard geometry.
+
+Requirements Mapping:
+- REQ2.1
+- REQ2.2
+"""
+import struct
+from dataclasses import dataclass
+from typing import List, Tuple
+
+import pytest
+
+from ofrak import OFRAKContext
+from ofrak.component.analyzer import AnalyzerError
+from ofrak.core.flash import FlashAttributes, FlashField, FlashFieldType, FlashResource
+from ofrak.core.flash_heuristic.analyzer import FlashGeometryHeuristicAnalyzer
+from ofrak.core.flash_heuristic.detectors import (
+    LINUX_MTD_OOB_ECC_END,
+    LINUX_MTD_OOB_ECC_OFFSET,
+    SMALL_PAGE_BBM_OFFSET,
+    SMALL_PAGE_OOB_MAX,
+    YAFFS2_PACKED_TAGS2_END,
+    YAFFS2_PACKED_TAGS2_OFFSET,
+    YAFFS2_TAG_MARKER_VALUE,
+    _linux_mtd_hamming_ecc_256,
+)
+from ofrak.resource import Resource
+
+from ..unit.component.analyzer.analyzer_test_case import (
+    AnalyzerTestCase,
+    AnalyzerTests,
+    PopulatedAnalyzerTestCase,
+)
+
+
+# Synthetic NAND construction
+
+
+def _pseudorandom(seed: int, n: int) -> bytes:
+    """
+    Deterministic high-entropy byte stream (xorshift64) for synthetic page data. Keeps the
+    tests reproducible.
+    """
+    out = bytearray(n)
+    x = seed & 0xFFFFFFFFFFFFFFFF or 1
+    for i in range(n):
+        x ^= (x << 13) & 0xFFFFFFFFFFFFFFFF
+        x ^= (x >> 7) & 0xFFFFFFFFFFFFFFFF
+        x ^= (x << 17) & 0xFFFFFFFFFFFFFFFF
+        out[i] = x & 0xFF
+    return bytes(out)
+
+
+def _ecc_triplets(page_data: bytes) -> bytes:
+    """
+    Byte-exact Linux MTD soft-Hamming ECC for the first 8 * 256-byte sectors (24 bytes).
+
+    The cap at 8 sectors is an analyzer-side heuristic, not a Linux convention: real Linux
+    only uses this `nand_oob_64` soft-Hamming layout for 2K pages, whereas 4K/8K NAND
+    typically uses BCH with a different OOB layout.
+    """
+    n_sectors = min(len(page_data) // 256, 8)
+    return b"".join(
+        _linux_mtd_hamming_ecc_256(page_data[s * 256 : (s + 1) * 256]) for s in range(n_sectors)
+    )
+
+
+def _small_page_oob(seed: int, oob_size: int) -> bytes:
+    """
+    Synthesize a densely-populated small-page OOB (<=16 bytes)
+    byte 5 (BBM) is 0xFF and every other byte is non-0xFF.
+    """
+    oob = bytearray(_pseudorandom(seed, oob_size))
+    for i in range(oob_size):
+        if i == SMALL_PAGE_BBM_OFFSET:
+            continue
+        if oob[i] == 0xFF:
+            oob[i] = 0xFE
+    if oob_size > SMALL_PAGE_BBM_OFFSET:
+        oob[SMALL_PAGE_BBM_OFFSET] = 0xFF
+    return bytes(oob)
+
+
+def _large_page_oob(seed_idx: int, data: bytes, oob_size: int) -> bytes:
+    """
+    Synthesize a large-page OOB (>=64 bytes). Odd-indexed pages use the YAFFS2 packed-tags-2
+    layout; even-indexed pages use the Linux MTD ECC-only layout. Every page carries the
+    byte-exact Hamming ECC for its first 8 * 256 data bytes at OOB[40:64]. Remaining bytes
+    beyond byte 64 are 0xFF padding.
+    """
+    oob = bytearray(b"\xff" * oob_size)
+    if seed_idx % 2 == 1:
+        oob[1] = YAFFS2_TAG_MARKER_VALUE
+        # Packed tags 2: (seq_number, object_id, chunk_id, n_bytes). `n_bytes` must be in
+        # (0, data_size] to be accepted by `Yaffs2PackedTagsDetector`.
+        oob[YAFFS2_PACKED_TAGS2_OFFSET:YAFFS2_PACKED_TAGS2_END] = struct.pack(
+            "<IIII", seed_idx + 1, 100 + seed_idx, seed_idx, max(1, len(data) // 2)
+        )
+    oob[LINUX_MTD_OOB_ECC_OFFSET:LINUX_MTD_OOB_ECC_END] = _ecc_triplets(data)
+    return bytes(oob)
+
+
+def _build_synthetic_nand(data_size: int, oob_size: int, num_pages: int) -> bytes:
+    """
+    Build a raw NAND image of `num_pages` physical pages sized `(data_size + oob_size)` each.
+    """
+    pages: List[bytes] = []
+    for i in range(num_pages):
+        data = _pseudorandom(seed=0xA5A50000 + i, n=data_size)
+        if oob_size == 0:
+            oob = b""
+        elif oob_size <= SMALL_PAGE_OOB_MAX:
+            oob = _small_page_oob(seed=0xB00B0000 + i, oob_size=oob_size)
+        else:
+            oob = _large_page_oob(seed_idx=i, data=data, oob_size=oob_size)
+        pages.append(data + oob)
+    return b"".join(pages)
+
+
+def _expected_attrs(data_size: int, oob_size: int) -> FlashAttributes:
+    return FlashAttributes(
+        data_block_format=[
+            FlashField(FlashFieldType.DATA, data_size),
+            FlashField(FlashFieldType.ALIGNMENT, oob_size),
+        ]
+    )
+
+
+# Parameterized test cases: one per default geometry. `num_pages` is always a power of two,
+# kept small to keep each image under 20 KB.
+GEOMETRY_CASES: Tuple[Tuple[int, int, int, str], ...] = (
+    (2048, 64, 8, "large_page_2048_64"),
+    (4096, 128, 4, "large_page_4096_128"),
+    (512, 16, 16, "small_page_512_16"),
+    (4096, 224, 2, "large_page_4096_224"),
+    (8192, 448, 2, "large_page_8192_448"),
+    (256, 0, 8, "raw_no_oob_256_0"),
+)
+
+
+@dataclass
+class FlashGeometryHeuristicAnalyzerTestCase(AnalyzerTestCase):
+    resource_contents: bytes
+
+
+@dataclass
+class PopulatedFlashGeometryHeuristicAnalyzerTestCase(
+    PopulatedAnalyzerTestCase, FlashGeometryHeuristicAnalyzerTestCase
+):
+    ofrak_context: OFRAKContext
+    resource: Resource
+
+    def get_analyzer(self):
+        return self.ofrak_context.component_locator.get_by_type(self.analyzer_type)
+
+
+@pytest.fixture(
+    params=[
+        FlashGeometryHeuristicAnalyzerTestCase(
+            analyzer_type=FlashGeometryHeuristicAnalyzer,
+            expected_result=_expected_attrs(data_size, oob_size),
+            resource_contents=_build_synthetic_nand(data_size, oob_size, num_pages),
+        )
+        for data_size, oob_size, num_pages, _id in GEOMETRY_CASES
+    ],
+    ids=[case_id for *_rest, case_id in GEOMETRY_CASES],
+)
+async def test_case(
+    request, ofrak_context: OFRAKContext, test_id: str
+) -> PopulatedFlashGeometryHeuristicAnalyzerTestCase:
+    tc: FlashGeometryHeuristicAnalyzerTestCase = request.param
+    resource = await ofrak_context.create_root_resource(
+        test_id, tc.resource_contents, tags=(FlashResource,)
+    )
+    return PopulatedFlashGeometryHeuristicAnalyzerTestCase(
+        tc.analyzer_type,
+        tc.expected_result,
+        tc.resource_contents,
+        ofrak_context,
+        resource,
+    )
+
+
+class TestFlashGeometryHeuristicAnalyzer(AnalyzerTests):
+    """Run the standard `AnalyzerTests` suite against the heuristic analyzer (REQ2.1)."""
+
+
+async def test_no_matching_geometry_raises(ofrak_context: OFRAKContext, test_id: str):
+    """
+    Verify the analyzer raises `AnalyzerError` for a file whose size doesn't evenly divide
+    any standard NAND geometry into a power-of-two page count (REQ2.2).
+    """
+    resource = await ofrak_context.create_root_resource(
+        test_id, b"\x00" * 257, tags=(FlashResource,)
+    )
+    with pytest.raises(AnalyzerError, match="No standard NAND geometry"):
+        await resource.analyze(FlashAttributes)
