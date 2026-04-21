@@ -14,6 +14,62 @@ A typical flash dump looks something like this:
 
 This pattern may continue for the entire flash chip or could have fields in the header or tail block that show the size of the region that includes OOB data.
 
+### Common Page Geometries
+
+Real NAND dumps often use a handful of standard `(data, OOB)` page sizes, and the whole image is almost always a power-of-two number of pages:
+
+| Data | OOB | Typical use |
+| ---- | --- | ----------- |
+| 512 | 16 | "Small-page" NAND (SLC, older parts) |
+| 2048 | 64 | "Large-page" NAND — the most common modern geometry |
+| 4096 | 128 | 4K-page NAND |
+| 4096 | 224 | 4K-page NAND with extra OOB for stronger (BCH) ECC |
+| 8192 | 448 | 8K-page NAND |
+| 256 | 0 | SPI NOR / raw images with no spare area |
+
+Which one you're looking at can usually be narrowed down from the file size alone: geometries where `data + OOB` evenly divides the image into a power-of-two page count are plausible candidates for a raw chip dump. 
+
+### OOB Layout Conventions
+
+The OOB (also called "spare area") of a page is not always random: different software stacks impose recognisable structures on it. The three conventions most commonly seen in the wild are:
+
+**Linux MTD large-page (64-byte OOB)**
+
+| Bytes | Contents |
+| ----- | -------- |
+| `[0, 40)` | Bad-block / scrub-marker region. On a good block these bytes are all `0xFF`; a non-`0xFF` byte 0 marks the block as bad. |
+| `[40, 64)` | 24 bytes of Hamming ECC, arranged as 8 x 3-byte triplets covering 8 x 256-byte subpages of the data region. |
+
+This layout assumes the data region is a multiple of 256 bytes (Linux's soft-Hamming sector size), so it fits naturally over 2048-byte pages (8 subpages) and smaller multiples of 256. 4K / 8K pages that follow this layout typically only cover the first 2048 bytes with Hamming and protect the rest with a different algorithm (e.g. BCH).
+
+**YAFFS2 "packed tags 2"**
+
+| Bytes | Contents |
+| ----- | -------- |
+| 0 | `0xFF` (leading erased byte, deliberately left untouched by YAFFS) |
+| 1 | `0x55` — the YAFFS2 tag marker |
+| `[2, 18)` | 16 bytes of little-endian packed tags: `(seq_number, object_id, chunk_id, n_bytes)` as 4 x `uint32`. |
+
+Pages carrying YAFFS2 tags usually still include ECC in the remaining OOB bytes under the Linux MTD large-page convention, so a YAFFS2 OOB is a superset of the MTD layout with tags squeezed into the bad-block-marker region.
+
+**Small-page OOB (<= 16 bytes)**
+
+| Bytes | Contents |
+| ----- | -------- |
+| 5 | Bad-block marker — `0xFF` for good blocks, any other value indicates a bad block. |
+| Other | ECC + metadata, densely populated. |
+
+Classic 512+16 NAND follows this layout. 
+
+### Erased Pages and Bad-Block Markers
+
+Two byte-level conventions hold across essentially every NAND image and are useful to keep in mind when looking at a raw dump:
+
+- **Erased flash reads as `0xFF`.** Before a block is programmed, every byte, data region *and* OOB, is `0xFF`. "Deletion" on NAND is a block-level erase that restores this state. 
+- **A non-`0xFF` byte at the bad-block-marker offset** (byte 5 for small-page OOB, byte 0 of the scrub-marker region for large-page OOB) marks the whole block as unusable. Software stacks skip the block and relocate its data to a spare block. A bad block in a raw dump often still contains old data that looks populated but should be ignored.
+
+### More Complex Layouts
+
 Other examples are more complex. Sometimes this is due to the fact that not all of the dump is ECC protected or needs OOB data. In such cases, delimiters or magic bytes are necessary to show the area. An example format:
 
 Header Block
