@@ -362,6 +362,7 @@ class SmallPageEccHeuristic:
 
 # Linux MTD soft-Hamming ECC over a 256-byte sector. Mirrors Linux
 # `ecc_sw_hamming_calculate(..., step_size=256, sm_order=false)`.
+# https://github.com/torvalds/linux/blob/59bd5ae0db22566e2b961742126269c151d587c7/drivers/mtd/nand/ecc-sw-hamming.c#L115
 _ECC_INVPARITY = bytes(1 - (bin(i).count("1") & 1) for i in range(256))
 
 _HAM256_ECC_STEPS: Tuple[Tuple[bool, Tuple[Tuple[int, int], ...]], ...] = (
