@@ -21,8 +21,8 @@ import pytest
 from ofrak import OFRAKContext
 from ofrak.core.flash import FlashAttributes, FlashField, FlashFieldType, FlashResource
 from ofrak_type.error import NotFoundError
-from ofrak.core.flash_heuristic.analyzer import FlashGeometryHeuristicAnalyzer
-from ofrak.core.flash_heuristic.heuristics import (
+from ofrak.core.flash.analyzer import FlashGeometryHeuristicAnalyzer
+from ofrak.core.flash.heuristics import (
     LINUX_MTD_OOB_ECC_END,
     LINUX_MTD_OOB_ECC_OFFSET,
     SMALL_PAGE_BBM_OFFSET,

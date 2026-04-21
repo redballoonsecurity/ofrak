@@ -8,13 +8,13 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.core.flash import (
+from ofrak.core.flash.flash import (
     FlashAttributes,
     FlashField,
     FlashFieldType,
     FlashResource,
 )
-from ofrak.core.flash_heuristic.heuristics import (
+from ofrak.core.flash.heuristics import (
     DEFAULT_HEURISTICS,
     GeometryCandidate,
     Heuristic,
