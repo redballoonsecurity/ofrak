@@ -94,7 +94,7 @@ class FlashGeometryHeuristicAnalyzerConfig(ComponentConfig):
     heuristics: Sequence[Heuristic] = field(default_factory=lambda: list(DEFAULT_HEURISTICS))
 
     def geometries(self) -> Tuple[Tuple[int, int], ...]:
-        return tuple(list(DEFAULT_GEOMETRIES) + list(self.extra_geometries))
+        return tuple(list(self.extra_geometries) + list(DEFAULT_GEOMETRIES))
 
 
 # OFRAK component
