@@ -365,7 +365,7 @@ def _scan_entropy_and_gap(
     scan: ScanConfig,
 ) -> Tuple[int, float, float, int]:
     """
-    Single pass collecting entropy aggregates and gap-probe hits.
+    Single pass collecting entropy aggregates and page-boundary gap hits.
 
     :param data: the full flash image bytes
     :param candidate: the candidate geometry being measured
@@ -403,8 +403,9 @@ def _scan_entropy_and_gap(
 
         pages_scanned += 1
 
-        # Gap probe: skip page 0 (needs a previous page for context); only run while
-        # within the sampling window and the budget isn't exhausted.
+        # Probe this page boundary for an OOB-sized 0xFF gap between non-erased data.
+        # Skip page 0 (needs a previous page for context); only run while within the
+        # sampling window and the budget isn't exhausted.
         if page == 0 or page > scan.gap_sample_max_scan or gap_budget <= 0:
             continue
 
