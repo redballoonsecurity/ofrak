@@ -252,7 +252,7 @@ def _scan_per_page_batched(
 # Concrete heuristics
 
 
-class OobPageCategory(str, Enum):
+class OobPageCategory(Enum):
     """
     Classification of a single page's spare area.
     """
