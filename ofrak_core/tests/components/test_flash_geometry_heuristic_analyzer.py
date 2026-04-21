@@ -22,7 +22,7 @@ from ofrak import OFRAKContext
 from ofrak.core.flash import FlashAttributes, FlashField, FlashFieldType, FlashResource
 from ofrak_type.error import NotFoundError
 from ofrak.core.flash_heuristic.analyzer import FlashGeometryHeuristicAnalyzer
-from ofrak.core.flash_heuristic.detectors import (
+from ofrak.core.flash_heuristic.heuristics import (
     LINUX_MTD_OOB_ECC_END,
     LINUX_MTD_OOB_ECC_OFFSET,
     SMALL_PAGE_BBM_OFFSET,
@@ -82,7 +82,7 @@ class SyntheticNand:
         if page_idx % 2 == 1:
             oob[1] = YAFFS2_TAG_MARKER_VALUE
             # Packed tags 2: (seq_number, object_id, chunk_id, n_bytes). `n_bytes` must be in
-            # (0, data_size] to be accepted by `Yaffs2PackedTagsDetector`.
+            # (0, data_size] to be accepted by `Yaffs2PackedTagsHeuristic`.
             oob[YAFFS2_PACKED_TAGS2_OFFSET:YAFFS2_PACKED_TAGS2_END] = struct.pack(
                 "<IIII", page_idx + 1, 100 + page_idx, page_idx, max(1, len(data) // 2)
             )

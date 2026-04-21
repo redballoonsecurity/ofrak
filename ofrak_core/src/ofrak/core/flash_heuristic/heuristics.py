@@ -1,9 +1,9 @@
 """
-Detectors and detector framework for the flash geometry heuristic analyzer.
+Heuristics and heuristic framework for the flash geometry heuristic analyzer.
 
-Every detector carries a `DetectorSpec` (uniform scoring parameters) and
-returns a `DetectorEvidence` from `evaluate`. The analyzer treats every
-entry in the detector list identically.
+Every heuristic carries a `HeuristicSpec` (uniform scoring parameters) and
+returns a `HeuristicEvidence` from `evaluate`. The analyzer treats every
+entry in the heuristic list identically.
 """
 
 import struct
@@ -12,7 +12,7 @@ from enum import Enum
 from typing import List, Protocol, Sequence, Tuple, Union, cast
 
 
-# Constants shared with detectors
+# Constants shared with heuristics
 
 # Linux MTD large-page OOB (64-byte spare) layout:
 #   bytes [0, 40)  - bad-block / scrub markers (usually 0xFF after byte 0)
@@ -74,7 +74,7 @@ class ScanConfig:
     """
     Tunables for the evidence-collection pass.
 
-    :param oob_scan_cap_pages: cap on total pages inspected by per-page detectors and the
+    :param oob_scan_cap_pages: cap on total pages inspected by per-page heuristics and the
         entropy / gap sampler
     :param ecc_verify_page_cap: cap on pages inspected by the exact-ECC verifier
     :param ecc_verify_enabled: whether to run the exact-ECC verifier at all. This can be disabled since it is expensive.
@@ -91,17 +91,17 @@ class ScanConfig:
     entropy_enabled: bool = True
 
 
-# Detector framework (uniform scoring interface)
+# Heuristic framework (uniform scoring interface)
 
 
 @dataclass(frozen=True)
-class DetectorSpec:
+class HeuristicSpec:
     """
-    Uniform scoring parameters attached to every detector.
+    Uniform scoring parameters attached to every heuristic.
 
-    :param name: short identifier used to look up the detector's evidence
+    :param name: short identifier used to look up the heuristic's evidence
     :param weight: multiplier applied to the hit count when contributing to `oob_signal_score`
-    :param absolute_min_hits: floor on hits below which the detector's contribution is zeroed
+    :param absolute_min_hits: floor on hits below which the heuristic's contribution is zeroed
     :param relative_min_hit_rate: fractional floor on hits per page examined, combined with
         `absolute_min_hits` via `max()`
     """
@@ -119,16 +119,16 @@ class DetectorSpec:
 
 
 @dataclass
-class DetectorEvidence:
+class HeuristicEvidence:
     """
-    Per-detector result produced by a single evaluation pass.
+    Per-heuristic result produced by a single evaluation pass.
 
     :param spec: the spec used to drive the evaluation
-    :param hits: number of pages the detector matched
-    :param pages_examined: number of pages the detector was given a chance to match
+    :param hits: number of pages the heuristic matched
+    :param pages_examined: number of pages the heuristic was given a chance to match
     """
 
-    spec: DetectorSpec
+    spec: HeuristicSpec
     hits: int
     pages_examined: int
 
@@ -138,7 +138,7 @@ class DetectorEvidence:
 
     def score(self) -> int:
         """
-        Compute the detector's uniform contribution to the primary signal score.
+        Compute the heuristic's uniform contribution to the primary signal score.
 
         :return: `hits * weight` if hits clear the spec's noise floor, else 0
         """
@@ -149,90 +149,90 @@ class DetectorEvidence:
         return self.hits * self.spec.weight
 
 
-class GlobalDetector(Protocol):
+class GlobalHeuristic(Protocol):
     """
-    Detector that runs its own pass over the whole image via `evaluate`.
+    Heuristic that runs its own pass over the whole image via `evaluate`.
     """
 
     @property
-    def spec(self) -> DetectorSpec:  # pragma: no cover
+    def spec(self) -> HeuristicSpec:  # pragma: no cover
         ...
 
     def evaluate(
         self, data: bytes, candidate: GeometryCandidate, scan: ScanConfig
-    ) -> DetectorEvidence:  # pragma: no cover
+    ) -> HeuristicEvidence:  # pragma: no cover
         ...
 
 
-class PerPageOobDetector(Protocol):
+class PerPageOobHeuristic(Protocol):
     """
-    Detector whose per-page hit decision depends only on a page's OOB.
+    Heuristic whose per-page hit decision depends only on a page's OOB.
 
-    Implementations supply `check_page` and `evaluate_detectors` batches them into one shared
+    Implementations supply `check_page` and `evaluate_heuristics` batches them into one shared
     scan loop via `_scan_per_page_batched`.
     """
 
     @property
-    def spec(self) -> DetectorSpec:  # pragma: no cover
+    def spec(self) -> HeuristicSpec:  # pragma: no cover
         ...
 
     def check_page(self, oob: bytes, data_size: int) -> int:  # pragma: no cover
         ...
 
 
-Detector = Union[GlobalDetector, PerPageOobDetector]
+Heuristic = Union[GlobalHeuristic, PerPageOobHeuristic]
 
 
 # Public entry point
 
 
-def evaluate_detectors(
+def evaluate_heuristics(
     data: bytes,
     candidate: GeometryCandidate,
     scan: ScanConfig,
-    detectors: Sequence[Detector],
-) -> List[DetectorEvidence]:
+    heuristics: Sequence[Heuristic],
+) -> List[HeuristicEvidence]:
     """
-    Run every detector against a candidate and return one evidence per detector.
+    Run every heuristic against a candidate and return one evidence per heuristic.
 
-    The analyzer calls this entry point. Per-page detectors (anything exposing `check_page`)
-    are batched into a single shared scan loop; all other detectors are run individually.
+    The analyzer calls this entry point. Per-page heuristics (anything exposing `check_page`)
+    are batched into a single shared scan loop; all other heuristics are run individually.
 
     :param data: the full flash image bytes
     :param candidate: the candidate geometry under evaluation
     :param scan: tunables for the evidence-collection pass
-    :param detectors: the ordered list of detectors to evaluate
+    :param heuristics: the ordered list of heuristics to evaluate
 
-    :return: one `DetectorEvidence` per entry in `detectors`, in the same order
+    :return: one `HeuristicEvidence` per entry in `heuristics`, in the same order
     """
-    per_page: List[PerPageOobDetector] = [
-        cast(PerPageOobDetector, d) for d in detectors if hasattr(d, "check_page")
+    per_page: List[PerPageOobHeuristic] = [
+        cast(PerPageOobHeuristic, h) for h in heuristics if hasattr(h, "check_page")
     ]
-    other: List[GlobalDetector] = [
-        cast(GlobalDetector, d) for d in detectors if not hasattr(d, "check_page")
+    other: List[GlobalHeuristic] = [
+        cast(GlobalHeuristic, h) for h in heuristics if not hasattr(h, "check_page")
     ]
 
-    results: List[DetectorEvidence] = []
+    results: List[HeuristicEvidence] = []
     if per_page:
         results.extend(_scan_per_page_batched(data, candidate, scan, per_page))
-    results.extend(d.evaluate(data, candidate, scan) for d in other)
+    results.extend(h.evaluate(data, candidate, scan) for h in other)
 
     by_name = {ev.name: ev for ev in results}
-    return [by_name[d.spec.name] for d in detectors]
+    return [by_name[h.spec.name] for h in heuristics]
 
 
 def _scan_per_page_batched(
     data: bytes,
     candidate: GeometryCandidate,
     scan: ScanConfig,
-    detectors: Sequence[PerPageOobDetector],
-) -> List[DetectorEvidence]:
+    heuristics: Sequence[PerPageOobHeuristic],
+) -> List[HeuristicEvidence]:
     """
-    Shared per-page loop for detectors that expose `check_page`.
+    Shared per-page loop for heuristics that expose `check_page`.
     """
     pages_available = len(data) // candidate.total_chunk_size
     pages_to_scan = min(scan.oob_scan_cap_pages, pages_available)
-    hits = [0] * len(detectors)
+    hits = [0] * len(heuristics)
     pages_examined = 0
     for page in range(pages_to_scan):
         base = page * candidate.total_chunk_size
@@ -240,16 +240,16 @@ def _scan_per_page_batched(
         if oob_off + candidate.oob_size > len(data):
             break
         oob = data[oob_off : oob_off + candidate.oob_size]
-        for i, d in enumerate(detectors):
-            hits[i] += d.check_page(oob, candidate.data_size)
+        for i, h in enumerate(heuristics):
+            hits[i] += h.check_page(oob, candidate.data_size)
         pages_examined += 1
     return [
-        DetectorEvidence(d.spec, hits=h, pages_examined=pages_examined)
-        for d, h in zip(detectors, hits)
+        HeuristicEvidence(h.spec, hits=n, pages_examined=pages_examined)
+        for h, n in zip(heuristics, hits)
     ]
 
 
-# Concrete detectors
+# Concrete heuristics
 
 
 class OobPageCategory(str, Enum):
@@ -275,7 +275,7 @@ def classify_oob(oob: bytes) -> OobPageCategory:
     n = len(oob)
     if n == 0:
         return OobPageCategory.EMPTY
-    if all(b == 0xff for b in oob):
+    if all(b == 0xFF for b in oob):
         return OobPageCategory.ALL_FF
     if n >= LINUX_MTD_LARGE_PAGE_OOB_SIZE:
         header_erased = oob[:LINUX_MTD_OOB_ECC_OFFSET] == b"\xff" * LINUX_MTD_OOB_ECC_OFFSET
@@ -288,25 +288,25 @@ def classify_oob(oob: bytes) -> OobPageCategory:
 
 
 @dataclass(frozen=True)
-class EccOnlyDetector:
+class EccOnlyHeuristic:
     """
     Detects Linux MTD large-page layouts: the first 40 OOB bytes are 0xFF while the 24-byte
     ECC region is populated.
     """
 
-    spec: DetectorSpec = DetectorSpec(name="ecc_only")
+    spec: HeuristicSpec = HeuristicSpec(name="ecc_only")
 
     def check_page(self, oob: bytes, data_size: int) -> int:
         return 1 if classify_oob(oob) == OobPageCategory.ECC_ONLY else 0
 
 
 @dataclass(frozen=True)
-class Yaffs2PackedTagsDetector:
+class Yaffs2PackedTagsHeuristic:
     """
     Detects the YAFFS2 "packed tags 2" marker plus a plausible `n_bytes` field in the OOB.
     """
 
-    spec: DetectorSpec = DetectorSpec(name="yaffs2", weight=2)
+    spec: HeuristicSpec = HeuristicSpec(name="yaffs2", weight=2)
 
     def check_page(self, oob: bytes, data_size: int) -> int:
         if len(oob) < YAFFS2_PACKED_TAGS2_END:
@@ -323,7 +323,7 @@ class Yaffs2PackedTagsDetector:
 
 
 @dataclass(frozen=True)
-class SmallPageEccDetector:
+class SmallPageEccHeuristic:
     """
     Matches small-page NAND OOB (<= 16 bytes) that looks densely populated.
 
@@ -337,7 +337,7 @@ class SmallPageEccDetector:
     The density floor is intentionally strict: partial-erased data windows that
     happen to land 0xFF at the BBM position produce many FF bytes elsewhere, so
     requiring "nearly all non-BBM bytes populated" rejects them and leaves only
-    genuine small-page OOB structure. Without this detector, (512, 16)
+    genuine small-page OOB structure. Without this heuristic, (512, 16)
     candidates never score on OOB content and always lose the
     preference-index tie-break.
 
@@ -348,7 +348,7 @@ class SmallPageEccDetector:
 
     bbm_offset: int = SMALL_PAGE_BBM_OFFSET
     max_ff_outside_bbm: int = 1
-    spec: DetectorSpec = DetectorSpec(name="small_page_ecc")
+    spec: HeuristicSpec = HeuristicSpec(name="small_page_ecc")
 
     def check_page(self, oob: bytes, data_size: int) -> int:
         n = len(oob)
@@ -528,12 +528,12 @@ def _verify_exact_ecc(
 
 
 @dataclass(frozen=True)
-class EccSyndromeExactDetector:
+class EccExactVerifyHeuristic:
     """
-    `GlobalDetector` wrapper around `_verify_exact_ecc`.
+    `GlobalHeuristic` wrapper around `_verify_exact_ecc`.
     """
 
-    spec: DetectorSpec = DetectorSpec(
+    spec: HeuristicSpec = HeuristicSpec(
         name="ecc_exact",
         weight=100,
         absolute_min_hits=1,
@@ -542,18 +542,18 @@ class EccSyndromeExactDetector:
 
     def evaluate(
         self, data: bytes, candidate: GeometryCandidate, scan: ScanConfig
-    ) -> DetectorEvidence:
+    ) -> HeuristicEvidence:
         if not scan.ecc_verify_enabled:
-            return DetectorEvidence(self.spec, hits=0, pages_examined=0)
+            return HeuristicEvidence(self.spec, hits=0, pages_examined=0)
         pages_checked, matches = _verify_exact_ecc(data, candidate, scan.ecc_verify_page_cap)
-        return DetectorEvidence(self.spec, hits=matches, pages_examined=pages_checked)
+        return HeuristicEvidence(self.spec, hits=matches, pages_examined=pages_checked)
 
 
-# Default detector list (instantiated once at import time)
+# Default heuristic list (instantiated once at import time)
 
-DEFAULT_DETECTORS: List[Detector] = [
-    EccOnlyDetector(),
-    Yaffs2PackedTagsDetector(),
-    SmallPageEccDetector(),
-    EccSyndromeExactDetector(),
+DEFAULT_HEURISTICS: List[Heuristic] = [
+    EccOnlyHeuristic(),
+    Yaffs2PackedTagsHeuristic(),
+    SmallPageEccHeuristic(),
+    EccExactVerifyHeuristic(),
 ]

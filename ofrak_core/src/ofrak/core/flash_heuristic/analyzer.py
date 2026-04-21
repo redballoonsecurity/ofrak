@@ -14,13 +14,13 @@ from ofrak.core.flash import (
     FlashFieldType,
     FlashResource,
 )
-from ofrak.core.flash_heuristic.detectors import (
-    DEFAULT_DETECTORS,
-    Detector,
-    DetectorEvidence,
+from ofrak.core.flash_heuristic.heuristics import (
+    DEFAULT_HEURISTICS,
     GeometryCandidate,
+    Heuristic,
+    HeuristicEvidence,
     ScanConfig,
-    evaluate_detectors,
+    evaluate_heuristics,
 )
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
@@ -54,16 +54,16 @@ ERASED_SENTINEL_WINDOW = 16
 @dataclass
 class ScoringWeights:
     """
-    Scoring knobs for the tiebreakers that aren't detectors.
+    Scoring knobs for the tiebreakers that aren't heuristics.
 
-    Per-detector weight and noise-floor live on each detector's `DetectorSpec`.
+    Per-heuristic weight and noise-floor live on each heuristic's `HeuristicSpec`.
 
     :param entropy_min_delta_bits: minimum data-minus-OOB entropy delta (bits/byte) required
         before entropy contributes to the tiebreaker
     :param entropy_min_data_entropy_bits: minimum mean data entropy (bits/byte) required
         before entropy contributes to the tiebreaker
     :param entropy_tiebreak_scale: integer multiplier applied to the entropy delta so it can
-        be compared in the same ranking vector as detector hit counts
+        be compared in the same ranking vector as heuristic hit counts
     :param gap_relative_min_hit_rate: fractional floor on gap hits per page scanned before the
         gap signal is allowed to contribute
     """
@@ -79,19 +79,19 @@ class FlashGeometryHeuristicAnalyzerConfig(ComponentConfig):
     """
     Config for `FlashGeometryHeuristicAnalyzer`.
 
-    To "train" the heuristic on new image families, supply a custom `detectors` list.
+    To "train" the analyzer on new image families, supply a custom `heuristics` list.
 
     :param extra_geometries: additional `(data_size, oob_size)` pairs to consider beyond
         `DEFAULT_GEOMETRIES`
     :param scan: tunables for the evidence-collection pass
     :param weights: tiebreaker thresholds for the entropy and gap signals
-    :param detectors: ordered list of detectors to run against each candidate geometry
+    :param heuristics: ordered list of heuristics to run against each candidate geometry
     """
 
     extra_geometries: Tuple[Tuple[int, int], ...] = ()
     scan: ScanConfig = field(default_factory=ScanConfig)
     weights: ScoringWeights = field(default_factory=ScoringWeights)
-    detectors: Sequence[Detector] = field(default_factory=lambda: list(DEFAULT_DETECTORS))
+    heuristics: Sequence[Heuristic] = field(default_factory=lambda: list(DEFAULT_HEURISTICS))
 
     def geometries(self) -> Tuple[Tuple[int, int], ...]:
         return tuple(list(DEFAULT_GEOMETRIES) + list(self.extra_geometries))
@@ -107,7 +107,7 @@ class FlashGeometryHeuristicAnalyzer(
     Infers `FlashAttributes` for a raw NAND dump tagged as `FlashResource`.
 
     Ranks each standard `(data_size, oob_size)` geometry that evenly divides the file by
-    running a library of detectors (Linux MTD large-page OOB, YAFFS2 packed tags, small-page
+    running a library of heuristics (Linux MTD large-page OOB, YAFFS2 packed tags, small-page
     ECC density, exact Linux MTD Hamming verification) plus entropy and OOB-aligned gap
     tiebreakers.
 
@@ -142,7 +142,7 @@ class FlashGeometryHeuristicAnalyzer(
             return ()
 
         heuristic_results = [
-            run_heuristics(data, c, config.scan, config.detectors) for c in candidates
+            run_heuristics(data, c, config.scan, config.heuristics) for c in candidates
         ]
         scored = [score_candidate(e, config.weights, geometries) for e in heuristic_results]
         winner = min(scored, key=lambda s: s.sort_key)
@@ -168,7 +168,7 @@ class GeometryEvidence:
 
     :param candidate: the geometry candidate these counts belong to
     :param pages_scanned: number of pages actually visited during the scan
-    :param detector_evidence: one `DetectorEvidence` per configured detector
+    :param heuristic_evidence: one `HeuristicEvidence` per configured heuristic
     :param gap_hits: count of OOB-sized 0xFF gaps found between non-erased data regions
     :param mean_data_entropy: mean Shannon entropy (bits/byte) across scanned data regions
     :param mean_oob_entropy: mean Shannon entropy (bits/byte) across scanned OOB regions
@@ -176,7 +176,7 @@ class GeometryEvidence:
 
     candidate: GeometryCandidate
     pages_scanned: int
-    detector_evidence: List[DetectorEvidence]
+    heuristic_evidence: List[HeuristicEvidence]
     gap_hits: int
     mean_data_entropy: float = 0.0
     mean_oob_entropy: float = 0.0
@@ -193,13 +193,13 @@ class GeometryScore:
 
     Precedence when comparing candidates:
 
-    1. higher `oob_signal_score` (sum of per-detector scores)
+    1. higher `oob_signal_score` (sum of per-heuristic scores)
     2. higher `entropy_signal_score` (tiebreak: data-minus-OOB entropy delta)
     3. higher `gap_signal_score` (tiebreak: OOB-aligned 0xFF gaps)
     4. lower `preference_index` (earlier-listed geometries win)
 
     :param evidence: the evidence the scores were computed from
-    :param oob_signal_score: sum of per-detector scores
+    :param oob_signal_score: sum of per-heuristic scores
     :param entropy_signal_score: scaled data-minus-OOB entropy delta, or 0 when gated out
     :param gap_signal_score: gap-hit count after noise-floor gating
     :param preference_index: position of the geometry in the configured ordered list
@@ -253,22 +253,22 @@ def run_heuristics(
     data: bytes,
     candidate: GeometryCandidate,
     scan: ScanConfig,
-    detectors: Optional[Sequence[Detector]] = None,
+    heuristics: Optional[Sequence[Heuristic]] = None,
 ) -> GeometryEvidence:
     """
-    Gather per-detector evidence plus the entropy + gap tiebreak signals.
+    Gather per-heuristic evidence plus the entropy + gap tiebreak signals.
 
     :param data: the full flash image bytes
     :param candidate: the candidate geometry to evaluate
     :param scan: tunables for the scan pass
-    :param detectors: detectors to run; defaults to `DEFAULT_DETECTORS`
+    :param heuristics: heuristics to run; defaults to `DEFAULT_HEURISTICS`
 
     :return: the aggregated `GeometryEvidence` for `candidate`
     """
-    if detectors is None:
-        detectors = DEFAULT_DETECTORS
+    if heuristics is None:
+        heuristics = DEFAULT_HEURISTICS
 
-    detector_evidence = evaluate_detectors(data, candidate, scan, detectors)
+    heuristic_evidence = evaluate_heuristics(data, candidate, scan, heuristics)
     gap_hits, mean_data_entropy, mean_oob_entropy, pages_scanned = _scan_entropy_and_gap(
         data, candidate, scan
     )
@@ -276,7 +276,7 @@ def run_heuristics(
     return GeometryEvidence(
         candidate=candidate,
         pages_scanned=pages_scanned,
-        detector_evidence=detector_evidence,
+        heuristic_evidence=heuristic_evidence,
         gap_hits=gap_hits,
         mean_data_entropy=mean_data_entropy,
         mean_oob_entropy=mean_oob_entropy,
@@ -289,7 +289,7 @@ def score_candidate(
     geometries: Sequence[Tuple[int, int]],
 ) -> GeometryScore:
     """
-    Combine per-detector evidence and entropy/gap tiebreakers into a ranking vector.
+    Combine per-heuristic evidence and entropy/gap tiebreakers into a ranking vector.
 
     :param evidence: the `GeometryEvidence` for the candidate
     :param weights: tiebreaker thresholds for the entropy and gap signals
@@ -297,7 +297,7 @@ def score_candidate(
 
     :return: the `GeometryScore` for the candidate
     """
-    oob_signal = sum(ev.score() for ev in evidence.detector_evidence)
+    oob_signal = sum(ev.score() for ev in evidence.heuristic_evidence)
 
     gap_min_hits = int(evidence.pages_scanned * weights.gap_relative_min_hit_rate)
     gap_signal = evidence.gap_hits if evidence.gap_hits >= gap_min_hits else 0
