@@ -7,7 +7,7 @@ import math
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
 
-from ofrak.component.analyzer import Analyzer, AnalyzerError
+from ofrak.component.analyzer import Analyzer
 from ofrak.core.flash import (
     FlashAttributes,
     FlashField,
@@ -145,7 +145,7 @@ class FlashGeometryHeuristicAnalyzer(
             run_heuristics(data, c, config.scan, config.detectors) for c in candidates
         ]
         scored = [score_candidate(e, config.weights, geometries) for e in heuristic_results]
-        winner = select_best(scored)
+        winner = min(scored, key=lambda s: s.sort_key)
         winning_candidate = winner.evidence.candidate
 
         return (
@@ -321,21 +321,6 @@ def score_candidate(
             evidence.candidate.data_size, evidence.candidate.oob_size, geometries
         ),
     )
-
-
-def select_best(scores: Sequence[GeometryScore]) -> GeometryScore:
-    """
-    Pick the winning candidate using `GeometryScore.sort_key`.
-
-    :param scores: the candidate scores to rank
-
-    :raises AnalyzerError: if `scores` is empty
-
-    :return: the highest-ranked `GeometryScore`
-    """
-    if not scores:
-        raise AnalyzerError("No geometry candidates to score.")
-    return sorted(scores, key=lambda s: s.sort_key)[0]
 
 
 # Private helpers
