@@ -471,7 +471,7 @@ if __name__ == "__main__":  # pragma: no cover
         ]
         cache.append((expected, evs))
 
-    def accuracy(specs, weights):
+    def accuracy(specs, weights):  # pragma: no cover
         correct = 0
         for expected, evs in cache:
             if not evs:
@@ -500,7 +500,7 @@ if __name__ == "__main__":  # pragma: no cover
         return correct
 
     # Normalized L1 distance from defaults, used to tie-break trials with equal accuracy.
-    def distance(specs, weights):
+    def distance(specs, weights):  # pragma: no cover
         d = 0.0
         for n, s in specs.items():
             ref = default_specs[n].weight
