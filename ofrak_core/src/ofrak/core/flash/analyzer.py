@@ -19,6 +19,7 @@ from ofrak.core.flash.heuristics import (
     GeometryCandidate,
     Heuristic,
     HeuristicEvidence,
+    HeuristicSpec,
     ScanConfig,
     evaluate_heuristics,
 )
@@ -433,3 +434,117 @@ def _scan_entropy_and_gap(
         oob_entropy_sum / pages_scanned if (entropy_enabled and pages_scanned) else 0.0
     )
     return gap_hits, mean_data_entropy, mean_oob_entropy, pages_scanned
+
+
+# CLI: random-search heuristic weights that best match a labeled image set.
+#
+#   python -m ofrak.core.flash.analyzer --images-dir DIR --labels LABELS.json
+#
+# LABELS.json maps filename (relative to --images-dir) to [data_size, oob_size].
+
+if __name__ == "__main__":
+    import argparse
+    import json
+    import random
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--images-dir", type=Path, required=True)
+    parser.add_argument("--labels", type=Path, required=True)
+    parser.add_argument("--trials", type=int, default=200)
+    parser.add_argument("--seed", type=int, default=0)
+    args = parser.parse_args()
+
+    labels = {name: tuple(v) for name, v in json.loads(args.labels.read_text()).items()}
+    geometries = DEFAULT_GEOMETRIES
+    default_specs = {h.spec.name: h.spec for h in DEFAULT_HEURISTICS}
+    default_weights = ScoringWeights()
+    names = list(default_specs)
+
+    # Evidence is independent of weights, so collect it once per image.
+    cache = []
+    for fname, expected in labels.items():
+        data = (args.images_dir / fname).read_bytes()
+        evs = [
+            run_heuristics(data, c, ScanConfig(), DEFAULT_HEURISTICS)
+            for c in enumerate_candidates(len(data), geometries)
+        ]
+        cache.append((expected, evs))
+
+    def accuracy(specs, weights):
+        correct = 0
+        for expected, evs in cache:
+            if not evs:
+                continue
+            rescored = [
+                score_candidate(
+                    GeometryEvidence(
+                        e.candidate,
+                        e.pages_scanned,
+                        [
+                            HeuristicEvidence(specs[he.name], he.hits, he.pages_examined)
+                            for he in e.heuristic_evidence
+                        ],
+                        e.gap_hits,
+                        e.mean_data_entropy,
+                        e.mean_oob_entropy,
+                    ),
+                    weights,
+                    geometries,
+                )
+                for e in evs
+            ]
+            win = min(rescored, key=lambda s: s.sort_key).evidence.candidate
+            if (win.data_size, win.oob_size) == expected:
+                correct += 1
+        return correct
+
+    # Normalized L1 distance from defaults, used to tie-break trials with equal accuracy.
+    def distance(specs, weights):
+        d = 0.0
+        for n, s in specs.items():
+            ref = default_specs[n].weight
+            d += abs(s.weight - ref) / max(abs(ref), 1)
+        for attr in (
+            "entropy_min_delta_bits",
+            "entropy_min_data_entropy_bits",
+            "entropy_tiebreak_scale",
+            "gap_relative_min_hit_rate",
+        ):
+            ref = getattr(default_weights, attr)
+            d += abs(getattr(weights, attr) - ref) / max(abs(ref), 1e-6)
+        return d
+
+    rng = random.Random(args.seed)
+    # Seed the leaderboard with defaults (distance 0) so trials must beat them outright.
+    best_correct = accuracy(default_specs, default_weights)
+    best_dist = 0.0
+    best_specs = default_specs
+    best_weights = default_weights
+
+    for _ in range(args.trials):
+        specs = {n: HeuristicSpec(n, weight=rng.randint(1, 100)) for n in names}
+        weights = ScoringWeights(
+            entropy_min_delta_bits=rng.uniform(0.0, 1.0),
+            entropy_min_data_entropy_bits=rng.uniform(0.0, 8.0),
+            entropy_tiebreak_scale=rng.randint(1, 500),
+            gap_relative_min_hit_rate=rng.uniform(0.0, 0.1),
+        )
+        n = accuracy(specs, weights)
+        if n < best_correct:
+            continue
+        d = distance(specs, weights)
+        if n > best_correct or d < best_dist:
+            best_correct, best_dist, best_specs, best_weights = n, d, specs, weights
+
+    print(
+        json.dumps(
+            {
+                "correct": best_correct,
+                "total": len(cache),
+                "heuristic_weights": {n: s.weight for n, s in best_specs.items()},
+                "scoring_weights": best_weights.__dict__,
+            },
+            indent=2,
+        )
+    )
