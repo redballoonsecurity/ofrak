@@ -442,7 +442,7 @@ def _scan_entropy_and_gap(
 #
 # LABELS.json maps filename (relative to --images-dir) to [data_size, oob_size].
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import argparse
     import json
     import random
