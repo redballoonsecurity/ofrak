@@ -80,7 +80,7 @@ class TestYaffs2UnpackModifyPack(UnpackModifyPackPattern):
                     "-s",
                     str(self.spare_size),
                 ]
-                if self.endian == "big":
+                if self.endian == Endianness.BIG_ENDIAN:
                     cmd.append("-e")
                 cmd += [temp_path, temp_flush_dir]
                 subprocess.run(cmd, check=True, capture_output=True)

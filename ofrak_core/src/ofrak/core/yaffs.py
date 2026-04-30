@@ -127,18 +127,18 @@ def detect_page_size(data: bytes) -> int:
     Detect page size by looking for spare magic at known page size offsets.
     """
     NUM_CHECKS = 3
+    SPARE_SIZE_CANDIDATES = (16, 32, 64, 128, 256, 512)
     for page_size in PAGE_SIZES:
         for magic in SPARE_MAGICS:
-            combined_size = page_size + len(magic)
-            if combined_size > len(data):
-                continue
-            for i in range(NUM_CHECKS):
-                start = (combined_size * i) + page_size
-                end = combined_size * (i + 1)
-                if end <= len(data) and data[start:end] != magic:
-                    break
-            else:  # No break
-                return page_size
+            for spare_size in SPARE_SIZE_CANDIDATES:
+                block_size = page_size + spare_size
+                for i in range(NUM_CHECKS):
+                    start = block_size * i + page_size
+                    end = start + len(magic)
+                    if end > len(data) or data[start:end] != magic:
+                        break
+                else:  # No break
+                    return page_size
     return 0
 
 
