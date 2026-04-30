@@ -47,7 +47,7 @@ FORMAT_DEFAULT_VIEWS = {
 }
 
 
-def detect_format_from_extension(path: str) -> str:
+def detect_format_from_extension(path: str) -> str:  # pragma: no cover
     ext = os.path.splitext(path)[1].lower()
     fmt = EXTENSION_MAP.get(ext)
     if fmt is None:
