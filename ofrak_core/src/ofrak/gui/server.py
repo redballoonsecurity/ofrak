@@ -1,11 +1,13 @@
 import asyncio
 import binascii
 import dataclasses
+import importlib
 import re
 from enum import Enum
 import functools
 import itertools
 import logging
+
 
 from ofrak.project.project import OfrakProject
 
@@ -198,11 +200,13 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/search_for_string", self.search_for_string),
                 web.post("/{resource_id}/search_for_bytes", self.search_for_bytes),
                 web.post("/{resource_id}/add_tag", self.add_tag),
+                web.post("/{resource_id}/add_attributes", self.add_attributes),
                 web.post("/{resource_id}/remove_tag", self.remove_tag),
                 web.post(
                     "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
                 ),
                 web.get("/get_all_tags", self.get_all_tags),
+                web.get("/get_all_resource_attributes", self.get_all_resource_attributes),
                 web.get("/{resource_id}/get_script", self.get_script),
                 web.post(
                     "/{resource_id}/get_components",
@@ -959,6 +963,91 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
+    async def add_attributes(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        data = await request.json()
+        attributes_type = data["type"]
+        attributes_data = data["attributes"]
+        # Construct attributes directly without PJSON to avoid deserialization issues
+        attributes = self._construct_attributes_from_dict(attributes_type, attributes_data)
+
+        resource.add_attributes(attributes)
+        await resource.save()
+        return json_response(self._serialize_resource(resource))
+
+    def _import_class_from_path(self, type_path: str) -> Any:
+        """
+        Import and return a class given its fully qualified path
+        (e.g., 'module.submodule.ClassName').
+        """
+        module_name, class_name = type_path.rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        return getattr(module, class_name)
+
+    def _construct_attributes_from_dict(self, type_str: str, data: dict) -> Any:
+        """
+        Construct attribute objects directly from dict.
+        Recursively instantiates nested objects.
+        """
+        target_class = self._import_class_from_path(type_str)
+
+        # Recursively process all fields
+        processed_fields = {}
+        for field_name, field_value in data.items():
+            processed_fields[field_name] = self._process_attribute_value(field_value)
+
+        # Instantiate the target class with processed fields
+        return target_class(**processed_fields)
+
+    def _process_attribute_value(self, value: Any) -> Any:
+        """
+        Recursively process attribute values, instantiating classes from [type_str, fields] format
+        and converting enum string references to actual enum objects.
+        """
+        if value is None:
+            return None
+
+        # Handle enum string references like "ofrak.core.flash.FlashFieldType.DATA"
+        if isinstance(value, str) and "." in value:
+            try:
+                # Split into module path and enum member
+                parts = value.rsplit(".", 1)
+                if len(parts) == 2:
+                    enum_type_path, member_name = parts
+                    enum_class = self._import_class_from_path(enum_type_path)
+                    # Check if it's an Enum class and try to get the member
+                    if inspect.isclass(enum_class) and issubclass(enum_class, Enum):
+                        return enum_class[member_name]
+            except Exception:
+                # If conversion fails, just return the string as-is
+                pass
+            return value
+
+        # Handle [ClassName, fields_dict] format
+        if isinstance(value, list) and len(value) == 2:
+            type_str, fields = value
+            if isinstance(type_str, str) and isinstance(fields, dict):
+                # Recursively process nested fields
+                processed_fields = {k: self._process_attribute_value(v) for k, v in fields.items()}
+                # Instantiate the class
+                try:
+                    cls = self._import_class_from_path(type_str)
+                    return cls(**processed_fields)
+                except Exception as e:
+                    raise ValueError(f"Failed to instantiate {type_str}: {e}")
+
+        # Handle lists of objects
+        if isinstance(value, list):
+            return [self._process_attribute_value(item) for item in value]
+
+        # Handle nested dicts
+        if isinstance(value, dict):
+            return {k: self._process_attribute_value(v) for k, v in value.items()}
+
+        # Return primitive values as-is
+        return value
+
+    @exceptions_to_http(SerializedError)
     async def remove_tag(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
@@ -985,6 +1074,17 @@ class AiohttpOFRAKServer:
         return json_response(
             self._serializer.to_pjson(set(self._all_tags.values()), Set[ResourceTag])
         )
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_resource_attributes(self, request: Request) -> Response:
+        resource_attributes = [
+            {
+                "type": f"{attr_type.__module__}.{attr_type.__qualname__}",
+                "label": attr_type.__name__,
+            }
+            for attr_type in self._get_all_resource_attribute_types()
+        ]
+        return json_response(resource_attributes)
 
     @exceptions_to_http(SerializedError)
     async def add_flush_to_disk_to_script(self, request: Request) -> Response:
@@ -1539,33 +1639,67 @@ class AiohttpOFRAKServer:
         else:
             return {name: value.value for name, value in obj.__members__.items()}
 
+    def _get_all_resource_attribute_types(self) -> List[Type[ResourceAttributes]]:
+        def recurse(attribute_type: Type[ResourceAttributes]) -> List[Type[ResourceAttributes]]:
+            result = []
+            for child in attribute_type.__subclasses__():
+                result.append(child)
+                result.extend(recurse(child))
+            return result
+
+        return sorted(
+            recurse(ResourceAttributes),
+            key=lambda cls: f"{cls.__module__}.{cls.__qualname__}",
+        )
+
     def _has_elipsis(self, obj):
         return any([isinstance(arg, type(...)) for arg in get_args(obj)])
 
     def _convert_to_class_name_str(self, obj: Any):
+        # Check for generic types first (before checking membership in sets,
+        # which fails for unhashable types)
+        if hasattr(obj, "__origin__"):
+            origin = obj.__origin__
+            if origin is list:
+                return "typing.List"
+            elif origin is Iterable.__origin__:  # type: ignore
+                return "typing.Iterable"
+            elif origin is tuple:
+                return "typing.Tuple"
+            elif origin is dict:
+                return "typing.Dict"
+
+        # Check for typing constructs
+        if typing_inspect.is_optional_type(obj):
+            return "typing.Optional"
+        if typing_inspect.is_union_type(obj):
+            return "typing.Union"
+
+        # Check for common builtin types
+        if obj is bool:
+            return "builtins.bool"
+        if obj is str:
+            return "builtins.str"
+        if obj is bytes:
+            return "builtins.bytes"
+        if obj is int:
+            return "builtins.int"
+        if obj is float:
+            return "builtins.float"
+        if obj is list:
+            return "typing.List"
+        if obj is dict:
+            return "typing.Dict"
+        if obj is tuple:
+            return "typing.Tuple"
+        if obj is Range:
+            return "ofrak_type.range.Range"
+
+        # Check for classes with module and qualname
         if hasattr(obj, "__qualname__") and hasattr(obj, "__module__"):
             return f"{obj.__module__}.{obj.__qualname__}"
-        else:
-            if obj in {bool, str, bytes, int}:
-                return f"builtins.{obj.__name__}"
-            elif typing_inspect.is_optional_type(obj):
-                return "typing.Optional"
-            elif typing_inspect.is_union_type(obj):
-                return "typing.Union"
-            elif obj is Range:
-                return "ofrak_type.range.Range"
-            elif hasattr(obj, "__origin__"):
-                origin = obj.__origin__
-                if origin is list:
-                    return "typing.List"
-                elif origin is Iterable.__origin__:  # type: ignore
-                    return "typing.Iterable"
-                elif origin is tuple:
-                    return "typing.Tuple"
-                elif origin is dict:
-                    return "typing.Dict"
-            else:
-                return repr(obj).split("[")[0]
+
+        return repr(obj).split("[")[0]
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(

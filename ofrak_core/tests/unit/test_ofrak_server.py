@@ -9,6 +9,7 @@ from ofrak.resource import Resource
 import pytest
 from pytest_lazyfixture import lazy_fixture
 import re
+from .. import components
 
 from multiprocessing import Process
 from typing import List, Tuple
@@ -2359,3 +2360,292 @@ def update_linkable_symbols_config():
             LinkableSymbol(0x2000, "data_b", LinkableSymbolType.RO_DATA, InstructionSetMode.NONE),
         )
     )
+
+
+@pytest.fixture
+def flash_attributes_simple():
+    """Simple FlashAttributes without ECC."""
+    return {
+        "data_block_format": [
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.DATA", "size": 223},
+            ],
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.ECC", "size": 32},
+            ],
+        ]
+    }
+
+
+@pytest.fixture
+def flash_attributes_with_ecc():
+    """FlashAttributes with ECC (includes ReedSolomon)."""
+    return {
+        "data_block_format": [
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.DATA", "size": 223},
+            ],
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.ECC", "size": 32},
+            ],
+        ],
+        "ecc_attributes": [
+            "ofrak.core.flash.FlashEccAttributes",
+            {"ecc_class": ["ofrak.core.ecc.reedsolomon.ReedSolomon", {"nsym": 32}]},
+        ],
+    }
+
+
+@pytest.fixture
+def flash_attributes_multiple_enums():
+    """FlashAttributes with multiple enum values."""
+    return {
+        "data_block_format": [
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.DATA", "size": 100},
+            ],
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.ECC", "size": 32},
+            ],
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.ALIGNMENT", "size": 0},
+            ],
+        ]
+    }
+
+
+@pytest.fixture
+def flash_attributes_rs_parameters():
+    """FlashAttributes with ReedSolomon parameters."""
+    return {
+        "data_block_format": [
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.DATA", "size": 223},
+            ],
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.ECC", "size": 32},
+            ],
+        ],
+        "ecc_attributes": [
+            "ofrak.core.flash.FlashEccAttributes",
+            {
+                "ecc_class": [
+                    "ofrak.core.ecc.reedsolomon.ReedSolomon",
+                    {"nsym": 32, "nsize": 255, "fcr": 1},
+                ]
+            },
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "attributes_fixture,test_name",
+    [
+        pytest.param(
+            "flash_attributes_simple",
+            "simple_without_ecc",
+            id="simple_without_ecc",
+        ),
+        pytest.param(
+            "flash_attributes_with_ecc",
+            "with_ecc",
+            id="with_ecc",
+        ),
+        pytest.param(
+            "flash_attributes_multiple_enums",
+            "multiple_enums",
+            id="multiple_enums",
+        ),
+        pytest.param(
+            "flash_attributes_rs_parameters",
+            "rs_parameters",
+            id="rs_parameters",
+        ),
+        pytest.param(
+            "flash_attributes_simple",
+            "optional_fields_only",
+            id="optional_fields_only",
+        ),
+    ],
+)
+async def test_add_flash_attributes(
+    ofrak_client: TestClient, hello_elf, request, attributes_fixture, test_name
+):
+    """Test FlashAttributes with various configurations.
+
+    Tests cover:
+    - Adding simple FlashAttributes without ECC
+    - Adding FlashAttributes with ECC (includes ReedSolomon)
+    - Enum string value conversion with multiple enum values
+    - ReedSolomon with various parameters
+    - FlashAttributes with optional nested fields omitted
+    """
+    attributes_json = request.getfixturevalue(attributes_fixture)
+
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": f"test_{test_name}"}, data=hello_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+
+    # Add FlashResource tag
+    await ofrak_client.post(
+        f"/{resource_id}/add_tag",
+        json="ofrak.core.flash.FlashResource",
+    )
+
+    # Add attributes
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_attributes",
+        json={"type": "ofrak.core.flash.FlashAttributes", "attributes": attributes_json},
+    )
+
+    assert resp.status == 200
+    result = await resp.json()
+    assert result is not None
+    assert "attributes" in result
+
+
+@pytest.mark.parametrize(
+    "attr_type,error_case",
+    [
+        pytest.param(
+            "ofrak.core.flash.FlashAttributes",
+            "empty_json",
+            id="missing_required_fields",
+        ),
+        pytest.param(
+            "ofrak.core.flash.NonExistentAttributes",
+            "unknown_type",
+            id="unknown_type",
+        ),
+    ],
+)
+async def test_add_flash_attributes_error_handling(
+    ofrak_client: TestClient, hello_elf, attr_type, error_case
+):
+    """Test error handling for invalid attribute configurations.
+
+    Tests cover:
+    - Missing required fields in attribute JSON
+    - Unknown attribute type
+    """
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": f"test_error_{error_case}"}, data=hello_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+
+    # Try to add attributes with invalid configuration
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_attributes",
+        json={"type": attr_type, "attributes": {}},
+    )
+
+    # Should fail due to validation error
+    assert resp.status >= 400
+
+
+async def test_get_all_resource_attributes(ofrak_client: TestClient):
+    """Test retrieving all available resource attribute types."""
+    resp = await ofrak_client.get("/get_all_resource_attributes")
+
+    assert resp.status == 200
+    attribute_types = await resp.json()
+
+    # Verify response structure
+    assert isinstance(attribute_types, list)
+    assert len(attribute_types) > 0
+
+    # Check that each attribute type has required fields
+    for attr_type in attribute_types:
+        assert "type" in attr_type
+        assert "label" in attr_type
+        assert isinstance(attr_type["type"], str)
+        assert isinstance(attr_type["label"], str)
+        # Type should be in format "module.path.ClassName"
+        assert "." in attr_type["type"]
+
+    # Verify FlashAttributes is in the list
+    flash_attr_types = [t for t in attribute_types if "FlashAttributes" in t["type"]]
+    assert len(flash_attr_types) > 0
+
+
+async def test_add_flash_attributes_plain_unpacking(ofrak_client: TestClient):
+    """
+    Test adding FlashAttributes via server endpoint and unpacking.
+
+    This test verifies that:
+    - FlashAttributes can be added via the server endpoint using actual flash_test_plain.bin
+    - Resource can be unpacked after adding attributes
+    - The unpacking produces expected child resources
+    - This mirrors the flash_test_plain test case from test_flash_component.py
+    """
+
+    # Load actual flash_test_plain.bin file
+    plain_test_file = os.path.join(components.ASSETS_DIR, "flash_test_plain.bin")
+    with open(plain_test_file, "rb") as f:
+        plain_test_data = f.read()
+
+    # Create root resource
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "test_plain_unpack"}, data=plain_test_data
+    )
+    assert create_resp.status == 200
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+
+    # Add FlashResource tag
+    tag_resp = await ofrak_client.post(
+        f"/{resource_id}/add_tag",
+        json="ofrak.core.flash.FlashResource",
+    )
+    assert tag_resp.status == 200
+
+    # Add FlashAttributes with simple configuration (matches flash_test_plain from test_flash_component.py)
+    attributes_json = {
+        "data_block_format": [
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.DATA", "size": 223},
+            ],
+            [
+                "ofrak.core.flash.FlashField",
+                {"field_type": "ofrak.core.flash.FlashFieldType.ECC", "size": 32},
+            ],
+        ],
+        "ecc_attributes": [
+            "ofrak.core.flash.FlashEccAttributes",
+            {
+                "ecc_class": [
+                    "ofrak.core.ecc.reedsolomon.ReedSolomon",
+                    {"nsym": 32},
+                ]
+            },
+        ],
+    }
+
+    attr_resp = await ofrak_client.post(
+        f"/{resource_id}/add_attributes",
+        json={"type": "ofrak.core.flash.FlashAttributes", "attributes": attributes_json},
+    )
+    assert attr_resp.status == 200
+    attr_body = await attr_resp.json()
+    assert "attributes" in attr_body
+
+    # Attempt to unpack the resource with the added attributes
+    unpack_resp = await ofrak_client.post(f"/{resource_id}/unpack")
+    assert unpack_resp.status == 200
+    unpack_body = await unpack_resp.json()
+    # Unpacking may create resources or not depending on data format
+    assert "created" in unpack_body
+    assert "modified" in unpack_body

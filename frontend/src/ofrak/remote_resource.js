@@ -509,6 +509,29 @@ export class RemoteResource extends Resource {
     await this.update_script();
   }
 
+  async add_attributes(attributes_type, attributes) {
+    await fetch(`${this.uri}/add_attributes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: attributes_type,
+        attributes: attributes,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      const updated_model = await r.json();
+      remote_model_to_resource(updated_model, this.resource_list);
+    });
+    this.flush_cache();
+    this.update();
+
+    await this.update_script();
+  }
+
   async delete_comment(optional_range, comment_text) {
     await fetch(`${this.uri}/delete_comment`, {
       method: "POST",

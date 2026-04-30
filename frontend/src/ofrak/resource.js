@@ -226,7 +226,7 @@ export class Resource {
     throw new NotImplementedError("remove_tag");
   }
 
-  async add_attributes(attributes) {
+  async add_attributes(attributes_type, attributes) {
     // Sync in ResourceInterface
     throw new NotImplementedError("add_attributes");
   }

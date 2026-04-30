@@ -16,10 +16,13 @@
 
 <script>
   import StructuredList from "../utils/StructuredList.svelte";
+  import Button from "../utils/Button.svelte";
+  import AddAttributesView from "./AddAttributesView.svelte";
 
   import { cleanOfrakType } from "../helpers.js";
 
   export let resource;
+  export let modifierView;
   let attributes;
   $: if (resource !== undefined) {
     attributes = {};
@@ -55,7 +58,16 @@
         rel="noreferrer">{cleanOfrakType(tag)}</a
       >{i !== resource.get_tags().length - 1 ? ", " : ""}
     {/each}
-    <h1>Attributes:</h1>
+    <h1 style="display: flex; align-items: center;">
+      <span>Attributes:</span>
+      <Button
+        style="margin-left: auto;"
+        --button-margin="0"
+        --button-padding=".2em .5em .2em .5em"
+        on:click="{() => (modifierView = AddAttributesView)}"
+        >+ Add Attribute</Button
+      >
+    </h1>
     <StructuredList object="{attributes}" />
   {/if}
 </div>

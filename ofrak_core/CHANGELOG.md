@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
 - Add LZ4 compression format unpackers and packers with support for all frame types (modern, legacy, skippable) ([#661](https://github.com/redballoonsecurity/ofrak/pull/661))
 - Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
+- Added `add_attribute` and `get_all_resource_attributes` endpoints to `server.py` and Button/View to GUI to allow adding ResourceAttribtues manually from GUI, supporting certain workflows like flash unpacking ([#573](https://github.com/redballoonsecurity/ofrak/issues/573))   
 
 ### Changed
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))

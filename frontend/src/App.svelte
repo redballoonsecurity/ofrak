@@ -188,7 +188,10 @@ Answer by running riddle.answer('your answer here') from the console.`);
               bind:bottomLeftPane="{bottomLeftPane}"
             />
           {:else}
-            <AttributesView resource="{currentResource}" />
+            <AttributesView
+              resource="{currentResource}"
+              bind:modifierView="{modifierView}"
+            />
           {/if}
         </Pane>
       </Split>
