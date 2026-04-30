@@ -113,8 +113,9 @@ class FlashGeometryHeuristicAnalyzer(
     tiebreakers.
 
     The returned `FlashAttributes` describes one data block containing `DATA`
-    followed by `ALIGNMENT` of the OOB size, so the existing `FlashResourceUnpacker` strips
-    the spare region when unpacking.
+    followed by `SPARE` of the OOB size, so the existing `FlashOobResourceUnpacker`
+    preserves the per-block spare region verbatim as a `FlashSpareAreaResource` when
+    unpacking (rather than discarding it).
 
     If no standard geometry evenly divides the file into a power-of-two page count, the
     analyzer logs a warning and returns no attributes rather than raising, so that other
@@ -153,7 +154,7 @@ class FlashGeometryHeuristicAnalyzer(
             FlashAttributes(
                 data_block_format=[
                     FlashField(FlashFieldType.DATA, winning_candidate.data_size),
-                    FlashField(FlashFieldType.ALIGNMENT, winning_candidate.oob_size),
+                    FlashField(FlashFieldType.SPARE, winning_candidate.oob_size),
                 ]
             ),
         )

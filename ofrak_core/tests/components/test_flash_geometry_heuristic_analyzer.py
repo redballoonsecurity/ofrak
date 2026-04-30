@@ -113,7 +113,7 @@ def _expected_attrs(data_size: int, oob_size: int) -> Tuple[FlashAttributes, ...
         FlashAttributes(
             data_block_format=[
                 FlashField(FlashFieldType.DATA, data_size),
-                FlashField(FlashFieldType.ALIGNMENT, oob_size),
+                FlashField(FlashFieldType.SPARE, oob_size),
             ]
         ),
     )
