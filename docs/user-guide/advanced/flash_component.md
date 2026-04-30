@@ -68,7 +68,7 @@ class FlashFieldType(Enum):
 - `CHECKSUM` ensures that the data is read as expected.
 - `DELIMITER` may be placed between fields in a block or to indicate what type of block it is.
 - `TOTAL_SIZE` indicates the size of the entire region that includes OOB data.
-- `SPARE` is opaque OOB data that should be preserved but not decoded or verified. When a block format contains a `SPARE` field, the unpacker concatenates the spare bytes from every block into a `FlashSpareAreaResource` sibling of `FlashLogicalDataResource`. 
+- `SPARE` is opaque OOB data that should be preserved but not decoded or verified. When a block format contains a `SPARE` field, the unpacker concatenates the spare bytes from every block into a `FlashSpareAreaResource` sibling of `FlashLogicalDataResource`. The packer (`FlashLogicalDataResourcePacker`) reads this sibling resource and slices it back into per-block `SPARE` slots so the original OOB layout is reconstructed verbatim, even after modifying the logical data.
 - `SPARE_SIZE` indicates the size of the `SPARE` field.
 
 This class can be overridden or augmented if other field types are encountered.
