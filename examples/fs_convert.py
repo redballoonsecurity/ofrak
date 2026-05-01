@@ -4,6 +4,7 @@ Convert between filesystem archive formats using OFRAK.
 import argparse
 import os
 import sys
+from typing import Optional
 
 from ofrak import OFRAK, OFRAKContext
 from ofrak.core.cpio import CpioArchiveType, CpioFilesystem
@@ -47,15 +48,9 @@ FORMAT_DEFAULT_VIEWS = {
 }
 
 
-def detect_format_from_extension(path: str) -> str:  # pragma: no cover
+def detect_format_from_extension(path: str) -> Optional[str]:  # pragma: no cover
     ext = os.path.splitext(path)[1].lower()
-    fmt = EXTENSION_MAP.get(ext)
-    if fmt is None:
-        sys.exit(
-            f"Cannot detect format from extension '{ext}'. "
-            f"Use --to with one of: {', '.join(FORMATS.keys())}"
-        )
-    return fmt
+    return EXTENSION_MAP.get(ext)
 
 
 async def convert_filesystem(
@@ -95,6 +90,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     target_format = args.to if args.to else detect_format_from_extension(args.output)
+    if target_format is None:
+        ext = os.path.splitext(args.output)[1].lower()
+        sys.exit(
+            f"Cannot detect format from extension '{ext}'. "
+            f"Use --to with one of: {', '.join(FORMATS.keys())}"
+        )
 
     ofrak = OFRAK()
     ofrak.run(convert_filesystem, args.input, args.output, target_format)
