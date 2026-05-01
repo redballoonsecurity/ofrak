@@ -11,6 +11,7 @@ RUN apt-get -y update && \
       build-essential \
       cmake \
       cpio \
+      curl \
       git \
       genisoimage \
       liblz4-dev \
@@ -80,3 +81,13 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && \
     rm -r UEFITool-A68
+
+# Install yaffs2utils
+RUN mkdir -p /tmp/yaffs2utils && \
+    cd /tmp/yaffs2utils && \
+    curl --location 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/yaffs2utils/latest.tar.gz' | \
+    tar --strip-components=1 -xzf - && \
+    make -j && \
+    make install && \
+    cd /tmp && \
+    rm -r /tmp/yaffs2utils
