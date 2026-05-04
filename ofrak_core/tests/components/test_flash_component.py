@@ -9,6 +9,7 @@ Requirements Mapping:
 
 import pytest
 import os
+from abc import ABC
 from hashlib import md5
 
 from .. import components
@@ -17,6 +18,8 @@ from ofrak.resource import Resource
 from ofrak.core.flash import (
     FlashResource,
     FlashLogicalDataResource,
+    FlashLogicalEccResource,
+    FlashSpareAreaResource,
     FlashAttributes,
     FlashEccAttributes,
     FlashField,
@@ -208,6 +211,161 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         repacked_data = await repacked_resource.get_data()
 
         assert verified_data == repacked_data
+
+
+SPARE_TEST_FILE = os.path.join(components.ASSETS_DIR, "flash_test_plain.bin")
+SPARE_BLOCK_DATA = 223
+SPARE_BLOCK_OOB = 32
+SPARE_BLOCK_TOTAL = SPARE_BLOCK_DATA + SPARE_BLOCK_OOB  # 255
+SPARE_TEST_ATTR = FlashAttributes(
+    data_block_format=[
+        FlashField(FlashFieldType.DATA, SPARE_BLOCK_DATA),
+        FlashField(FlashFieldType.SPARE, SPARE_BLOCK_OOB),
+    ],
+)
+
+
+def _split_blocks(raw: bytes, block_size: int, data_size: int):
+    data_parts = []
+    spare_parts = []
+    for off in range(0, len(raw), block_size):
+        block = raw[off : off + block_size]
+        data_parts.append(block[:data_size])
+        spare_parts.append(block[data_size:])
+    return b"".join(data_parts), b"".join(spare_parts)
+
+
+class TestFlashSpareAreaUnpacker:
+    async def test_spare_field_creates_spare_resource(self, ofrak_context: OFRAKContext):
+        """
+        Asserts that a `FlashAttributes` with a `SPARE` field (and no `ecc_attributes`) causes
+        `FlashOobResourceUnpacker` to emit a `FlashSpareAreaResource` containing the raw
+        per-block OOB bytes verbatim, with no ECC decode or checksum verification.
+        """
+        with open(SPARE_TEST_FILE, "rb") as f:
+            raw = f.read()
+        assert (
+            len(raw) % SPARE_BLOCK_TOTAL == 0
+        ), f"Asset size {len(raw)} is not a multiple of {SPARE_BLOCK_TOTAL}"
+        expected_data, expected_spare = _split_blocks(raw, SPARE_BLOCK_TOTAL, SPARE_BLOCK_DATA)
+
+        root = await ofrak_context.create_root_resource_from_file(SPARE_TEST_FILE)
+        root.add_tag(FlashResource)
+        root.add_attributes(SPARE_TEST_ATTR)
+        await root.save()
+        await root.unpack_recursively()
+
+        logical = await root.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(FlashLogicalDataResource),
+        )
+        spare = await root.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(FlashSpareAreaResource),
+        )
+
+        logical_bytes = await logical.get_data()
+        spare_bytes = await spare.get_data()
+
+        assert logical_bytes == expected_data
+        assert spare_bytes == expected_spare
+
+        # No ECC resource should be created when ecc_attributes is unset.
+        ecc_descendants = list(
+            await root.get_descendants(
+                r_filter=ResourceFilter.with_tags(FlashLogicalEccResource),
+            )
+        )
+        assert ecc_descendants == []
+
+
+class _SpareUMPBase(UnpackModifyPackPattern, ABC):
+    """
+    Shared scaffolding for `FlashLogicalDataResourcePacker` tests that exercise block formats
+    declaring a `SPARE` field. The packer must consume the sibling `FlashSpareAreaResource`
+    and re-emit each per-block spare slice into its original position so the OOB layout is
+    reconstructed verbatim. Subclasses provide `modify` and `verify` to express each scenario.
+    """
+
+    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+        root = await ofrak_context.create_root_resource_from_file(SPARE_TEST_FILE)
+        root.add_tag(FlashResource)
+        root.add_attributes(SPARE_TEST_ATTR)
+        await root.save()
+        return root
+
+    async def unpack(self, root_resource: Resource) -> None:
+        await root_resource.unpack_recursively()
+
+    async def repack(self, modified_root_resource: Resource) -> None:
+        await modified_root_resource.pack_recursively()
+
+
+class TestFlashSpareAreaPackerRoundtrip(_SpareUMPBase):
+    """
+    Unpack and immediately repack with no modifications; the packed bytes must equal the
+    original file byte-for-byte (DATA from `FlashLogicalDataResource`, SPARE from
+    `FlashSpareAreaResource`).
+    """
+
+    async def modify(self, unpacked_root_resource: Resource) -> None:
+        pass
+
+    async def verify(self, repacked_root_resource: Resource) -> None:
+        with open(SPARE_TEST_FILE, "rb") as f:
+            original = f.read()
+        repacked = await repacked_root_resource.get_data()
+        assert repacked == original
+
+
+class TestFlashSpareAreaPackerLogicalDataPatch(_SpareUMPBase):
+    """
+    Modifying logical data must not disturb the spare-area bytes: the per-block OOB regions
+    in the repacked dump should match the original file's OOB regions exactly.
+    """
+
+    PATCH_OFFSET = 0x10
+    PATCH = b"PATCHED!"
+
+    async def modify(self, unpacked_root_resource: Resource) -> None:
+        logical = await unpacked_root_resource.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(FlashLogicalDataResource),
+        )
+        await logical.run(BinaryPatchModifier, BinaryPatchConfig(self.PATCH_OFFSET, self.PATCH))
+
+    async def verify(self, repacked_root_resource: Resource) -> None:
+        with open(SPARE_TEST_FILE, "rb") as f:
+            original = f.read()
+        _, expected_spare = _split_blocks(original, SPARE_BLOCK_TOTAL, SPARE_BLOCK_DATA)
+        repacked = await repacked_root_resource.get_data()
+
+        assert len(repacked) == len(original)
+        repacked_data, repacked_spare = _split_blocks(repacked, SPARE_BLOCK_TOTAL, SPARE_BLOCK_DATA)
+        assert repacked_spare == expected_spare
+        assert repacked_data[self.PATCH_OFFSET : self.PATCH_OFFSET + len(self.PATCH)] == self.PATCH
+
+
+class TestFlashSpareAreaPackerSparePatch(_SpareUMPBase):
+    """
+    Modifying the spare-area resource directly must round-trip into the packed image at
+    the corresponding per-block OOB offsets, while logical data stays intact.
+    """
+
+    async def modify(self, unpacked_root_resource: Resource) -> None:
+        spare = await unpacked_root_resource.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(FlashSpareAreaResource),
+        )
+        # Patch the very first byte of the very first block's spare region.
+        await spare.run(BinaryPatchModifier, BinaryPatchConfig(0, b"\xAB"))
+
+    async def verify(self, repacked_root_resource: Resource) -> None:
+        with open(SPARE_TEST_FILE, "rb") as f:
+            original = f.read()
+        expected_data, expected_spare = _split_blocks(original, SPARE_BLOCK_TOTAL, SPARE_BLOCK_DATA)
+        repacked = await repacked_root_resource.get_data()
+
+        assert len(repacked) == len(original)
+        repacked_data, repacked_spare = _split_blocks(repacked, SPARE_BLOCK_TOTAL, SPARE_BLOCK_DATA)
+        assert repacked_data == expected_data
+        assert repacked_spare == b"\xAB" + expected_spare[1:]
 
 
 class TestFlashUnpackModifyPackUnpackVerify(TestFlashUnpackModifyPack):

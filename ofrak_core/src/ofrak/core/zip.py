@@ -12,7 +12,7 @@ from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.core.binary import GenericBinary
 
-from ofrak.model.component_model import ComponentExternalTool
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class ZipUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNZIP_TOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
+    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         zip_view = await resource.view_as(ZipArchive)
         async with resource.temp_to_disk(suffix=".zip") as temp_path:
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -72,7 +72,20 @@ class ZipUnpacker(Unpacker[None]):
                 await zip_view.initialize_from_disk(temp_dir)
 
 
-class ZipPacker(Packer[None]):
+@dataclass
+class ZipPackerConfig(ComponentConfig):
+    """
+    Configuration for ZipPacker.
+
+    :param compression_level: ZIP compression level from 0 (store, no compression) to 9 (maximum
+        compression). Higher levels produce smaller archives at the cost of longer packing times.
+        Defaults to 6, which balances compression ratio and speed.
+    """
+
+    compression_level: int = 6
+
+
+class ZipPacker(Packer[ZipPackerConfig]):
     """
     Compresses and packages files into a ZIP archive format with standard compression algorithms.
     Use after modifying extracted ZIP contents to recreate the archive for distribution or
@@ -82,27 +95,37 @@ class ZipPacker(Packer[None]):
     targets = (ZipArchive,)
     external_dependencies = (ZIP_TOOL,)
 
-    async def pack(self, resource: Resource, config=None):
+    async def pack(self, resource: Resource, config: ZipPackerConfig = None) -> None:
+        if config is None:
+            config = ZipPackerConfig()
+        if not 0 <= config.compression_level <= 9:
+            raise ValueError("compression_level must be an integer from 0-9")
+
         zip_view: ZipArchive = await resource.view_as(ZipArchive)
         flush_dir = await zip_view.flush_to_disk()
-        temp_archive = f"{flush_dir}.zip"
-        cwd = os.getcwd()
-        os.chdir(flush_dir)
-        cmd = [
-            "zip",
-            "-r",
-            temp_archive,
-            ".",
-        ]
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-        )
-        returncode = await proc.wait()
-        if proc.returncode:
-            raise CalledProcessError(returncode=returncode, cmd=cmd)
-        os.chdir(cwd)
-        with open(temp_archive, "rb") as fh:
-            resource.queue_patch(Range(0, await zip_view.resource.get_data_length()), fh.read())
+
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete_on_close=False) as temp_archive:
+            temp_archive.close()
+            os.unlink(
+                temp_archive.name
+            )  # zip fails if the output path exists but isn't a valid zip
+            cmd = [
+                "zip",
+                f"-{config.compression_level}",
+                "-r",
+                temp_archive.name,
+                ".",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=flush_dir,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
+
+            with open(temp_archive.name, "rb") as fh:
+                resource.queue_patch(Range(0, await resource.get_data_length()), fh.read())
 
 
 MagicMimePattern.register(ZipArchive, "application/zip")

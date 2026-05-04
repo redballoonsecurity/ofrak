@@ -3,11 +3,15 @@ All notable changes to `ofrak-angr` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 1.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Removed
+- Remove dead `_create_dependencies` no-op override from `AngrAnalyzer` ([#727](https://github.com/redballoonsecurity/ofrak/pull/727))
 
 ### Fixed
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
 - Pin pycparser version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
+- Pin `angr<=9.2.102` for Python 3.9 (last version supporting it) and constrain setuptools to preserve `pkg_resources` during arm64 builds ([#718](https://github.com/redballoonsecurity/ofrak/pull/718))
 
 ## [1.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-angr-v1.0.1...ofrak-angr-v1.1.0) - 2025-10-03
 

@@ -7,22 +7,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Add FastSegmentInjectorModifier for optimized bulk segment injection ([#685](https://github.com/redballoonsecurity/ofrak/pull/685))
+- Add `FlashGeometryHeuristicAnalyzer` that infers `FlashAttributes` (page/OOB geometry) for raw NAND dumps tagged as `FlashResource`, using YAFFS2, Linux MTD large-page OOB, small-page OOB density, and exact Hamming ECC verification as signals ([#737](https://github.com/redballoonsecurity/ofrak/pull/737))
+- Add `FlashFieldType.SPARE` and `FlashSpareAreaResource` so `FlashOobResourceUnpacker` can preserve OOB bytes without ECC/Checksum computation, and extend `FlashLogicalDataResourcePacker` to consume the sibling `FlashSpareAreaResource` so the original OOB layout is reconstructed verbatim during repacking ([#738](https://github.com/redballoonsecurity/ofrak/pull/738))
+- Add cramfs unpacker and packer, using `fsck.cramfs` and `mkfs.cramfs` from `util-linux` 2.38.1 ([#719](https://github.com/redballoonsecurity/ofrak/pull/719))
+- Add ApkAnalyzer to extract package metadata from Android APKs using aapt ([#716](https://github.com/redballoonsecurity/ofrak/pull/716))
+- Add compression level config to `ZipPacker` via `ZipPackerConfig` ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))
 - Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 - Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
 - Add LZ4 compression format unpackers and packers with support for all frame types (modern, legacy, skippable) ([#661](https://github.com/redballoonsecurity/ofrak/pull/661))
 - Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
+- Add YAFFS2 filesystem support ([#739](https://github.com/redballoonsecurity/ofrak/pull/739))
 
 ### Changed
+- Resources tagged as `FlashResource` now have their `FlashAttributes` inferred automatically by the new `FlashGeometryHeuristicAnalyzer` and become unpackable via `FlashResourceUnpacker` without user-supplied geometry. Workflows that previously attached a hand-crafted `FlashAttributes` should verify the inferred geometry matches. If no standard geometry fits the image, the analyzer logs a warning and returns no attributes so other analyzers (e.g. `BinwalkAnalyzer`) can still run ([#737](https://github.com/redballoonsecurity/ofrak/pull/737))
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
+- Fix thread-unsafe `os.chdir` in `ZipPacker` by passing `cwd` to subprocess ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))
+- Pin libmagic to 5.46 on macOS CI builds to work around a regression in 5.47 that breaks ELF identification; update documentation to reflect the libmagic 5.46 requirement ([#723](https://github.com/redballoonsecurity/ofrak/pull/723))
 - Bump `aiohttp` to >=3.13.3 to address CVE-2025-69223 ([#693](https://github.com/redballoonsecurity/ofrak/pull/693))
 - Fix `Resource.get_attributes` docstring to match implementation ([#692](https://github.com/redballoonsecurity/ofrak/pull/692))
 - Remove `pkg_resources` usage from `build_image.py`, broken by setuptools 82.0.0 ([#708](https://github.com/redballoonsecurity/ofrak/pull/708))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
 - Explicitly raise ValueError if ubireader guess_leb_size/guess_peb_size returns None ([#714](https://github.com/redballoonsecurity/ofrak/pull/714))
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
+- Pin Pygments==2.19.2 for OFRAK docs ([#728](https://github.com/redballoonsecurity/ofrak/pull/728))
+- Fix typo in `find` command used by CPIO packer ([#740](https://github.com/redballoonsecurity/ofrak/pull/740))
 - Fix bug in Segment Injector: favor regions with data when injecting data ([#682](https://github.com/redballoonsecurity/ofrak/pull/682))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
