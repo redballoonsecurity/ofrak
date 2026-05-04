@@ -30,11 +30,11 @@ fem = patch_maker.make_fem([(bom, region_config)], ofrak_fw_resource, verbose=Tr
 await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 ```
 """
-import asyncio
 import logging
 import itertools
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
@@ -274,7 +274,7 @@ class PatchMaker:
             self._toolchain.segment_alignment,
         )
 
-    async def make_bom_async(
+    def make_bom_parallel(
         self,
         name: str,
         source_list: List[str],
@@ -283,12 +283,15 @@ class PatchMaker:
         entry_point_name: Optional[str] = None,
     ) -> BOM:
         """
-        Async version of make_bom that compiles/assembles source files in parallel.
+        Parallel version of [make_bom][ofrak_patch_maker.patch_maker.PatchMaker.make_bom] that
+        compiles and assembles source files concurrently using a thread pool.
 
-        Uses asyncio.to_thread to run each _create_object_file call concurrently,
-        significantly speeding up builds with many source files (e.g. hook assembly).
+        Each `_create_object_file` call shells out to the toolchain (compile/assemble/preprocess),
+        so the work is subprocess-bound and threads release the GIL while waiting. This
+        significantly speeds up builds with many source files (e.g. hook assembly).
 
-        Parameters are identical to make_bom.
+        Parameters are identical to
+        [make_bom][ofrak_patch_maker.patch_maker.PatchMaker.make_bom].
         """
         if self._platform_includes:
             header_dirs.extend(self._platform_includes)
@@ -301,23 +304,22 @@ class PatchMaker:
         out_dir = os.path.join(self.build_dir, name + "_bom_files")
         os.mkdir(out_dir)
 
-        async def _create_object_file_async(file, header_dirs, out_dir, file_type):
-            return await asyncio.to_thread(
-                self._create_object_file, file, header_dirs, out_dir, file_type
+        c_files = [f for f in source_list if f.endswith(".c")]
+        asm_files = [f for f in source_list if f.endswith(".as") or f.endswith(".S")]
+
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(self._create_object_file, f, header_dirs, out_dir, SourceFileType.C)
+                for f in c_files
+            ]
+            futures.extend(
+                executor.submit(
+                    self._create_object_file, f, header_dirs, out_dir, SourceFileType.ASM
+                )
+                for f in asm_files
             )
-
-        tasks = []
-        c_files = list(filter(lambda x: x.endswith(".c"), source_list))
-        for f in c_files:
-            tasks.append(_create_object_file_async(f, header_dirs, out_dir, SourceFileType.C))
-
-        asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
-        for f in asm_files:
-            tasks.append(_create_object_file_async(f, header_dirs, out_dir, SourceFileType.ASM))
-
-        results = await asyncio.gather(*tasks)
-        for r in results:
-            object_map.update(r)
+            for future in futures:
+                object_map.update(future.result())
 
         unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
 
