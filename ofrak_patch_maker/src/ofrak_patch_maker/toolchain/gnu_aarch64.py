@@ -21,6 +21,9 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
         self._compiler_flags.append("-mno-outline-atomics")
         # Force literal pools at end of functions, rather than .rodata
         self._compiler_flags.append("-mpc-relative-literal-loads")
+        # On aarch64, prevent the compiler from emitting NEON/FP/SIMD instructions unless hard_float is set.
+        if not self._config.hard_float:
+            self._compiler_flags.append("-mgeneral-regs-only")
 
     @property
     def name(self) -> str:
