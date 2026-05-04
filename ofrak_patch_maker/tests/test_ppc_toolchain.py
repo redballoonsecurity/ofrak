@@ -15,6 +15,7 @@ from .toolchain_asm import (
 from .toolchain_c import (
     run_bounds_check_test,
     run_hello_world_test,
+    run_make_bom_parallel_test,
     run_relocatable_test,
 )
 
@@ -61,3 +62,7 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
 
 def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
     run_relocatable_test(toolchain_under_test, tmp_path)
+
+
+def test_make_bom_parallel(toolchain_under_test: ToolchainUnderTest):
+    run_make_bom_parallel_test(toolchain_under_test)

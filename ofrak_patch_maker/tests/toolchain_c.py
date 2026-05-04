@@ -269,3 +269,64 @@ def run_relocatable_test(toolchain_under_test: ToolchainUnderTest, build_dir):
 
     assert os.path.exists(exec_path)
     assert get_file_format(exec_path) == tc_config.file_format
+
+
+def run_make_bom_parallel_test(toolchain_under_test: ToolchainUnderTest):
+    """
+    Verify that make_bom_parallel produces an equivalent BOM to make_bom for the same source
+    list, exercising parallel compilation across the thread pool.
+
+    This test verifies that:
+    - make_bom_parallel returns the same set of object_map keys as make_bom
+    - the same strong and unresolved symbols are produced for each object
+    - the resulting object files are byte-identical between the two BOMs
+    """
+    build_dir = tempfile.mkdtemp()
+    source_template = "int func_{idx}(int x) {{ return x + {idx}; }}\n"
+
+    n_sources = 6
+    source_paths = []
+    for i in range(n_sources):
+        path = os.path.join(build_dir, f"src_{i}.c")
+        with open(path, "w") as f:
+            f.write(source_template.format(idx=i))
+        source_paths.append(path)
+
+    tc_config = ToolchainConfig(
+        file_format=BinFileType.ELF,
+        force_inlines=False,
+        relocatable=False,
+        no_std_lib=True,
+        no_jump_tables=True,
+        no_bss_section=True,
+        create_map_files=True,
+        compiler_optimization_level=CompilerOptimizationLevel.NONE,
+        debug_info=False,
+        userspace_dynamic_linker=toolchain_under_test.userspace_dynamic_linker,
+    )
+
+    logger = logging.getLogger("ToolchainTest")
+    logger.setLevel("INFO")
+
+    patch_maker = PatchMaker(
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
+        logger=logger,
+        build_dir=build_dir,
+    )
+
+    seq_bom = patch_maker.make_bom("seq", source_paths, [], [])
+    par_bom = patch_maker.make_bom_parallel("par", source_paths, [], [])
+
+    assert set(par_bom.object_map.keys()) == set(seq_bom.object_map.keys())
+    assert par_bom.unresolved_symbols == seq_bom.unresolved_symbols
+
+    for src in seq_bom.object_map:
+        seq_obj = seq_bom.object_map[src]
+        par_obj = par_bom.object_map[src]
+        assert seq_obj.strong_symbols == par_obj.strong_symbols
+        assert seq_obj.unresolved_symbols == par_obj.unresolved_symbols
+        with open(seq_obj.path, "rb") as f:
+            seq_bytes = f.read()
+        with open(par_obj.path, "rb") as f:
+            par_bytes = f.read()
+        assert seq_bytes == par_bytes, f"object bytes differ for {src}"
