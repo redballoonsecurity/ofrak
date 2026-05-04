@@ -11,6 +11,7 @@ RUN apt-get -y update && \
       build-essential \
       cmake \
       cpio \
+      curl \
       git \
       genisoimage \
       liblz4-dev \
@@ -44,18 +45,18 @@ RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/li
 # Install official 7-zip
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
   cd /tmp && \
-  wget https://www.7-zip.org/a/7z2201-linux-arm64.tar.xz && \
-  tar -xf 7z2201-linux-arm64.tar.xz && \
+  wget https://github.com/ip7z/7zip/releases/download/26.00/7z2600-linux-arm64.tar.xz && \
+  tar -xf 7z2600-linux-arm64.tar.xz && \
   mv 7zz /usr/local/bin && \
-  rm 7z2201-linux-arm64.tar.xz 7zzs; \
+  rm 7z2600-linux-arm64.tar.xz 7zzs; \
 fi;
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
   cd /tmp && \
-  wget https://www.7-zip.org/a/7z2201-linux-x64.tar.xz && \
-  tar -xf 7z2201-linux-x64.tar.xz && \
+  wget https://github.com/ip7z/7zip/releases/download/26.00/7z2600-linux-x64.tar.xz && \
+  tar -xf 7z2600-linux-x64.tar.xz && \
   mv 7zz /usr/local/bin && \
-  rm 7z2201-linux-x64.tar.xz 7zzs; \
+  rm 7z2600-linux-x64.tar.xz 7zzs; \
 fi;
 
 # Install the correct version of squashfs-tools. We specifically need the
@@ -80,3 +81,13 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && \
     rm -r UEFITool-A68
+
+# Install yaffs2utils
+RUN mkdir -p /tmp/yaffs2utils && \
+    cd /tmp/yaffs2utils && \
+    curl --location 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/yaffs2utils/latest.tar.gz' | \
+    tar --strip-components=1 -xzf - && \
+    make -j && \
+    make install && \
+    cd /tmp && \
+    rm -r /tmp/yaffs2utils

@@ -26,7 +26,8 @@ RUN mkdir -p /opt/rbs && \
 
 ENV GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3.2_PUBLIC/
 # Install PyGhidra
-RUN export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3.2_PUBLIC/ && \
+RUN python3 -m pip install jpype1~=1.6.0 && \
+    export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3.2_PUBLIC/ && \
     cd ${GHIDRA_INSTALL_DIR}/Ghidra/Features/PyGhidra/pypkg/ && \
     python3 -m pip install -e .
 

@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix Ghidra and pyghidra CodeRegion unpacker to take into account the base address that ghidra sets for PIE executables.([#627](https://github.com/redballoonsecurity/ofrak/pull/627))
 - Fix auto discovery of `PyGhidraDecompilationAnalyzer` ([#650](https://github.com/redballoonsecurity/ofrak/pull/650))
 - Fix redundant re-analysis of complex blocks in the standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))
+- Pin Jpype1 (transitive dependency via PyGhidra) ([#736](https://github.com/redballoonsecurity/ofrak/pull/736))
 
 ### Changed
 - Reduce the decompilation time of PyGhidra by reusing cached unpacking results. ([#623](https://github.com/redballoonsecurity/ofrak/pull/623))

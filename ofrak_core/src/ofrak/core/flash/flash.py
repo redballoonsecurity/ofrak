@@ -70,6 +70,14 @@ class FlashLogicalEccResource(GenericBinary):
     """
 
 
+@dataclass
+class FlashSpareAreaResource(GenericBinary):
+    """
+    Represents spare area data that is not part of the logical data.
+    Is meant to be used when we don't want to discard the spare area.
+    """
+
+
 #####################
 #     ATTRIBUTES    #
 #####################
@@ -105,6 +113,8 @@ class FlashFieldType(Enum):
     CHECKSUM = 6
     DELIMITER = 7
     TOTAL_SIZE = 8
+    SPARE = 9
+    SPARE_SIZE = 10
 
 
 @dataclass
@@ -420,6 +430,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
     children = (
         FlashLogicalDataResource,
         FlashLogicalEccResource,
+        FlashSpareAreaResource,
     )
 
     async def unpack(self, resource: Resource, config=None):
@@ -438,6 +449,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         offset = 0
         only_data = list()
         only_ecc = list()
+        only_spare = list()
         for block in flash_attr.iterate_through_all_blocks(data_len, True):
             block_size = flash_attr.get_block_size(block)
             block_end_offset = offset + block_size
@@ -498,6 +510,8 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     else:
                         # No ECC found in block, just add the data directly
                         only_data.append(block_data[block_data_range.start : block_data_range.end])
+                if field.field_type == FlashFieldType.SPARE:
+                    only_spare.append(block_data[field_range.start : field_range.end])
                 field_offset += field.size
             offset += block_size
 
@@ -515,6 +529,14 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                 data=b"".join(only_ecc),
                 attributes=[
                     ecc_attr,
+                ],
+            )
+        if only_spare:
+            await oob_resource.create_child(
+                tags=(FlashSpareAreaResource,),
+                data=b"".join(only_spare),
+                attributes=[
+                    flash_attr,
                 ],
             )
 
@@ -574,8 +596,11 @@ class FlashLogicalDataResourcePacker(Packer[None]):
     """
     Packs logical flash data back into the OOB (out-of-band) format, FlashOobResource, by
     recalculating and inserting ECC (Error Correction Code) bytes according to the
-    `FlashAttributes`. Use when recreating flash dumps after modifying the logical data, ensuring
-    ECC is properly calculated for flash device compatibility.
+    `FlashAttributes`. When a sibling `FlashSpareAreaResource` is present, its bytes are sliced
+    in block order and re-emitted into each block's `SPARE` field so that opaque OOB data
+    (which is not regenerable from the logical data) is preserved verbatim. Use when recreating
+    flash dumps after modifying the logical data, ensuring ECC is properly calculated for flash
+    device compatibility.
     """
 
     id = b"FlashLogicalDataResourcePacker"
@@ -592,6 +617,20 @@ class FlashLogicalDataResourcePacker(Packer[None]):
         packed_data = bytearray()
         data_offset = 0
 
+        # If a sibling FlashSpareAreaResource exists, fetch its bytes so we can re-emit
+        # them into each block's SPARE field as we rebuild the OOB layout.
+        parent = await resource.get_parent()
+        spare_data: Optional[bytes] = None
+        try:
+            spare_resource = await parent.get_only_child(
+                r_filter=ResourceFilter.with_tags(FlashSpareAreaResource),
+            )
+        except NotFoundError:
+            spare_resource = None
+        if spare_resource is not None:
+            spare_data = await spare_resource.get_data()
+        spare_offset = 0
+
         for c in flash_attr.iterate_through_all_blocks(original_size, False):
             block_data = b""
             block_data_size = flash_attr.get_field_length_in_block(c, FlashFieldType.DATA)
@@ -601,15 +640,21 @@ class FlashLogicalDataResourcePacker(Packer[None]):
                 data_offset += block_data_size
                 bytes_left -= block_data_size
 
+            block_spare = b""
+            block_spare_size = flash_attr.get_field_length_in_block(c, FlashFieldType.SPARE)
+            if block_spare_size != 0 and spare_data is not None:
+                block_spare = spare_data[spare_offset : spare_offset + block_spare_size]
+                spare_offset += block_spare_size
+
             packed_data += _build_block(
                 cur_block_type=c,
                 attributes=flash_attr,
                 block_data=block_data,
                 original_data=data,
+                block_spare=block_spare,
             )
 
         # Create child under the original FlashOobResource to show that it packed itself
-        parent = await resource.get_parent()
         await parent.create_child(tags=(FlashOobResource,), data=packed_data)
 
 
@@ -710,87 +755,104 @@ def _build_block(
     attributes: FlashAttributes,
     block_data: bytes,
     original_data: bytes,
+    block_spare: bytes = b"",
 ) -> bytes:
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     if attributes is None:
         raise UnpackerError("Cannot pack without providing FlashAttributes")
     data_hash = md5(block_data).digest()
     ecc_attr = attributes.ecc_attributes
+    if ecc_attr is not None and ecc_attr.ecc_class is None:
+        raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
     block = b""
-    if ecc_attr is not None:
-        ecc_class = ecc_attr.ecc_class
-        if ecc_class is None:
-            raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
-        for field in cur_block_type:
-            if field is not None:
-                f = field.field_type
-                f_size = field.size
-                if f is FlashFieldType.ALIGNMENT:
-                    block += b"\x00" * f_size
-                elif f is FlashFieldType.CHECKSUM:
-                    if attributes.checksum_func is not None:
-                        block += attributes.checksum_func(original_data)
-                elif f is FlashFieldType.DATA:
-                    expected_data_size = attributes.get_field_length_in_block(
-                        cur_block_type, FlashFieldType.DATA
+    for field in cur_block_type:
+        if field is not None:
+            f = field.field_type
+            f_size = field.size
+            if f is FlashFieldType.ALIGNMENT:
+                block += b"\x00" * f_size
+            elif f is FlashFieldType.CHECKSUM:
+                if attributes.checksum_func is not None:
+                    block += attributes.checksum_func(original_data)
+            elif f is FlashFieldType.DATA:
+                expected_data_size = attributes.get_field_length_in_block(
+                    cur_block_type, FlashFieldType.DATA
+                )
+                real_data_len = len(block_data)
+                if real_data_len < expected_data_size:
+                    cur_block_data = bytearray(expected_data_size)
+                    cur_block_data[:real_data_len] = block_data
+                    block_data = cur_block_data
+                block += block_data
+            elif f is FlashFieldType.DATA_SIZE:
+                block += len(original_data).to_bytes(f_size, "big")
+            elif f is FlashFieldType.DELIMITER:
+                if ecc_attr is None:
+                    raise PackerError(
+                        "Tried to add delimiter without specifying in FlashEccAttributes"
                     )
-                    real_data_len = len(block_data)
-                    if real_data_len < expected_data_size:
-                        cur_block_data = bytearray(expected_data_size)
-                        cur_block_data[:real_data_len] = block_data
-                        block_data = cur_block_data
-                    block += block_data
-                elif f is FlashFieldType.DATA_SIZE:
-                    block += len(original_data).to_bytes(f_size, "big")
-                elif f is FlashFieldType.DELIMITER:
-                    if cur_block_type == attributes.header_block_format:
-                        delimiter = ecc_attr.head_delimiter
-                    elif cur_block_type == attributes.first_data_block_format:
-                        delimiter = ecc_attr.first_data_delimiter
-                    elif cur_block_type == attributes.data_block_format:
-                        delimiter = ecc_attr.data_delimiter
-                    elif cur_block_type == attributes.last_data_block_format:
-                        delimiter = ecc_attr.last_data_delimiter
-                    elif cur_block_type == attributes.tail_block_format:
-                        delimiter = ecc_attr.tail_delimiter
-                    else:
+                if cur_block_type == attributes.header_block_format:
+                    delimiter = ecc_attr.head_delimiter
+                elif cur_block_type == attributes.first_data_block_format:
+                    delimiter = ecc_attr.first_data_delimiter
+                elif cur_block_type == attributes.data_block_format:
+                    delimiter = ecc_attr.data_delimiter
+                elif cur_block_type == attributes.last_data_block_format:
+                    delimiter = ecc_attr.last_data_delimiter
+                elif cur_block_type == attributes.tail_block_format:
+                    delimiter = ecc_attr.tail_delimiter
+                else:
+                    raise PackerError(
+                        "Tried to add delimiter without specifying in FlashEccAttributes"
+                    )
+                if delimiter is not None:
+                    block += delimiter
+            elif f is FlashFieldType.ECC:
+                if ecc_attr is None:
+                    raise PackerError(
+                        "Cannot pack FlashLogicalDataResource without providing ECC class"
+                    )
+                if data_hash in DATA_HASHES:
+                    ecc = DATA_HASHES[data_hash]
+                else:
+                    # Assumes that all previously added data in the block should be included in the ECC
+                    # TODO: Support ECC that comes before data
+                    try:
+                        if ecc_attr.ecc_class is not None:
+                            ecc = ecc_attr.ecc_class.encode(block)
+                    except TypeError:
                         raise PackerError(
-                            "Tried to add delimiter without specifying in FlashEccAttributes"
+                            "Tried to encode ECC without specifying ecc_class in FlashEccAttributes"
                         )
-                    if delimiter is not None:
-                        block += delimiter
-                elif f is FlashFieldType.ECC:
-                    if data_hash in DATA_HASHES:
-                        ecc = DATA_HASHES[data_hash]
-                    else:
-                        # Assumes that all previously added data in the block should be included in the ECC
-                        # TODO: Support ECC that comes before data
-                        try:
-                            if ecc_attr.ecc_class is not None:
-                                ecc = ecc_attr.ecc_class.encode(block)
-                        except TypeError:
-                            raise PackerError(
-                                "Tried to encode ECC without specifying ecc_class in FlashEccAttributes"
-                            )
-                    block += ecc
-                elif f is FlashFieldType.ECC_SIZE:
-                    block_ecc_field = attributes.get_field_in_block(
-                        cur_block_type, FlashFieldType.ECC
-                    )
-                    if block_ecc_field is not None:
-                        block += block_ecc_field.size.to_bytes(f_size, "big")
-                elif f is FlashFieldType.TOTAL_SIZE:
-                    data_size = len(original_data)
-                    oob_size = attributes.get_total_oob_size(data_len=data_size)
-                    expected_data_size = attributes.get_total_field_size(
-                        data_len=data_size, field_type=FlashFieldType.DATA
-                    )
-                    total_size = expected_data_size + oob_size
-                    block += (total_size).to_bytes(f_size, "big")
-                elif f is FlashFieldType.MAGIC:
-                    if ecc_attr.ecc_magic is None:
-                        raise PackerError(
-                            "Tried to add Magic without specifying in FlashEccAttributes"
-                        )
-                    block += ecc_attr.ecc_magic
+                block += ecc
+            elif f is FlashFieldType.ECC_SIZE:
+                block_ecc_field = attributes.get_field_in_block(cur_block_type, FlashFieldType.ECC)
+                if block_ecc_field is not None:
+                    block += block_ecc_field.size.to_bytes(f_size, "big")
+            elif f is FlashFieldType.TOTAL_SIZE:
+                data_size = len(original_data)
+                oob_size = attributes.get_total_oob_size(data_len=data_size)
+                expected_data_size = attributes.get_total_field_size(
+                    data_len=data_size, field_type=FlashFieldType.DATA
+                )
+                total_size = expected_data_size + oob_size
+                block += (total_size).to_bytes(f_size, "big")
+            elif f is FlashFieldType.MAGIC:
+                if ecc_attr is None or ecc_attr.ecc_magic is None:
+                    raise PackerError("Tried to add Magic without specifying in FlashEccAttributes")
+                block += ecc_attr.ecc_magic
+            elif f is FlashFieldType.SPARE:
+                real_spare_len = len(block_spare)
+                if real_spare_len < f_size:
+                    cur_block_spare = bytearray(f_size)
+                    cur_block_spare[:real_spare_len] = block_spare
+                    block += bytes(cur_block_spare)
+                else:
+                    block += bytes(block_spare[:f_size])
+            elif f is FlashFieldType.SPARE_SIZE:
+                block_spare_field = attributes.get_field_in_block(
+                    cur_block_type, FlashFieldType.SPARE
+                )
+                if block_spare_field is not None:
+                    block += block_spare_field.size.to_bytes(f_size, "big")
     return block

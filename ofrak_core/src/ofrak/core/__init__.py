@@ -59,6 +59,7 @@ from ofrak.core.ubi import *
 from ofrak.core.ubifs import *
 from ofrak.core.uf2 import *
 from ofrak.core.uimage import *
+from ofrak.core.yaffs import *
 from ofrak.core.zip import *
 from ofrak.core.zlib import *
 from ofrak.core.zstd import *
