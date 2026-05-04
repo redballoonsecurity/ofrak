@@ -42,6 +42,7 @@ from ofrak.core.patch_maker.modifiers import (
     FastSegmentInjectorModifier,
     SourceBundle,
 )
+from ofrak_patch_maker.model import FEM, LinkedExecutable
 from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
     BinFileType,
@@ -358,3 +359,50 @@ async def test_fast_segment_injector_applies_patches(ofrak_context: OFRAKContext
     )
 
     await root_resource.run(FastSegmentInjectorModifier, cfg)
+
+
+def test_segment_injector_modifier_config_from_fems(tmp_path):
+    """
+    Tests that SegmentInjectorModifierConfig.from_fems correctly merges segment data extracted
+    from multiple FEMs into a single config (REQ6.1).
+    """
+    exe_a_path = tmp_path / "exec_a"
+    exe_a_data = b"AAAABBBB"
+    exe_a_path.write_bytes(exe_a_data)
+
+    exe_b_path = tmp_path / "exec_b"
+    exe_b_data = b"CCCCDDDDEEEE"
+    exe_b_path.write_bytes(exe_b_data)
+
+    segment_a = Segment(".text", 0x1000, 0, False, 4, MemoryPermissions.RX)
+    segment_b_text = Segment(".text", 0x2000, 0, False, 4, MemoryPermissions.RX)
+    segment_b_data = Segment(".data", 0x3000, 4, False, 8, MemoryPermissions.RW)
+
+    fem_a = FEM(
+        name="patch_a",
+        executable=LinkedExecutable(
+            path=str(exe_a_path),
+            file_format=BinFileType.ELF,
+            segments=(segment_a,),
+            symbols={},
+            relocatable=False,
+        ),
+    )
+    fem_b = FEM(
+        name="patch_b",
+        executable=LinkedExecutable(
+            path=str(exe_b_path),
+            file_format=BinFileType.ELF,
+            segments=(segment_b_text, segment_b_data),
+            symbols={},
+            relocatable=False,
+        ),
+    )
+
+    cfg = SegmentInjectorModifierConfig.from_fems([fem_a, fem_b])
+
+    assert cfg.segments_and_data == (
+        (segment_a, b"AAAA"),
+        (segment_b_text, b"CCCC"),
+        (segment_b_data, b"DDDDEEEE"),
+    )
