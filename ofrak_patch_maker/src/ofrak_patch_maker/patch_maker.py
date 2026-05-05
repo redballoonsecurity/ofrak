@@ -254,7 +254,7 @@ class PatchMaker:
             itertools.repeat(out_dir),
             itertools.repeat(SourceFileType.ASM),
         )
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
             for r in executor.map(lambda args: self._create_object_file(*args), c_args):
                 object_map.update(r)
             for r in executor.map(lambda args: self._create_object_file(*args), asm_args):
