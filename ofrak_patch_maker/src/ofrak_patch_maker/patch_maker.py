@@ -247,10 +247,6 @@ class PatchMaker:
             itertools.repeat(out_dir),
             itertools.repeat(SourceFileType.C),
         )
-        result = itertools.starmap(self._create_object_file, c_args)
-        for r in result:
-            object_map.update(r)
-
         asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
         asm_args = zip(
             asm_files,
@@ -258,69 +254,13 @@ class PatchMaker:
             itertools.repeat(out_dir),
             itertools.repeat(SourceFileType.ASM),
         )
-        result = itertools.starmap(self._create_object_file, asm_args)
-        for r in result:
-            object_map.update(r)
+        with ThreadPoolExecutor() as executor:
+            for r in executor.map(lambda args: self._create_object_file(*args), c_args):
+                object_map.update(r)
+            for r in executor.map(lambda args: self._create_object_file(*args), asm_args):
+                object_map.update(r)
 
         # Compute the required size for the .bss segment
-        unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
-
-        return BOM(
-            name,
-            immutabledict(object_map),
-            unresolved_sym_set,
-            None,
-            entry_point_name,
-            self._toolchain.segment_alignment,
-        )
-
-    def make_bom_parallel(
-        self,
-        name: str,
-        source_list: List[str],
-        object_list: List[str],
-        header_dirs: List[str],
-        entry_point_name: Optional[str] = None,
-    ) -> BOM:
-        """
-        Parallel version of [make_bom][ofrak_patch_maker.patch_maker.PatchMaker.make_bom] that
-        compiles and assembles source files concurrently using a thread pool.
-
-        Each `_create_object_file` call shells out to the toolchain (compile/assemble/preprocess),
-        so the work is subprocess-bound and threads release the GIL while waiting. This
-        significantly speeds up builds with many source files (e.g. hook assembly).
-
-        Parameters are identical to
-        [make_bom][ofrak_patch_maker.patch_maker.PatchMaker.make_bom].
-        """
-        if self._platform_includes:
-            header_dirs.extend(self._platform_includes)
-        self._validate_bom_input(name, source_list, object_list, header_dirs)
-        object_map = {}
-        for o_file in object_list:
-            assembled_object = self.prepare_object(o_file)
-            object_map.update({o_file: assembled_object})
-
-        out_dir = os.path.join(self.build_dir, name + "_bom_files")
-        os.mkdir(out_dir)
-
-        c_files = [f for f in source_list if f.endswith(".c")]
-        asm_files = [f for f in source_list if f.endswith(".as") or f.endswith(".S")]
-
-        with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(self._create_object_file, f, header_dirs, out_dir, SourceFileType.C)
-                for f in c_files
-            ]
-            futures.extend(
-                executor.submit(
-                    self._create_object_file, f, header_dirs, out_dir, SourceFileType.ASM
-                )
-                for f in asm_files
-            )
-            for future in futures:
-                object_map.update(future.result())
-
         unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
 
         return BOM(

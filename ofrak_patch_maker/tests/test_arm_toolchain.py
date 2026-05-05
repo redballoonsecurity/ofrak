@@ -26,7 +26,6 @@ from .toolchain_asm import (
 from .toolchain_c import (
     run_hello_world_test,
     run_bounds_check_test,
-    run_make_bom_parallel_test,
     run_relocatable_test,
 )
 from ofrak_type.architecture import (
@@ -138,10 +137,6 @@ def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
         else:
             pytest.skip("LLVM test can't link .got")
     run_relocatable_test(toolchain_under_test, tmp_path)
-
-
-def test_make_bom_parallel(toolchain_under_test: ToolchainUnderTest):
-    run_make_bom_parallel_test(toolchain_under_test)
 
 
 def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):

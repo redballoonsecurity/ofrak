@@ -10,7 +10,6 @@ from .toolchain_asm import run_monkey_patch_test
 from .toolchain_c import (
     run_bounds_check_test,
     run_hello_world_test,
-    run_make_bom_parallel_test,
     run_relocatable_test,
 )
 from ofrak_type import ArchInfo, InstructionSet, BitWidth, Endianness
@@ -56,8 +55,3 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
 @pytest.mark.skipif(platform.machine() != "x86_64", reason="Test only supported on x86_64")
 def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
     run_relocatable_test(toolchain_under_test, tmp_path)
-
-
-@pytest.mark.skipif(platform.machine() != "x86_64", reason="Test only supported on x86_64")
-def test_make_bom_parallel(toolchain_under_test: ToolchainUnderTest):
-    run_make_bom_parallel_test(toolchain_under_test)

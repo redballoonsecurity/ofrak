@@ -8,11 +8,7 @@ from .toolchain_under_test import ToolchainUnderTest
 from .toolchain_asm import (
     run_monkey_patch_test,
 )
-from .toolchain_c import (
-    run_bounds_check_test,
-    run_hello_world_test,
-    run_make_bom_parallel_test,
-)
+from .toolchain_c import run_hello_world_test, run_bounds_check_test
 from ofrak_type.architecture import (
     InstructionSet,
     ProcessorType,
@@ -63,7 +59,3 @@ def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     run_hello_world_test(toolchain_under_test)
-
-
-def test_make_bom_parallel(toolchain_under_test: ToolchainUnderTest):
-    run_make_bom_parallel_test(toolchain_under_test)
