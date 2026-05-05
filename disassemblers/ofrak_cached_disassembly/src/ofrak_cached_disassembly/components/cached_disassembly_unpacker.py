@@ -98,7 +98,7 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
     async def verify_cache_file(self, resource: Resource):
         data = await resource.get_data()
-        md5_hash = hashlib.md5(data)
+        md5_hash = hashlib.md5(data, usedforsecurity=False)
         return (
             md5_hash.digest().hex()
             == self.analysis_store.get_analysis(resource.get_id())["metadata"]["hash"]

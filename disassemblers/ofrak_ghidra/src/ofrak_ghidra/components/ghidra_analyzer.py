@@ -122,7 +122,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         else:
             tmp_dir = tempfile.TemporaryDirectory()
             data = await resource.get_data()
-            hash_sha256 = hashlib.sha256()
+            hash_sha256 = hashlib.sha256(usedforsecurity=False)
             hash_sha256.update(data)
 
             fname = name if name is not None else hash_sha256.hexdigest()
