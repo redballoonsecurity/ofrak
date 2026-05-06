@@ -3,6 +3,11 @@ All notable changes to `ofrak-io` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Fix `StreamCapture` hanging in Jupyter on ARM by writing the escape sentinel directly to the pipe fd rather than through the Python stream wrapper.
+
 ## [1.1.3](https://github.com/redballoonsecurity/ofrak/compare/ofrak-io-v1.1.0...ofrak-type-v1.1.3) - 2025-10-03
 
 ### Changed
