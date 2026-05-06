@@ -56,13 +56,10 @@ class StreamCapture:
             # Capture was not started
             return
 
-        # Fix for ofrak_tutorial ARM support so Jupyter notebook doesn't hang:
-        # Flush any Python-level buffered content so it reaches the pipe before the sentinel.
+        # Flush Python-level buffers before writing the sentinel, then write the sentinel
+        # directly to the pipe fd. In Jupyter, sys.stderr is a ZMQ OutStream wrapper and
+        # self.stream.write() never reaches the pipe, causing _read_stream() to block forever.
         self.stream.flush()
-        # Write the escape sentinel directly to the pipe fd rather than through the Python
-        # stream object. In environments like Jupyter where sys.stderr is a Python-level
-        # wrapper (e.g. ZMQ OutStream) rather than a direct fd, self.stream.write() does
-        # not reach the pipe and _read_stream() would block forever waiting for the sentinel.
         os.write(self.pipe_in, self.escape_char)
         self._read_stream()
 
