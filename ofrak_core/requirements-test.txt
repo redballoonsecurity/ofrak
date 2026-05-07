@@ -1,3 +1,2 @@
 filelock==3.19.1
-psutil~=5.9
 pyelftools==0.29
