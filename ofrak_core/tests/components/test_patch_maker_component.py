@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Type
 
+import logging
 import pytest
 import re
 import subprocess
@@ -463,7 +464,6 @@ async def test_segment_injector_warns_when_multiple_regions_with_data(
 
     The modifier should log a warning about finding more than one region to inject into.
     """
-    import logging
 
     # Create root resource with enough data for the CodeRegions
     root_data = b"\x00" * SIZE
