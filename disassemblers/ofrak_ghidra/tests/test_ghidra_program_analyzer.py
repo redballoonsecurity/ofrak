@@ -211,5 +211,5 @@ async def _make_dummy_program(resource: Resource, arch_info):
 
     await resource.run(
         SegmentInjectorModifier,
-        SegmentInjectorModifierConfig.from_fem(fem),
+        SegmentInjectorModifierConfig.from_fems([fem]),
     )
