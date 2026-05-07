@@ -272,6 +272,7 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                         LOGGER.warning(
                             f"Found more than one region to inject patch in, using the first one."
                         )
+                        break
             if not candidate:
                 # uninitialized section like .bss mapped to arbitrary memory range without corresponding
                 # MemoryRegion resource, no patch needed.
