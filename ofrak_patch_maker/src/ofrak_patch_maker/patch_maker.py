@@ -35,6 +35,7 @@ import logging
 import itertools
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
@@ -247,10 +248,6 @@ class PatchMaker:
             itertools.repeat(out_dir),
             itertools.repeat(SourceFileType.C),
         )
-        result = itertools.starmap(self._create_object_file, c_args)
-        for r in result:
-            object_map.update(r)
-
         asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
         asm_args = zip(
             asm_files,
@@ -258,9 +255,11 @@ class PatchMaker:
             itertools.repeat(out_dir),
             itertools.repeat(SourceFileType.ASM),
         )
-        result = itertools.starmap(self._create_object_file, asm_args)
-        for r in result:
-            object_map.update(r)
+        with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+            for r in executor.map(
+                lambda args: self._create_object_file(*args), itertools.chain(c_args, asm_args)
+            ):
+                object_map.update(r)
 
         # Compute the required size for the .bss segment
         unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
