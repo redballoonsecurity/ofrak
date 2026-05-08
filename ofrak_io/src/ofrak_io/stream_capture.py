@@ -56,11 +56,9 @@ class StreamCapture:
             # Capture was not started
             return
 
-        # Flush Python-level buffers before writing the sentinel, then write the sentinel
-        # directly to the pipe fd. In Jupyter, sys.stderr is a ZMQ OutStream wrapper and
-        # self.stream.write() never reaches the pipe, causing _read_stream() to block forever.
+        # Flush and read the captured stream
+        self.stream.write(self.escape_char.decode())
         self.stream.flush()
-        os.write(self.pipe_in, self.escape_char)
         self._read_stream()
 
         # Reset the file
