@@ -13,7 +13,6 @@ from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
@@ -22,6 +21,7 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.error import NotFoundError
+from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__file__)
 
@@ -240,16 +240,16 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             )
         )
 
-        injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
+        patches: List[Tuple[int, bytes]] = []  # (root_offset, data)
 
         for segment, segment_data in config.segments_and_data:
             if segment.length == 0 or not segment.is_allocated:
                 continue
-            if segment.length > 0:
-                LOGGER.debug(
-                    f"    Segment {segment.segment_name} - {segment.length} "
-                    f"bytes @ {hex(segment.vm_address)}",
-                )
+
+            LOGGER.debug(
+                f"    Segment {segment.segment_name} - {segment.length} "
+                f"bytes @ {hex(segment.vm_address)}",
+            )
 
             if segment.segment_name.startswith(".rela"):
                 continue
@@ -273,8 +273,9 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 
             region_mapped_to_data = region.resource.get_data_id() is not None
             if region_mapped_to_data:
-                patches = [(segment.vm_address, segment_data)]
-                injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
+                range_in_root = await region.resource.get_data_range_within_root()
+                offset = range_in_root.start + segment.vm_address - region.virtual_address
+                patches.append((offset, segment_data))
             else:
                 if segment.is_bss:
                     # uninitialized section like .bss mapped to arbitrary memory range without corresponding
@@ -285,23 +286,35 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                     f"{hex(segment.vm_address)} is not mapped to data"
                 )
 
-        for injected_resource, injection_config in injection_tasks:
-            result = await injected_resource.run(BinaryInjectorModifier, injection_config)
-            # The above can patch data of any of injected_resources' descendants or ancestors
-            # We don't want to delete injected_resources or its ancestors, so subtract them from the
-            # set of patched resources
-            patched_descendants = result.resources_modified.difference(
-                {
-                    r.get_id()
-                    for r in await injected_resource.get_ancestors(
-                        ResourceFilter(include_self=True)
-                    )
-                }
-            )
-            to_delete = [
-                r for r in await resource.get_descendants() if r.get_id() in patched_descendants
-            ]
-            await asyncio.gather(*(r.delete() for r in to_delete))
+        if not patches:
+            return
+
+        # Predict stale descendants from patch ranges before modifying
+        patch_ranges = [Range.from_size(offset, len(data)) for offset, data in patches]
+        all_descendants = list(await resource.get_descendants())
+
+        async def _get_data_range(r: Resource) -> Optional[Range]:
+            if r.get_data_id() is None:
+                return None
+            try:
+                return await r.get_data_range_within_root()
+            except Exception:
+                return None
+
+        desc_ranges = await asyncio.gather(*(_get_data_range(r) for r in all_descendants))
+        stale = [
+            r
+            for r, rng in zip(all_descendants, desc_ranges)
+            if rng is not None and any(rng.overlaps(pr) for pr in patch_ranges)
+        ]
+
+        # Apply all patches in a single bulk operation
+        resource_data = bytearray(await resource.get_data())
+        for offset, data in patches:
+            resource_data[offset : offset + len(data)] = data
+        resource.queue_patch(Range.from_size(0, await resource.get_data_length()), bytes(resource_data))
+
+        await asyncio.gather(*(r.delete() for r in stale))
 
 
 @dataclass
