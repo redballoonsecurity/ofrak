@@ -353,9 +353,6 @@ async def test_segment_injector_when_dataless_region_has_higher_id(
     """
     root_data = b"\x00" * SIZE
     root_resource = await ofrak_context.create_root_resource("test_root", root_data)
-    root_resource.add_tag(MemoryRegion)
-    root_resource.add_view(MemoryRegion(VADDR, SIZE))
-    await root_resource.save()
 
     # Create first CodeRegion WITH data (lower resource ID)
     code_region_with_data = CodeRegion(VADDR, SIZE)
@@ -400,9 +397,6 @@ async def test_segment_injector_when_data_region_has_higher_id(
     """
     root_data = b"\x00" * SIZE
     root_resource = await ofrak_context.create_root_resource("test_root", root_data)
-    root_resource.add_tag(MemoryRegion)
-    root_resource.add_view(MemoryRegion(VADDR, SIZE))
-    await root_resource.save()
 
     # Create first CodeRegion WITHOUT data (lower resource ID)
     code_region_without_data = CodeRegion(VADDR, SIZE)
@@ -453,9 +447,6 @@ async def test_segment_injector_warns_when_multiple_regions_with_data(
 
     root_data = b"\x00" * SIZE
     root_resource = await ofrak_context.create_root_resource("test_root", root_data)
-    root_resource.add_tag(MemoryRegion)
-    root_resource.add_view(MemoryRegion(VADDR, SIZE))
-    await root_resource.save()
 
     # Create first CodeRegion WITH data
     code_region_1 = CodeRegion(VADDR, SIZE)
