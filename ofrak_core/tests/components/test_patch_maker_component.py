@@ -382,6 +382,9 @@ async def test_segment_injector_when_dataless_region_has_higher_id(
 
     await root_resource.run(SegmentInjectorModifier, config)
 
+    patched_data = await root_resource.get_data()
+    assert patched_data == patch_data
+
 
 async def test_segment_injector_when_data_region_has_higher_id(
     ofrak_context: OFRAKContext,
