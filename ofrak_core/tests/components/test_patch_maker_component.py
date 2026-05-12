@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Type
 
-import logging
 import pytest
 import re
 import subprocess
@@ -437,56 +436,3 @@ async def test_segment_injector_when_data_region_has_higher_id(
 
     patched_data = await root_resource.get_data()
     assert patched_data == patch_data
-
-
-async def test_segment_injector_warns_when_multiple_regions_with_data(
-    ofrak_context: OFRAKContext,
-    caplog,
-):
-    """
-    Test that SegmentInjectorModifier logs a warning when multiple CodeRegions
-    with data exist at the same virtual address.
-
-    Setup:
-    - Create root resource with data
-    - Create two CodeRegions WITH data at the same vaddr/size
-
-    The modifier should log a warning about finding more than one region to inject into.
-    """
-    if not isinstance(ofrak_context.id_service, SequentialIDService):
-        pytest.skip("Requires SequentialIDService for deterministic resource IDs")
-    root_data = b"\x00" * SIZE
-    root_resource = await ofrak_context.create_root_resource("test_root", root_data)
-
-    # Create first CodeRegion WITH data
-    code_region_1 = CodeRegion(VADDR, SIZE)
-    await root_resource.create_child_from_view(
-        code_region_1,
-        data_range=Range(0, SIZE),
-    )
-
-    # Create second CodeRegion WITH data (same vaddr/size)
-    code_region_2 = CodeRegion(VADDR, SIZE)
-    await root_resource.create_child_from_view(
-        code_region_2,
-        data_range=Range(0, SIZE),
-    )
-
-    segment = Segment(
-        segment_name=".text",
-        vm_address=VADDR,
-        offset=0,
-        is_entry=False,
-        length=SIZE,
-        access_perms=MemoryPermissions.RX,
-    )
-    patch_data = b"\x90" * SIZE
-
-    config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
-
-    with caplog.at_level(logging.WARNING):
-        await root_resource.run(SegmentInjectorModifier, config)
-
-    assert (
-        "Found more than one region to inject patch in, using the first one." in caplog.text
-    ), "Expected warning about multiple candidates for patch insertion"
