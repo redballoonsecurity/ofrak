@@ -53,6 +53,7 @@ from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak.core.code_region import CodeRegion
 from ofrak_type.range import Range
+from ofrak.service.id_service_sequential import SequentialIDService
 
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")
@@ -351,6 +352,9 @@ async def test_segment_injector_when_dataless_region_has_higher_id(
     - Create CodeRegion WITH data first (gets lower ID, e.g. ID=1)
     - Create CodeRegion WITHOUT data second (gets higher ID, e.g. ID=2)
     """
+    if not isinstance(ofrak_context.id_service, SequentialIDService):
+        pytest.skip("Requires SequentialIDService for deterministic resource IDs")
+
     root_data = b"\x00" * SIZE
     root_resource = await ofrak_context.create_root_resource("test_root", root_data)
 
@@ -398,6 +402,8 @@ async def test_segment_injector_when_data_region_has_higher_id(
     - Create CodeRegion WITHOUT data first (gets lower ID, e.g. ID=1)
     - Create CodeRegion WITH data second (gets higher ID, e.g. ID=2)
     """
+    if not isinstance(ofrak_context.id_service, SequentialIDService):
+        pytest.skip("Requires SequentialIDService for deterministic resource IDs")
     root_data = b"\x00" * SIZE
     root_resource = await ofrak_context.create_root_resource("test_root", root_data)
 
@@ -447,7 +453,8 @@ async def test_segment_injector_warns_when_multiple_regions_with_data(
 
     The modifier should log a warning about finding more than one region to inject into.
     """
-
+    if not isinstance(ofrak_context.id_service, SequentialIDService):
+        pytest.skip("Requires SequentialIDService for deterministic resource IDs")
     root_data = b"\x00" * SIZE
     root_resource = await ofrak_context.create_root_resource("test_root", root_data)
 
