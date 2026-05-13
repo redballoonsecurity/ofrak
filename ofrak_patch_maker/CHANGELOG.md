@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Patchmaker: prevent emission of NEON instructions (aarch64) ([#742](https://github.com/redballoonsecurity/ofrak/pull/742))
 
+### Changed
+- make `make_bom` parallel using threads ([#743](https://github.com/redballoonsecurity/ofrak/pull/743))
+
 ## [4.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.2...ofrak-patch-maker-v.4.1.0) - 2025-10-03
 
 ### Added

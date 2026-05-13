@@ -50,6 +50,9 @@ from ofrak_patch_maker.toolchain.model import (
 from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
+from ofrak.core.code_region import CodeRegion
+from ofrak_type.range import Range
+from ofrak.service.id_service_sequential import SequentialIDService
 
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")
@@ -330,3 +333,106 @@ async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAK
 
     # check that resources have been deleted
     assert results.resources_deleted == expected_deleted_ids
+
+
+VADDR = 0x1000
+SIZE = 0x100
+
+
+async def test_segment_injector_when_dataless_region_has_higher_id(
+    ofrak_context: OFRAKContext,
+):
+    """
+    Test that SegmentInjectorModifier succeeds by preferring the region with data
+    even when a dataless CodeRegion has a higher resource ID.
+
+    Setup:
+    - Create root resource with data
+    - Create CodeRegion WITH data first (gets lower ID, e.g. ID=1)
+    - Create CodeRegion WITHOUT data second (gets higher ID, e.g. ID=2)
+    """
+    if not isinstance(ofrak_context.id_service, SequentialIDService):
+        pytest.skip("Requires SequentialIDService for deterministic resource IDs")
+
+    root_data = b"\x00" * SIZE
+    root_resource = await ofrak_context.create_root_resource("test_root", root_data)
+
+    # Create first CodeRegion WITH data (lower resource ID)
+    code_region_with_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_with_data,
+        data_range=Range(0, SIZE),  # Maps to root's data
+    )
+
+    # Create second CodeRegion WITHOUT data (higher resource ID)
+    code_region_without_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_without_data,
+        # No data_range and no data = dataless resource
+    )
+
+    segment = Segment(
+        segment_name=".text",
+        vm_address=VADDR,
+        offset=0,
+        is_entry=False,
+        length=SIZE,
+        access_perms=MemoryPermissions.RX,
+    )
+    patch_data = b"\x90" * SIZE
+
+    config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
+
+    await root_resource.run(SegmentInjectorModifier, config)
+
+    patched_data = await root_resource.get_data()
+    assert patched_data == patch_data
+
+
+async def test_segment_injector_when_data_region_has_higher_id(
+    ofrak_context: OFRAKContext,
+):
+    """
+    Test that SegmentInjectorModifier succeeds when the CodeRegion with data has
+    a higher resource ID than the dataless CodeRegion.
+
+    Setup:
+    - Create root resource with data
+    - Create CodeRegion WITHOUT data first (gets lower ID, e.g. ID=1)
+    - Create CodeRegion WITH data second (gets higher ID, e.g. ID=2)
+    """
+    if not isinstance(ofrak_context.id_service, SequentialIDService):
+        pytest.skip("Requires SequentialIDService for deterministic resource IDs")
+    root_data = b"\x00" * SIZE
+    root_resource = await ofrak_context.create_root_resource("test_root", root_data)
+
+    # Create first CodeRegion WITHOUT data (lower resource ID)
+    code_region_without_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_without_data,
+        # No data_range and no data = dataless resource
+    )
+
+    # Create second CodeRegion WITH data (higher resource ID)
+    code_region_with_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_with_data,
+        data_range=Range(0, SIZE),  # Maps to root's data
+    )
+
+    segment = Segment(
+        segment_name=".text",
+        vm_address=VADDR,
+        offset=0,
+        is_entry=False,
+        length=SIZE,
+        access_perms=MemoryPermissions.RX,
+    )
+    patch_data = b"\x90" * SIZE  # NOP sled
+
+    config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
+
+    await root_resource.run(SegmentInjectorModifier, config)
+
+    patched_data = await root_resource.get_data()
+    assert patched_data == patch_data
