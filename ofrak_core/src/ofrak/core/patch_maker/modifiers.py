@@ -372,10 +372,9 @@ class FastSegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                         target_region = mem_view
                     elif target_region.resource.get_data_id() is None:
                         target_region = mem_view
-                    elif target_region.resource.get_data_id():
-                        LOGGER.warning(
-                            f"Found more than one region to inject patch in, using the first one."
-                        )
+                    if (
+                        target_region.resource.get_data_id()
+                    ):  # break once we find a candidate that has data
                         break
             if target_region is None:
                 raise ValueError(
