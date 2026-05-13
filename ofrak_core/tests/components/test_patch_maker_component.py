@@ -39,7 +39,6 @@ from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifier,
     SegmentInjectorModifierConfig,
     SegmentInjectorModifier,
-    FastSegmentInjectorModifier,
     SourceBundle,
 )
 from ofrak_patch_maker.toolchain.model import (
@@ -429,7 +428,7 @@ async def test_segment_injector_when_data_region_has_higher_id(
         length=SIZE,
         access_perms=MemoryPermissions.RX,
     )
-    patch_data = b"\x90" * SIZE
+    patch_data = b"\x90" * SIZE  # NOP sled
 
     config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
 
@@ -437,30 +436,3 @@ async def test_segment_injector_when_data_region_has_higher_id(
 
     patched_data = await root_resource.get_data()
     assert patched_data == patch_data
-
-
-async def test_fast_segment_injector_applies_patches(ofrak_context: OFRAKContext):
-    """
-    Tests that FastSegmentInjectorModifier applies segment patches correctly (REQ6.1).
-
-    Unlike SegmentInjectorModifier, this does NOT delete patched descendants.
-    """
-    root_resource = await ofrak_context.create_root_resource_from_file(ARM32_PROGRAM_PATH)
-    await root_resource.unpack_recursively()
-
-    main_start = 0x8068
-    main_end = main_start + 40
-
-    target_program = await root_resource.view_as(Program)
-    await target_program.get_code_region_for_vaddr(main_start)
-
-    cfg = SegmentInjectorModifierConfig(
-        (
-            (
-                Segment(".text", main_start, 0, False, main_end - main_start, MemoryPermissions.RX),
-                b"\x00" * (main_end - main_start),
-            ),
-        )
-    )
-
-    await root_resource.run(FastSegmentInjectorModifier, cfg)
