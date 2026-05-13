@@ -121,7 +121,7 @@ def unpack(
                 main_dictionary["metadata"]["base_address"] = base_address
             with open(program_file, "rb") as fh:
                 data = fh.read()
-                md5_hash = hashlib.md5(data)
+                md5_hash = hashlib.md5(data, usedforsecurity=False)
                 main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
 
             LOGGER.info(f"Program contains {len(code_regions)} code regions")

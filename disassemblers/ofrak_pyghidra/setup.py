@@ -21,7 +21,7 @@ with open("LICENSE") as f:
 
 setuptools.setup(
     name="ofrak_pyghidra",
-    version="0.2.0rc5",
+    version="0.2.0rc6",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK PyGhidra Components",

@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Pin Pygments==2.19.2 for OFRAK docs ([#728](https://github.com/redballoonsecurity/ofrak/pull/728))
 - Fix typo in `find` command used by CPIO packer ([#740](https://github.com/redballoonsecurity/ofrak/pull/740))
 - Fix bug in Segment Injector: favor regions with data when injecting data ([#682](https://github.com/redballoonsecurity/ofrak/pull/682))
+- Pass `usedforsecurity=False` to non-cryptographic `hashlib` calls to prevent failures when Python links against FIPS OpenSSL ([#744](https://github.com/redballoonsecurity/ofrak/pull/744))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 
