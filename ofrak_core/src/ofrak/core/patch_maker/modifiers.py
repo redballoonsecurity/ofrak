@@ -269,10 +269,9 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                         candidate = mem_view
                     elif candidate.resource.get_data_id() is None:
                         candidate = mem_view
-                    elif candidate.resource.get_data_id():
-                        LOGGER.warning(
-                            f"Found more than one region to inject patch in, using the first one."
-                        )
+                    if (
+                        candidate.resource.get_data_id()
+                    ):  # break once we find a candidate that has data
                         break
             if not candidate:
                 # uninitialized section like .bss mapped to arbitrary memory range without corresponding
