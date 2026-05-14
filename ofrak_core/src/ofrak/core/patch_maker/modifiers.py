@@ -1,4 +1,5 @@
 import asyncio
+import bisect
 import logging
 import os
 import tempfile312 as tempfile
@@ -13,7 +14,7 @@ from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
+
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
@@ -240,16 +241,19 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             )
         )
 
-        injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
+        patches: List[Tuple[int, bytes]] = []
+        patch_vaddr_ranges: List[Range] = []
+        # Patch-target regions are excluded from stale deletion (their size may equal the segment's).
+        target_region_ids = set()
 
         for segment, segment_data in config.segments_and_data:
             if segment.length == 0 or not segment.is_allocated:
                 continue
-            if segment.length > 0:
-                LOGGER.debug(
-                    f"    Segment {segment.segment_name} - {segment.length} "
-                    f"bytes @ {hex(segment.vm_address)}",
-                )
+
+            LOGGER.debug(
+                f"    Segment {segment.segment_name} - {segment.length} "
+                f"bytes @ {hex(segment.vm_address)}",
+            )
 
             if segment.segment_name.startswith(".rela"):
                 continue
@@ -273,8 +277,11 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 
             region_mapped_to_data = region.resource.get_data_id() is not None
             if region_mapped_to_data:
-                patches = [(segment.vm_address, segment_data)]
-                injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
+                range_in_root = await region.resource.get_data_range_within_root()
+                offset = range_in_root.start + segment.vm_address - region.virtual_address
+                patches.append((offset, segment_data))
+                patch_vaddr_ranges.append(Range.from_size(segment.vm_address, segment.length))
+                target_region_ids.add(region.resource.get_id())
             else:
                 if segment.is_bss:
                     # uninitialized section like .bss mapped to arbitrary memory range without corresponding
@@ -285,23 +292,38 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                     f"{hex(segment.vm_address)} is not mapped to data"
                 )
 
-        for injected_resource, injection_config in injection_tasks:
-            result = await injected_resource.run(BinaryInjectorModifier, injection_config)
-            # The above can patch data of any of injected_resources' descendants or ancestors
-            # We don't want to delete injected_resources or its ancestors, so subtract them from the
-            # set of patched resources
-            patched_descendants = result.resources_modified.difference(
-                {
-                    r.get_id()
-                    for r in await injected_resource.get_ancestors(
-                        ResourceFilter(include_self=True)
-                    )
-                }
-            )
-            to_delete = [
-                r for r in await resource.get_descendants() if r.get_id() in patched_descendants
-            ]
-            await asyncio.gather(*(r.delete() for r in to_delete))
+        if not patches:
+            return
+
+        # Delete MemoryRegions fully contained in a patched vaddr range (stale
+        # Instructions/BasicBlocks/ComplexBlocks). Enclosing ancestors extend
+        # past the patch so they fail `within` and survive. Bisect: O(R log P).
+        merged_patches = sorted(Range.merge_ranges(patch_vaddr_ranges), key=lambda r: r.start)
+        patch_starts = [r.start for r in merged_patches]
+
+        def _is_stale_vaddr(va: int, size: int) -> bool:
+            idx = bisect.bisect_right(patch_starts, va) - 1
+            if idx < 0:
+                return False
+            return va + size <= merged_patches[idx].end
+
+        stale = [
+            region.resource
+            for region in sorted_regions
+            if region.resource.get_id() not in target_region_ids
+            and _is_stale_vaddr(region.virtual_address, region.size)
+        ]
+
+        # One bulk patch is an order of magnitude faster than queueing a patch for each segment
+        resource_data = bytearray(await resource.get_data())
+        for offset, data in patches:
+            resource_data[offset : offset + len(data)] = data
+        resource.queue_patch(
+            Range.from_size(0, len(resource_data)),
+            bytes(resource_data),
+        )
+
+        await asyncio.gather(*(r.delete() for r in stale))
 
 
 @dataclass

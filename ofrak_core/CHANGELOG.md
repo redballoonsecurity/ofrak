@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
 
 ### Changed
+- Speed up `SegmentInjectorModifier` by applying all segment patches as one bulk `queue_patch` and identifying stale descendants via bisect over merged patch vaddr ranges instead of an O(regions × patches) scan.
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
