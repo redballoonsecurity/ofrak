@@ -98,7 +98,7 @@ class ITargetsCommonOutputsA(Analyzer[None, Tuple[AbstractionAttributesA]], ABC)
     id = b"TargetsCommonOutputsA"
 
     @abstractmethod
-    def analyze(
+    async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig]
     ) -> Tuple[AbstractionAttributesA]:
         raise NotImplementedError()
@@ -113,11 +113,14 @@ class ITargetsQOutputsABC(
     ABC,
 ):
     targets = (AbstractionQ,)
-    outputs = (AbstractionAttributesA, AbstractionAttributesB, AbstractionAttributesC)
+    # Intentionally tests multi-element outputs tuple to exercise iteration logic
+    # in Analyzer.get_outputs_as_attribute_types(), even though the base class
+    # type annotation only specifies single-element tuples.
+    outputs = (AbstractionAttributesA, AbstractionAttributesB, AbstractionAttributesC)  # type: ignore[assignment]
     id = b"TargetsQOutputsABC"
 
     @abstractmethod
-    def analyze(
+    async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig]
     ) -> Tuple[AbstractionAttributesA, AbstractionAttributesB, AbstractionAttributesC]:
         raise NotImplementedError()
@@ -133,19 +136,19 @@ class IWithoutImplementation(Analyzer[None, Tuple[AbstractionAttributesA]], ABC)
     id = b"WithoutImplementation"
 
     @abstractmethod
-    def analyze(
+    async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig]
     ) -> Tuple[AbstractionAttributesA]:
         raise NotImplementedError()
 
 
 class AbstractionPUnpacker(MockUnpacker):
-    targets = [AbstractionP]
+    targets = (AbstractionP,)
 
 
 class AbstractionRUnpacker(MockUnpacker):
-    targets = [AbstractionR]
+    targets = (AbstractionR,)
 
 
 class AbstractionRRUnpacker(MockUnpacker):
-    targets = [AbstractionRR]
+    targets = (AbstractionRR,)

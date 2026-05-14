@@ -293,19 +293,26 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     )
     dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
     dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
-    test_names = " ".join([f"test_{package_name}" for package_name in package_names])
-    finish_makefile = "\\n\\\n".join(
-        [
-            ".PHONY: test " + test_names,
-            "test: " + test_names,
+    if config.install_target is InstallTarget.DEVELOP:
+        test_names = ["pytest_ofrak_inspect"] + [
+            f"test_{package_name}" for package_name in package_names
         ]
-        + [
-            f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
-            for package_name in package_names
-        ]
-        + ["\\n"]
-    )
-    dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
+        test_names_str = " ".join(test_names)
+        finish_makefile = "\\n\\\n".join(
+            [
+                ".PHONY: test " + test_names_str,
+                "test: " + test_names_str,
+                "pytest_ofrak_inspect:",
+                "\t\\$(MAKE) -C pytest_ofrak inspect",
+            ]
+            + [
+                line
+                for package_name in package_names
+                for line in (f"test_{package_name}:", f"\t\\$(MAKE) -C {package_name} test")
+            ]
+            + ["\\n"]
+        )
+        dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
     if config.entrypoint is not None:
         dockerfile_finish_parts.append('SHELL ["/bin/bash", "-c"]\n')
         dockerfile_finish_parts.append(f"ENTRYPOINT {config.entrypoint}")

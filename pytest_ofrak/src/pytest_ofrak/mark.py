@@ -1,5 +1,5 @@
 import asyncio
-from typing import Mapping, Sequence, Type, Tuple
+from typing import Mapping, Sequence, Type
 import sys
 import pytest
 
@@ -16,7 +16,7 @@ async def _check_deps_installed(
 def _handle_skipif_missing_deps(
     deps_installed_data: Mapping[ComponentExternalTool, bool],
     components: Sequence[Type[AbstractComponent]],
-) -> Tuple[bool, str]:
+) -> "pytest.MarkDecorator":
     """
     :param deps_installed_data: a precomputed mapping of all tools to their installed status
     :params components: the components a test case uses
