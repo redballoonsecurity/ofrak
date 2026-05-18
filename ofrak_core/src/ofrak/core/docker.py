@@ -153,7 +153,7 @@ class DockerImageUnpacker(Unpacker[None]):
 
         opaque_dirs: List[str] = []
         for entry in stdout.decode().splitlines():
-            entry = entry.strip("/")
+            entry = os.path.normpath(entry.strip("/"))
             basename = os.path.basename(entry)
             if basename == _OPAQUE_WHITEOUT:
                 parent = os.path.dirname(entry)
