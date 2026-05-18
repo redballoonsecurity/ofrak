@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
+- Add DockerImage components (identifier and unpacker) ([#715](https://github.com/redballoonsecurity/ofrak/pull/715))
 - Add `FlashGeometryHeuristicAnalyzer` that infers `FlashAttributes` (page/OOB geometry) for raw NAND dumps tagged as `FlashResource`, using YAFFS2, Linux MTD large-page OOB, small-page OOB density, and exact Hamming ECC verification as signals ([#737](https://github.com/redballoonsecurity/ofrak/pull/737))
 - Add `FlashFieldType.SPARE` and `FlashSpareAreaResource` so `FlashOobResourceUnpacker` can preserve OOB bytes without ECC/Checksum computation, and extend `FlashLogicalDataResourcePacker` to consume the sibling `FlashSpareAreaResource` so the original OOB layout is reconstructed verbatim during repacking ([#738](https://github.com/redballoonsecurity/ofrak/pull/738))
 - Add cramfs unpacker and packer, using `fsck.cramfs` and `mkfs.cramfs` from `util-linux` 2.38.1 ([#719](https://github.com/redballoonsecurity/ofrak/pull/719))
