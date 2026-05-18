@@ -106,6 +106,10 @@ class DockerImageUnpacker(Unpacker[None]):
                 with open(manifest_path) as f:
                     manifest = json.load(f)
 
+                if len(manifest) > 1:
+                    LOGGER.warning(
+                        f"Tar ball contains more than one image, will only extract the first one."
+                    )
                 layers = manifest[0]["Layers"]
 
                 with tempfile.TemporaryDirectory() as merged_dir:
