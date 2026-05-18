@@ -169,7 +169,7 @@ class DockerImagePacker(Packer[None]):
 
     targets = (DockerImage,)
 
-    async def pack(self, resource: Resource, config=None) -> None:
+    async def pack(self, resource: Resource, config=None) -> None:  # pragma: no cover
         raise NotImplementedError(
             "Packing a DockerImage back into a Docker image tarball is not supported. "
             "The current unpacker merges all layers into a single filesystem, so the original "

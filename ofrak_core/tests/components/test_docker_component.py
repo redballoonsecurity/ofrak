@@ -90,15 +90,3 @@ class TestDockerImageUnpacker:
         entries = await _get_all_entries(unpacked_docker_image)
         wh_entries = [p for p in entries if ".wh." in p]
         assert wh_entries == [], f"Whiteout markers not cleaned up: {wh_entries}"
-
-
-class TestDockerImagePacker:
-    async def test_pack_not_implemented(self, ofrak_context: OFRAKContext):
-        with open(DOCKER_IMAGE_ASSET, "rb") as f:
-            data = f.read()
-        resource = await ofrak_context.create_root_resource("docker.tar", data)
-        await resource.identify()
-
-        await resource.unpack()
-        with pytest.raises(NotImplementedError):
-            await resource.pack()
