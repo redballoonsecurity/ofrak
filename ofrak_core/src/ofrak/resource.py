@@ -1710,7 +1710,7 @@ async def _default_summarize_resource(resource: Resource) -> str:
             else:
                 data_string = f"data_hex={data.hex()}"
         else:
-            sha256 = hashlib.sha256()
+            sha256 = hashlib.sha256(usedforsecurity=False)
             sha256.update(data)
             data_string = f"data_hash={sha256.hexdigest()[:8]}"
         data_info = (

@@ -221,7 +221,7 @@ def test_example_9(tmp_path):
         data = f.read()
         expected_string = b"INSERT ME!"
         assert expected_string in data, f"{str(file)} doesn't contain the {expected_string} string"
-        md5sum = md5(data).hexdigest()
+        md5sum = md5(data, usedforsecurity=False).hexdigest()
         expected_md5 = "6277eb7c64b12f247913eb4e875f5758"
         assert (
             md5sum == expected_md5

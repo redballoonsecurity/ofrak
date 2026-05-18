@@ -69,7 +69,7 @@ DEFAULT_TEST_ATTR = FlashAttributes(
         last_data_delimiter=b"$",
         tail_delimiter=b"!",
     ),
-    checksum_func=(lambda x: md5(x).digest()),
+    checksum_func=(lambda x: md5(x, usedforsecurity=False).digest()),
 )
 
 FLASH_TEST_CASES = [
@@ -120,7 +120,7 @@ FLASH_TEST_CASES = [
             ecc_attributes=FlashEccAttributes(
                 ecc_class=ReedSolomon(nsym=32, fcr=1),
             ),
-            checksum_func=(lambda x: md5(x).digest()),
+            checksum_func=(lambda x: md5(x, usedforsecurity=False).digest()),
         ),
     ),
     (
@@ -156,7 +156,7 @@ FLASH_TEST_CASES = [
                 data_delimiter=b"*",
                 last_data_delimiter=b"$",
             ),
-            checksum_func=(lambda x: md5(x).digest()),
+            checksum_func=(lambda x: md5(x, usedforsecurity=False).digest()),
         ),
     ),
 ]

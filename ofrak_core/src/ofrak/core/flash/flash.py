@@ -476,7 +476,9 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
                     only_ecc.append(cur_block_ecc)
                     # Add hash of everything up to the ECC to our dict for faster packing
-                    block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
+                    block_data_hash = md5(
+                        block_data[: block_ecc_range.start], usedforsecurity=False
+                    ).digest()
                     DATA_HASHES[block_data_hash] = cur_block_ecc
 
                 if field.field_type == FlashFieldType.DATA:
@@ -760,7 +762,7 @@ def _build_block(
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     if attributes is None:
         raise UnpackerError("Cannot pack without providing FlashAttributes")
-    data_hash = md5(block_data).digest()
+    data_hash = md5(block_data, usedforsecurity=False).digest()
     ecc_attr = attributes.ecc_attributes
     if ecc_attr is not None and ecc_attr.ecc_class is None:
         raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
