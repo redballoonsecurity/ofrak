@@ -79,3 +79,32 @@ async def test_binwalk_component(ofrak_context, test_case):
     if test_case.number_of_results is not None:
         assert len(binwalk_offsets) == test_case.number_of_results
     assert test_case.subset_of_results.items() <= binwalk_offsets.items()
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(f"/proc/{os.getpid()}/fd"),
+    reason="Requires /proc/<pid>/fd (Linux only)",
+)
+@pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
+async def test_binwalk_does_not_leak_fds(ofrak_context):
+    """
+    Regression test for the ProcessPoolExecutor FD leak in BinwalkAnalyzer.
+    """
+    fd_dir = f"/proc/{os.getpid()}/fd"
+    asset_path = os.path.join(BINWALK_ASSETS_PATH, "dirtraversal.tar")
+
+    root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+    before = len(os.listdir(fd_dir))
+    await root_resource.analyze(BinwalkAttributes)
+
+    iterations = 5
+    for _ in range(iterations):
+        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        await root_resource.analyze(BinwalkAttributes)
+    after = len(os.listdir(fd_dir))
+
+    delta = after - before
+    assert delta < 10, (
+        f"BinwalkAnalyzer leaked {delta} FDs across {iterations} iterations "
+        f"({before} -> {after})."
+    )

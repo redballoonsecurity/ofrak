@@ -67,17 +67,18 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         resource_service: ResourceServiceInterface,
     ):
         super().__init__(resource_factory, data_service, resource_service)
-        self.pool = ProcessPoolExecutor()
 
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
+        pool = ProcessPoolExecutor()
         async with resource.temp_to_disk() as temp_path:
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
             offsets = await asyncio.get_running_loop().run_in_executor(
-                self.pool, _run_binwalk_on_file, temp_path
+                pool, _run_binwalk_on_file, temp_path
             )
+        pool.shutdown(wait=True, cancel_futures=True)
         return BinwalkAttributes(offsets)
 
 
