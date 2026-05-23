@@ -37,11 +37,14 @@
   import ContentView from "./views/ContentView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
+  import { get } from "svelte/store";
+  import { tick } from "svelte";
   import {
     selected,
     selectedResource,
     settings,
     dataLength,
+    resourceNodeDataMap,
   } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
@@ -55,6 +58,23 @@
     rootResourceLoadPromise = new Promise((resolve) => {}),
     resources = {};
   let currentResource, rootResource, modifierView, bottomLeftPane;
+  let prevSelectedForAutoIdentify = undefined;
+
+  // Keeps expand/collapse state
+  // reloads children so the tree matches post-identify models.
+  function refreshResourceTreeChildren(resourceId, resource) {
+    resourceNodeDataMap.update((map) => {
+      const nodeState = map[resourceId] ?? {};
+      return {
+        ...map,
+        [resourceId]: {
+          ...nodeState,
+          collapsed: !!nodeState.collapsed,
+          childrenPromise: resource.get_children(),
+        },
+      };
+    });
+  }
 
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
@@ -87,6 +107,35 @@
     if ($selected !== window.location.hash.slice(1)) {
       window.history.pushState(null, "", `#${$selected}`);
     }
+  }
+
+  // Run identify on the selected resource if it is not
+  // already identified.
+  $: if (
+    showRootResource &&
+    $selected !== undefined &&
+    resources[$selected] !== undefined
+  ) {
+    const id = $selected;
+    const res = resources[id];
+    if (id !== prevSelectedForAutoIdentify) {
+      prevSelectedForAutoIdentify = id;
+      (async () => {
+        await res.identify();
+        if (get(selected) !== id) {
+          return;
+        }
+        refreshResourceTreeChildren(id, res);
+        document.title = "OFRAK App – " + res.get_caption();
+        // refresh the selected resource
+        const cur = get(selected);
+        selected.set(undefined);
+        await tick();
+        selected.set(cur);
+      })();
+    }
+  } else if (!showRootResource) {
+    prevSelectedForAutoIdentify = undefined;
   }
 
   function backButton() {
