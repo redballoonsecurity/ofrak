@@ -1,12 +1,14 @@
 """
 Test the decompilation functionality of OFRAK with Ghidra.
 """
-from typing import List
 import os
+from typing import List
+
+from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 from ofrak.ofrak_context import OFRAKContext
-from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
+from pytest_ofrak import ASSETS_DIR
 
 
 async def test_ghidra_decompilation(ofrak_context: OFRAKContext):
@@ -19,7 +21,7 @@ async def test_ghidra_decompilation(ofrak_context: OFRAKContext):
     - The decompilation results contain expected keywords like 'main' and 'print'
     """
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+        os.path.join(ASSETS_DIR, "hello.x64.elf")
     )
     await root_resource.unpack_recursively(
         do_not_unpack=[
