@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="pytest-ofrak",
-    version="0.1.0rc0",
+    version="0.1.0rc1",
     description="Pytest fixtures and tests for OFRAK",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
