@@ -35,6 +35,8 @@ class _BinwalkExternalTool(ComponentExternalTool):
 
 BINWALK_TOOL = _BinwalkExternalTool()
 
+pool = ProcessPoolExecutor(max_workers=1)
+
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class BinwalkAttributes(ResourceAttributes):
@@ -61,13 +63,12 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
-        with ProcessPoolExecutor(max_workers=1) as pool:
-            async with resource.temp_to_disk() as temp_path:
-                # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
-                # overkill here.
-                offsets = await asyncio.get_running_loop().run_in_executor(
-                    pool, _run_binwalk_on_file, temp_path
-                )
+        async with resource.temp_to_disk() as temp_path:
+            # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
+            # overkill here.
+            offsets = await asyncio.get_running_loop().run_in_executor(
+                pool, _run_binwalk_on_file, temp_path
+            )
         return BinwalkAttributes(offsets)
 
 
