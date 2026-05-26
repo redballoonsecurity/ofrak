@@ -92,10 +92,7 @@ async def test_binwalk_does_not_leak_fds(ofrak_context):
     """
     fd_dir = f"/proc/{os.getpid()}/fd"
     asset_path = os.path.join(BINWALK_ASSETS_PATH, "dirtraversal.tar")
-
-    root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
     before = len(os.listdir(fd_dir))
-    await root_resource.analyze(BinwalkAttributes)
 
     iterations = 5
     for _ in range(iterations):
