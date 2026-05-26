@@ -23,6 +23,9 @@ except:
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
 
+pool = ProcessPoolExecutor(max_workers=1)
+
+
 @dataclass
 class DataSummary:
     """
@@ -62,7 +65,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
         resource_service: ResourceServiceInterface,
     ):
         super().__init__(resource_factory, data_service, resource_service)
-        self.pool = ProcessPoolExecutor()
         self.max_analysis_retries = 10
         self._cache: Dict[str, DataSummary] = {}
 
@@ -78,6 +80,7 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
         return self._cache[cache_info.cache_key]
 
     async def _compute_data_summary(self, resource: Resource, depth=0) -> DataSummary:
+        global pool
         if depth > self.max_analysis_retries:
             raise RuntimeError(
                 f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
@@ -85,16 +88,16 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
         try:
             data = await resource.get_data()
             entropy = await asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_entropy, data, resource.get_id()
+                pool, sample_entropy, data, resource.get_id()
             )
             magnitude = await asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_magnitude, data
+                pool, sample_magnitude, data
             )
             data_summary = DataSummary(entropy, magnitude)
             return data_summary
         except BrokenProcessPool:
             # If the previous one was aborted, try again with a new pool
-            self.pool = ProcessPoolExecutor()
+            pool = ProcessPoolExecutor()
             return await self._compute_data_summary(resource, depth=depth + 1)
 
 

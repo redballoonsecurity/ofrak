@@ -82,3 +82,28 @@ def _almost_equal(bytes1: bytes, bytes2: bytes) -> bool:
             print(f"Inputs differ at byte {i} ({bytes1[i]} != {bytes2[i]})")
             return False
     return True
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(f"/proc/{os.getpid()}/fd"),
+    reason="Requires /proc/<pid>/fd (Linux only)",
+)
+async def test_entropy_does_not_leak_fds(ofrak_context: OFRAKContext):
+    """
+    Regression test for the ProcessPoolExecutor FD leak in DataSummaryAnalyzer.
+    """
+    fd_dir = f"/proc/{os.getpid()}/fd"
+    asset_path = os.path.join(components.ASSETS_DIR, "hello.out")
+    before = len(os.listdir(fd_dir))
+
+    iterations = 5
+    for _ in range(iterations):
+        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        await root_resource.run(DataSummaryAnalyzer)
+    after = len(os.listdir(fd_dir))
+
+    delta = after - before
+    assert delta < 10, (
+        f"DataSummaryAnalyzer leaked {delta} FDs across {iterations} iterations "
+        f"({before} -> {after})."
+    )
