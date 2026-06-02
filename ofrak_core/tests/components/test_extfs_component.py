@@ -241,6 +241,18 @@ class ExtFilesystemPackUnpackVerifyPattern(FilesystemPackUnpackVerifyPattern):
             ]
             subprocess.run(command, check=True, capture_output=True)
 
+    def _validate_folder_equality(self, old_path: str, new_path: str):
+        old_files = os.listdir(old_path)
+        new_files = list(f for f in os.listdir(new_path) if f != "lost+found")
+        assert len(old_files) == len(new_files) and set(old_files) == set(
+            new_files
+        ), f"{old_path} and {new_path} contain different files\nold: {old_files}\nnew: {new_files}"
+
+        for old_f, new_f in zip(old_files, new_files):
+            old_f = os.path.join(old_path, old_f)
+            new_f = os.path.join(new_path, new_f)
+            self.verify_filesystem_equality(old_f, new_f)
+
 
 class _TestExtPackUnpack(ExtFilesystemPackUnpackVerifyPattern):
     EXT_TYPE: str
