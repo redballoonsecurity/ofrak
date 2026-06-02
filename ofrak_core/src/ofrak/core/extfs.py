@@ -79,12 +79,14 @@ class ExtAnalyzer(Analyzer[None, ExtFilesystem]):
                 "-h",
                 temp_path,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE,
             )
-            stdout, _ = await proc.communicate()
+            stdout, stderr = await proc.communicate()
             if proc.returncode:
                 raise CalledProcessError(
-                    returncode=proc.returncode, cmd=["dumpe2fs", "-h", temp_path]
+                    returncode=proc.returncode,
+                    cmd=["dumpe2fs", "-h", temp_path],
+                    stderr=stderr,
                 )
 
             params = {}
@@ -202,27 +204,27 @@ class ExtPacker(Packer[None]):
                 flush_dir,
             ]
 
-            if ext_view.blocks_per_group:
+            if ext_view.blocks_per_group is not None:
                 cmd.extend(["-g", str(ext_view.blocks_per_group)])
-            if ext_view.inode_size:
+            if ext_view.inode_size is not None:
                 cmd.extend(["-I", str(ext_view.inode_size)])
-            if ext_view.number_of_inodes:
+            if ext_view.number_of_inodes is not None:
                 cmd.extend(["-N", str(ext_view.number_of_inodes)])
-            if ext_view.reserved_block_count and ext_view.block_count > 0:
+            if ext_view.reserved_block_count is not None and ext_view.block_count > 0:
                 percentage = round(ext_view.reserved_block_count / ext_view.block_count * 100)
                 cmd.extend(["-m", str(percentage)])
-            if ext_view.creator_os:
+            if ext_view.creator_os is not None:
                 cmd.extend(["-o", ext_view.creator_os])
-            if ext_view.filesystem_features:
+            if ext_view.filesystem_features is not None:
                 features = "none," + ext_view.filesystem_features.replace(" ", ",")
                 cmd.extend(["-O", features])
-            if ext_view.filesystem_revision:
+            if ext_view.filesystem_revision is not None:
                 cmd.extend(["-r", str(ext_view.filesystem_revision)])
-            if ext_view.volume_label:
+            if ext_view.volume_label is not None:
                 cmd.extend(["-L", ext_view.volume_label])
-            if ext_view.last_mounted_directory:
+            if ext_view.last_mounted_directory is not None:
                 cmd.extend(["-M", ext_view.last_mounted_directory])
-            if ext_view.uuid:
+            if ext_view.uuid is not None:
                 cmd.extend(["-U", ext_view.uuid])
 
             cmd.extend([temp.name, str(ext_view.block_count)])

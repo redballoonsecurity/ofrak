@@ -7,7 +7,6 @@ Requirements Mapping:
 """
 import os
 import os.path
-import shutil
 import subprocess
 import tempfile312 as tempfile
 from dataclasses import dataclass
@@ -234,21 +233,13 @@ class ExtFilesystemPackUnpackVerifyPattern(FilesystemPackUnpackVerifyPattern):
 
     async def extract(self, root_resource: Resource, extract_dir: str) -> None:
         async with root_resource.temp_to_disk() as ext_blob_path:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                command = [
-                    "debugfs",
-                    "-R",
-                    f"rdump / {temp_dir}",
-                    ext_blob_path,
-                ]
-                subprocess.run(command, check=True, capture_output=True)
-                for item in os.listdir(temp_dir):
-                    src = os.path.join(temp_dir, item)
-                    dst = os.path.join(str(extract_dir), item)
-                    if os.path.isdir(src):
-                        shutil.copytree(src, dst, symlinks=True)
-                    else:
-                        shutil.copy2(src, dst)
+            command = [
+                "debugfs",
+                "-R",
+                f"rdump / {extract_dir}",
+                ext_blob_path,
+            ]
+            subprocess.run(command, check=True, capture_output=True)
 
 
 class _TestExtPackUnpack(ExtFilesystemPackUnpackVerifyPattern):
