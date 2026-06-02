@@ -78,6 +78,6 @@ class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
             ubi_vol_data = await ubi_vol.get_data()
             ubi_vol_id = ubi_vol_view.UbiVolumeId
 
-            ubi_vol_hash = hashlib.sha256()
+            ubi_vol_hash = hashlib.sha256(usedforsecurity=False)
             ubi_vol_hash.update(ubi_vol_data)
             assert ubi_vol_hash.hexdigest() == EXPECTED_HASHES[ubi_vol_id]

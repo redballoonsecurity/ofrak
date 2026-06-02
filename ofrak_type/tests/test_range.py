@@ -210,6 +210,16 @@ REMOVE_SUBRANGES_TEST_CASES = [
         [Range(0x20, 0x40), Range(0x60, 0x80)],
         [],
     ),  # remove everything, exact match
+    (
+        [Range(0, 10), Range(20, 30), Range(40, 50)],
+        [Range(0, 5)],
+        [Range(5, 10), Range(20, 30), Range(40, 50)],
+    ),  # to_remove exhausted with multiple ranges remaining
+    (
+        [Range(5, 5)],
+        [Range(5, 10)],
+        [Range(5, 5)],
+    ),  # empty range at the lower boundary of to_remove is preserved
 ]
 
 
@@ -448,17 +458,17 @@ def test_very_large_ranges():
     assert Range.MAX not in r
 
 
-def test_chunk_ranges_invalid_chunk_size():
-    """
-    Test chunk_ranges with invalid chunk sizes.
-    """
-    ranges = [Range(0, 10)]
-
+@pytest.mark.parametrize(
+    "ranges, chunk_size",
+    [
+        ([Range(0, 10)], 0),
+        ([Range(0, 10)], -1),
+        ([], 0),
+    ],
+)
+def test_chunk_ranges_invalid_chunk_size(ranges: List[Range], chunk_size: int):
     with pytest.raises(ValueError):
-        chunk_ranges(ranges, 0)
-
-    with pytest.raises(ValueError):
-        chunk_ranges(ranges, -1)
+        chunk_ranges(ranges, chunk_size)
 
 
 def test_contains_constant_time():

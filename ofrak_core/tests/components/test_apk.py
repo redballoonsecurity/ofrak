@@ -1,16 +1,17 @@
 """
-Test APK unpacking and packing functionality.
+Test APK unpacking, packing, and analysis functionality.
 
 Requirements Mapping:
 - REQ1.3
 - REQ4.4
 """
+import os
 import pytest
-import requests
 
+from . import ASSETS_DIR
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.apk import Apk, ApkPacker, ApkPackerConfig, ApkUnpacker
+from ofrak.core.apk import Apk, ApkAnalyzer, ApkAttributes, ApkPacker, ApkPackerConfig, ApkUnpacker
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 
@@ -30,13 +31,11 @@ class TestApkUnpackPack(UnpackPackPattern):
 
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
-        Get a small APK from the internet for testing.
+        Get a small APK for testing.
         """
-        url = "https://github.com/appium/sample-apps/raw/0e92532585431d3b362c1ff12c65b54936fbe26f/pre-built/ContactManager.apk"
-        r = requests.get(url)
-        data = r.content
-        resource = await ofrak_context.create_root_resource("ContactManager.apk", data)
-        return resource
+        return await ofrak_context.create_root_resource_from_file(
+            os.path.join(ASSETS_DIR, "ContactManager.apk")
+        )
 
     async def unpack(self, root_resource: Resource) -> None:
         """
@@ -52,3 +51,35 @@ class TestApkUnpackPack(UnpackPackPattern):
 
     async def verify(self, repacked_root_resource: Resource) -> None:
         await self.unpack(repacked_root_resource)
+
+
+@pytest.mark.skipif_missing_deps([ApkAnalyzer])
+class TestApkAnalyzer:
+    """
+    Test APK analyzer extracts correct metadata from APK files.
+    """
+
+    async def test_analyzer_extracts_all_attributes(self, ofrak_context: OFRAKContext):
+        """
+        Test that the analyzer extracts all APK attributes correctly from a real APK.
+        """
+        resource = await ofrak_context.create_root_resource_from_file(
+            os.path.join(ASSETS_DIR, "ContactManager.apk")
+        )
+
+        # Run the analyzer
+        await resource.run(ApkAnalyzer)
+        attributes = resource.get_attributes(ApkAttributes)
+
+        assert attributes.package_name == "com.example.android.contactmanager"
+        assert attributes.application_name == "Contact Manager"
+        assert attributes.version_code == 1
+        assert attributes.sdk_version == 5
+        assert attributes.target_sdk_version == 5
+        assert len(attributes.permissions) == 5
+        assert "android.permission.GET_ACCOUNTS" in attributes.permissions
+        assert "android.permission.READ_CONTACTS" in attributes.permissions
+        assert "android.permission.WRITE_CONTACTS" in attributes.permissions
+        assert "android.permission.READ_CALL_LOG" in attributes.permissions
+        assert "android.permission.WRITE_CALL_LOG" in attributes.permissions
+        assert attributes.launchable_activity == "com.example.android.contactmanager.ContactManager"

@@ -256,7 +256,7 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
             if child.get_data_id() is not None:
                 data = await child.get_data()
                 if len(data) > 0:
-                    expected_hashes.add(hashlib.sha256(data).hexdigest())
+                    expected_hashes.add(hashlib.sha256(data, usedforsecurity=False).hexdigest())
         all_expected_hashes[filename] = expected_hashes
     await ofrak_context.shutdown_context()
     return all_expected_hashes
@@ -283,7 +283,7 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
         for unpacked_file in filenames:
             path = os.path.join(dirpath, unpacked_file)
             with open(path, "rb") as file:
-                unpacked_hashes.add(hashlib.sha256(file.read()).hexdigest())
+                unpacked_hashes.add(hashlib.sha256(file.read(), usedforsecurity=False).hexdigest())
     expected_hashes = all_expected_hashes[filename]
 
     assert unpacked_hashes == expected_hashes

@@ -7,3 +7,4 @@ mkdocs_gen_files==0.3.3
 jinja2==3.0.0
 pytkdocs>=0.12.0
 PyYAML>=5.4
+Pygments==2.19.2
