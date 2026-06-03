@@ -13,6 +13,7 @@ from typing import Optional
 import pytest
 from pycdlib import PyCdlib
 
+from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.iso9660 import (
     ISO9660Entry,
@@ -167,3 +168,41 @@ class TestJolietUnpackModifyPack(Iso9660UnpackModifyPackPattern):
         )
         iso.write(os.path.join(tmpdir, self.TEST_ISO_NAME))
         self._test_file = os.path.join(tmpdir, self.TEST_ISO_NAME)
+
+
+@pytest.mark.skipif_missing_deps([ISO9660Unpacker])
+class TestIso9660RootLevelFileUnpack:
+    """
+    Test for an ISO that contains a file directly at the root (no enclosing directory).
+    """
+
+    TEST_ISO_NAME = "root_file.iso"
+    ROOT_FILE_NAME = "ROOTFILE.TXT"
+    ROOT_FILE_DATA = b"hello at the root\n"
+
+    @pytest.fixture
+    def iso_with_root_level_file(self, tmpdir):
+        iso = PyCdlib()
+        iso.new(interchange_level=3)
+        iso.add_fp(
+            BytesIO(self.ROOT_FILE_DATA),
+            len(self.ROOT_FILE_DATA),
+            "/" + self.ROOT_FILE_NAME + ";1",
+        )
+        path = os.path.join(tmpdir, self.TEST_ISO_NAME)
+        iso.write(path)
+        iso.close()
+        return path
+
+    async def test_unpack_iso_with_root_level_file(
+        self, ofrak_context: OFRAKContext, iso_with_root_level_file
+    ):
+        root_resource = await ofrak_context.create_root_resource_from_file(iso_with_root_level_file)
+        await root_resource.unpack()
+
+        iso_resource = await root_resource.view_as(ISO9660Image)
+        for descendant in await iso_resource.resource.get_descendants():
+            assert ISO9660Entry in descendant.get_tags(), (
+                f"Descendant {descendant.get_id().hex()} with tags {tags} is missing "
+                f"ISO9660Entry"
+            )

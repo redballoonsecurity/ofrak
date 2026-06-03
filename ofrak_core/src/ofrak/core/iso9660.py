@@ -257,7 +257,7 @@ class ISO9660Unpacker(Unpacker[None]):
                     iso_version=iso_version,
                 )
                 await iso_resource.add_file(
-                    path,
+                    path.lstrip("/"),
                     file_data,
                     None,
                     None,
