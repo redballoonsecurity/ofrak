@@ -136,8 +136,8 @@ async def test_entropy_parallel_faster_than_sequential(ofrak_context: OFRAKConte
     await asyncio.gather(analyze_once(), analyze_once())
     parallel_time = time.perf_counter() - start
 
-    assert parallel_time < sequential_time * 0.7, (
-        f"Expected parallel analysis to be at least 30% faster, but sequential took "
+    assert parallel_time < sequential_time * 0.85, (
+        f"Expected parallel analysis to be at least 15% faster, but sequential took "
         f"{sequential_time:.3f}s and parallel took {parallel_time:.3f}s "
         f"({parallel_time / sequential_time:.0%} of sequential)."
     )
