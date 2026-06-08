@@ -4,7 +4,9 @@ Test entropy analysis component functionality.
 Requirements Mapping:
 - REQ2.2
 """
+import asyncio
 import os.path
+import time
 
 import pytest
 from ofrak.core.entropy import DataSummaryAnalyzer
@@ -106,4 +108,36 @@ async def test_entropy_does_not_leak_fds(ofrak_context: OFRAKContext):
     assert delta < 10, (
         f"DataSummaryAnalyzer leaked {delta} FDs across {iterations} iterations "
         f"({before} -> {after})."
+    )
+
+
+async def test_entropy_parallel_faster_than_sequential(ofrak_context: OFRAKContext):
+    """
+    Time two entropy analyses run sequentially vs. run concurrently with
+    ``asyncio.gather``, and assert that the concurrent version is faster.
+    """
+    asset_path = os.path.join(components.ASSETS_DIR, "uimage_multi")
+
+    async def analyze_once():
+        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        analyzer: DataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+            DataSummaryAnalyzer.get_id()
+        )
+        return await analyzer.get_data_summary(root_resource)
+
+    # Sequential:
+    start = time.perf_counter()
+    await analyze_once()
+    await analyze_once()
+    sequential_time = time.perf_counter() - start
+
+    # Parallel:
+    start = time.perf_counter()
+    await asyncio.gather(analyze_once(), analyze_once())
+    parallel_time = time.perf_counter() - start
+
+    assert parallel_time < sequential_time * 0.7, (
+        f"Expected parallel analysis to be at least 30% faster, but sequential took "
+        f"{sequential_time:.3f}s and parallel took {parallel_time:.3f}s "
+        f"({parallel_time / sequential_time:.0%} of sequential)."
     )
