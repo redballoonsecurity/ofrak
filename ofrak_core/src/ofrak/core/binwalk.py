@@ -1,5 +1,5 @@
 import asyncio
-from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
 
@@ -35,8 +35,6 @@ class _BinwalkExternalTool(ComponentExternalTool):
 
 BINWALK_TOOL = _BinwalkExternalTool()
 
-pool = ProcessPoolExecutor(max_workers=1)
-
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class BinwalkAttributes(ResourceAttributes):
@@ -66,9 +64,12 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         async with resource.temp_to_disk() as temp_path:
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
-            offsets = await asyncio.get_running_loop().run_in_executor(
-                pool, _run_binwalk_on_file, temp_path
-            )
+            # Spin up a dedicated process pool for this analysis and shut it down afterwards so its
+            # worker process and the FDs it opens are released.
+            with ProcessPoolExecutor(max_workers=1) as pool:
+                offsets = await asyncio.get_running_loop().run_in_executor(
+                    pool, _run_binwalk_on_file, temp_path
+                )
         return BinwalkAttributes(offsets)
 
 

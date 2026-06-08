@@ -7,7 +7,10 @@ Requirements Mapping:
 from dataclasses import dataclass
 from typing import Dict, Optional
 
+import asyncio
 import os
+import time
+
 import pytest
 
 from ofrak.core.binwalk import BinwalkAnalyzer, BinwalkAttributes
@@ -104,4 +107,35 @@ async def test_binwalk_does_not_leak_fds(ofrak_context):
     assert delta < 10, (
         f"BinwalkAnalyzer leaked {delta} FDs across {iterations} iterations "
         f"({before} -> {after})."
+    )
+
+
+@pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
+async def test_binwalk_parallel_faster_than_sequential(ofrak_context):
+    """
+    Time two binwalk analyses run sequentially vs. run concurrently with
+    ``asyncio.gather``, and assert that the concurrent version is faster.
+    """
+    asset_path = os.path.join(BINWALK_ASSETS_PATH, "firmware.zip")
+
+    async def analyze_once():
+        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        await root_resource.analyze(BinwalkAttributes)
+        return root_resource.get_attributes(BinwalkAttributes)
+
+    # Sequential:
+    start = time.perf_counter()
+    await analyze_once()
+    await analyze_once()
+    sequential_time = time.perf_counter() - start
+
+    # Parallel:
+    start = time.perf_counter()
+    await asyncio.gather(analyze_once(), analyze_once())
+    parallel_time = time.perf_counter() - start
+
+    assert parallel_time < sequential_time * 0.7, (
+        f"Expected parallel analysis to be at least 30% faster, but sequential took "
+        f"{sequential_time:.3f}s and parallel took {parallel_time:.3f}s "
+        f"({parallel_time / sequential_time:.0%} of sequential)."
     )
