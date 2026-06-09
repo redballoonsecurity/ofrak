@@ -113,7 +113,7 @@ async def test_entropy_does_not_leak_fds(ofrak_context: OFRAKContext):
 
 async def test_entropy_parallel_faster_than_sequential(ofrak_context: OFRAKContext):
     """
-    Time two entropy analyses run sequentially vs. run concurrently with
+    Time four entropy analyses run sequentially vs. run concurrently with
     `asyncio.gather`, and assert that the concurrent version is faster.
     """
     asset_path = os.path.join(components.ASSETS_DIR, "uimage_multi")
@@ -129,11 +129,13 @@ async def test_entropy_parallel_faster_than_sequential(ofrak_context: OFRAKConte
     start = time.perf_counter()
     await analyze_once()
     await analyze_once()
+    await analyze_once()
+    await analyze_once()
     sequential_time = time.perf_counter() - start
 
     # Parallel:
     start = time.perf_counter()
-    await asyncio.gather(analyze_once(), analyze_once())
+    await asyncio.gather(analyze_once(), analyze_once(), analyze_once(), analyze_once())
     parallel_time = time.perf_counter() - start
 
     assert parallel_time < sequential_time * 0.85, (
