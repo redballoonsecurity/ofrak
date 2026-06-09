@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Pass `usedforsecurity=False` to non-cryptographic `hashlib` calls to prevent failures when Python links against FIPS OpenSSL ([#744](https://github.com/redballoonsecurity/ofrak/pull/744))
 - Fix `chdir` in UEFI components causing failing tests. ([#747](https://github.com/redballoonsecurity/ofrak/pull/747))
 - Fix bug in `ISO9660Unpacker` for files in root directory. ([#750](https://github.com/redballoonsecurity/ofrak/pull/750))
+- Fix binwalk and entropy file descriptor leak. ([#749](https://github.com/redballoonsecurity/ofrak/pull/749))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 

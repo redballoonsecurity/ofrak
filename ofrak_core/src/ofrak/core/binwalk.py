@@ -1,9 +1,9 @@
 import asyncio
-from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
 
-from ofrak.resource import ResourceFactory, Resource
+from ofrak.resource import Resource
 
 from ofrak.model.resource_model import ResourceAttributes
 
@@ -19,8 +19,6 @@ except ImportError:
 
 from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentExternalTool
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
 
 
 class _BinwalkExternalTool(ComponentExternalTool):
@@ -60,24 +58,16 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     outputs = (BinwalkAttributes,)
     external_dependencies = (BINWALK_TOOL,)
 
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-    ):
-        super().__init__(resource_factory, data_service, resource_service)
-        self.pool = ProcessPoolExecutor()
-
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
         async with resource.temp_to_disk() as temp_path:
-            # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
-            # overkill here.
-            offsets = await asyncio.get_running_loop().run_in_executor(
-                self.pool, _run_binwalk_on_file, temp_path
-            )
+            # Spin up a dedicated process pool for this analysis and shut it down afterwards so its
+            # worker process and the FDs it opens are released.
+            with ProcessPoolExecutor(max_workers=1) as pool:
+                offsets = await asyncio.get_running_loop().run_in_executor(
+                    pool, _run_binwalk_on_file, temp_path
+                )
         return BinwalkAttributes(offsets)
 
 

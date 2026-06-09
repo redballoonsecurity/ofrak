@@ -3,8 +3,6 @@ import logging
 from typing import Dict
 
 import math
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 
 from ofrak.component.analyzer import Analyzer
@@ -62,8 +60,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
         resource_service: ResourceServiceInterface,
     ):
         super().__init__(resource_factory, data_service, resource_service)
-        self.pool = ProcessPoolExecutor()
-        self.max_analysis_retries = 10
         self._cache: Dict[str, DataSummary] = {}
 
     async def analyze(self, resource: Resource, config=None) -> DataSummaryCache:
@@ -77,30 +73,18 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
         cache_info = resource.get_attributes(DataSummaryCache)
         return self._cache[cache_info.cache_key]
 
-    async def _compute_data_summary(self, resource: Resource, depth=0) -> DataSummary:
-        if depth > self.max_analysis_retries:
-            raise RuntimeError(
-                f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
-            )
-        try:
-            data = await resource.get_data()
-            entropy = await asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_entropy, data, resource.get_id()
-            )
-            magnitude = await asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_magnitude, data
-            )
-            data_summary = DataSummary(entropy, magnitude)
-            return data_summary
-        except BrokenProcessPool:
-            # If the previous one was aborted, try again with a new pool
-            self.pool = ProcessPoolExecutor()
-            return await self._compute_data_summary(resource, depth=depth + 1)
+    async def _compute_data_summary(self, resource: Resource) -> DataSummary:
+        data = await resource.get_data()
+        # When using the C version, the GIL is released, improving parallel performance
+        # When using the python version, the GIL is held, so no improvements when running multiple analysis calls in parallel
+        entropy, magnitude = await asyncio.gather(
+            asyncio.to_thread(sample_entropy, data, resource.get_id()),
+            asyncio.to_thread(sample_magnitude, data),
+        )
+        return DataSummary(entropy, magnitude)
 
 
-def sample_entropy(
-    data: bytes, resource_id: bytes, window_size=256, max_samples=2**20
-) -> bytes:  # pragma: no cover
+def sample_entropy(data: bytes, resource_id: bytes, window_size=256, max_samples=2**20) -> bytes:
     """
     Return a list of entropy values where each value represents the Shannon entropy of the byte
     value distribution over a fixed-size, sliding window. If the entropy data is larger than a
@@ -128,7 +112,7 @@ def sample_entropy(
     return bytes(result[math.floor(i * skip)] for i in range(max_samples))
 
 
-def sample_magnitude(data: bytes, max_samples=2**20) -> bytes:  # pragma: no cover
+def sample_magnitude(data: bytes, max_samples=2**20) -> bytes:
     if len(data) < max_samples:
         # TODO: Should this be a shallow copy instead?
         return data
