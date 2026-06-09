@@ -114,7 +114,7 @@ async def test_binwalk_does_not_leak_fds(ofrak_context):
 async def test_binwalk_parallel_faster_than_sequential(ofrak_context):
     """
     Time two binwalk analyses run sequentially vs. run concurrently with
-    ``asyncio.gather``, and assert that the concurrent version is faster.
+    `asyncio.gather`, and assert that the concurrent version is faster.
     """
     asset_path = os.path.join(BINWALK_ASSETS_PATH, "firmware.zip")
 

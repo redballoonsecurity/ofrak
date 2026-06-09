@@ -76,7 +76,7 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
     async def _compute_data_summary(self, resource: Resource) -> DataSummary:
         data = await resource.get_data()
         # When using the C version, the GIL is released, improving parallel performance
-        # When using the python version, the GIL is hold, so no improvements when running multiple analysis in parallel
+        # When using the python version, the GIL is held, so no improvements when running multiple analysis calls in parallel
         entropy, magnitude = await asyncio.gather(
             asyncio.to_thread(sample_entropy, data, resource.get_id()),
             asyncio.to_thread(sample_magnitude, data),

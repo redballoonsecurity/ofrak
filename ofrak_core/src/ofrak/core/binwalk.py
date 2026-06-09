@@ -62,8 +62,6 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
         async with resource.temp_to_disk() as temp_path:
-            # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
-            # overkill here.
             # Spin up a dedicated process pool for this analysis and shut it down afterwards so its
             # worker process and the FDs it opens are released.
             with ProcessPoolExecutor(max_workers=1) as pool:
