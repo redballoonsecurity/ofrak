@@ -304,7 +304,7 @@ export class RemoteResource extends Resource {
   }
 
   async data_summary() {
-    const data_summary_results = await fetch(`${this.uri}/data_summary`, {
+    const summaryData = await fetch(`${this.uri}/data_summary`, {
       method: "POST",
     }).then(async (r) => {
       if (!r.ok) {
@@ -312,7 +312,8 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    ingest_component_results(data_summary_results, this.resource_list);
+    // For now, just add these in here :)
+    this.attributes["ofrak.core.entropy.entropy.DataSummary"] = summaryData;
     this.update();
   }
 
@@ -727,6 +728,26 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
+  }
+
+  async add_program_attributes(program_attributes) {
+    await fetch(`${this.uri}/add_program_attributes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: program_attributes,
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      const updated_model = await r.json();
+      remote_model_to_resource(updated_model, this.resource_list);
+    });
+    this.flush_cache();
+    this.update();
+
+    await this.update_script();
   }
 }
 

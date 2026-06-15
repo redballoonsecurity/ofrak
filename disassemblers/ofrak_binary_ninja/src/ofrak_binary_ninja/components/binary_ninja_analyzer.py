@@ -1,0 +1,43 @@
+import logging
+from dataclasses import dataclass
+from typing import Optional
+
+from binaryninja import open_view, BinaryViewType
+
+from ofrak.component.analyzer import Analyzer
+from ofrak.model.component_model import ComponentConfig
+from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
+from ofrak_binary_ninja.model import BinaryNinjaAnalysis
+from ofrak.resource import Resource
+
+LOGGER = logging.getLogger(__file__)
+
+
+@dataclass
+class BinaryNinjaAnalyzerConfig(ComponentConfig):
+    bndb_file: str  # Path to BinaryNinja DB pre-analyzed file
+
+
+class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNinjaAnalysis]):
+    """
+    Opens and analyzes binaries with Binary Ninja, either from scratch or from a pre-analyzed BNDB file. Creates
+    BinaryNinjaAnalysis state containing the BinaryView for use by other Binary Ninja components. Use for initial
+    comprehensive analysis with Binary Ninja's powerful analysis engine.
+    """
+
+    id = b"BinaryNinjaAnalyzer"
+    targets = (BinaryNinjaAnalysisResource,)
+    outputs = (BinaryNinjaAnalysis,)
+
+    async def analyze(
+        self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
+    ) -> BinaryNinjaAnalysis:
+        if not config:
+            async with resource.temp_to_disk(delete=False) as temp_path:
+                bv = open_view(temp_path)
+
+            return BinaryNinjaAnalysis(bv)
+        else:
+            bv = BinaryViewType.get_view_of_file(config.bndb_file)
+            assert bv is not None
+            return BinaryNinjaAnalysis(bv)

@@ -1,0 +1,141 @@
+"""
+This module tests the Binwalk component functionality.
+
+Requirements Mapping:
+- REQ2.2:
+"""
+from dataclasses import dataclass
+from typing import Dict, Optional
+
+import asyncio
+import os
+import time
+
+import pytest
+
+from ofrak.core.binwalk import BinwalkAnalyzer, BinwalkAttributes
+from ..components import ASSETS_DIR
+
+BINWALK_ASSETS_PATH = os.path.join(ASSETS_DIR, "binwalk_assets")
+
+
+@dataclass
+class BinwalkTestCase:
+    filename: str
+    # The expected length of the BinwalkAttributes dictionary, or None if the length shouldn't be
+    # checked.
+    number_of_results: Optional[int]
+    # Subset of the expected BinwalkAttributes dictionary.
+    subset_of_results: Dict[int, str]
+
+
+BINWALK_TEST_CASES = [
+    BinwalkTestCase(
+        "dirtraversal.tar",
+        1,
+        {0: "POSIX tar archive (GNU)"},
+    ),
+    BinwalkTestCase(
+        "firmware.zip",
+        None,
+        {
+            0: "Zip archive data, at least v1.0 to extract, name: dir655_revB_FW_203NA/",
+            6410581: "End of Zip archive, footer length: 22",
+        },
+    ),
+    BinwalkTestCase(
+        "foobar.lzma",
+        1,
+        {
+            0: "LZMA compressed data, properties: 0x5D, dictionary size: 8388608 bytes, uncompressed size: -1 bytes",
+        },
+    ),
+    BinwalkTestCase(
+        "firmware.squashfs",
+        1,
+        {
+            0: (
+                "Squashfs filesystem, little endian, version 4.0, compression:lzma, size: "
+                "3647665 bytes, 1811 inodes, blocksize: 524288 bytes, created: 2013-09-17 06:43:22"
+            )
+        },
+    ),
+]
+
+
+@pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
+@pytest.mark.parametrize("test_case", BINWALK_TEST_CASES, ids=lambda tc: tc.filename)
+async def test_binwalk_component(ofrak_context, test_case):
+    """
+    Test the Binwalk component analysis functionality.
+
+    This test verifies that:
+    - The Binwalk analyzer correctly identifies file types in various binary files
+    - The analysis produces expected results for different file formats
+    - The extracted attributes match the expected offsets and descriptions
+    """
+    asset_path = os.path.join(BINWALK_ASSETS_PATH, test_case.filename)
+    root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+    await root_resource.analyze(BinwalkAttributes)
+    binwalk_attributes = root_resource.get_attributes(BinwalkAttributes)
+    binwalk_offsets = binwalk_attributes.offsets
+    if test_case.number_of_results is not None:
+        assert len(binwalk_offsets) == test_case.number_of_results
+    assert test_case.subset_of_results.items() <= binwalk_offsets.items()
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(f"/proc/{os.getpid()}/fd"),
+    reason="Requires /proc/<pid>/fd (Linux only)",
+)
+@pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
+async def test_binwalk_does_not_leak_fds(ofrak_context):
+    """
+    Regression test for the ProcessPoolExecutor FD leak in BinwalkAnalyzer.
+    """
+    fd_dir = f"/proc/{os.getpid()}/fd"
+    asset_path = os.path.join(BINWALK_ASSETS_PATH, "dirtraversal.tar")
+    before = len(os.listdir(fd_dir))
+
+    iterations = 5
+    for _ in range(iterations):
+        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        await root_resource.analyze(BinwalkAttributes)
+    after = len(os.listdir(fd_dir))
+
+    delta = after - before
+    assert delta < 10, (
+        f"BinwalkAnalyzer leaked {delta} FDs across {iterations} iterations "
+        f"({before} -> {after})."
+    )
+
+
+@pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
+async def test_binwalk_parallel_faster_than_sequential(ofrak_context):
+    """
+    Time two binwalk analyses run sequentially vs. run concurrently with
+    `asyncio.gather`, and assert that the concurrent version is faster.
+    """
+    asset_path = os.path.join(BINWALK_ASSETS_PATH, "firmware.zip")
+
+    async def analyze_once():
+        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        await root_resource.analyze(BinwalkAttributes)
+        return root_resource.get_attributes(BinwalkAttributes)
+
+    # Sequential:
+    start = time.perf_counter()
+    await analyze_once()
+    await analyze_once()
+    sequential_time = time.perf_counter() - start
+
+    # Parallel:
+    start = time.perf_counter()
+    await asyncio.gather(analyze_once(), analyze_once())
+    parallel_time = time.perf_counter() - start
+
+    assert parallel_time < sequential_time * 0.85, (
+        f"Expected parallel analysis to be at least 15% faster, but sequential took "
+        f"{sequential_time:.3f}s and parallel took {parallel_time:.3f}s "
+        f"({parallel_time / sequential_time:.0%} of sequential)."
+    )

@@ -1,0 +1,14 @@
+ghidra_install:
+  path: /opt/rbs/ghidra_11.3.2_PUBLIC
+  log_file: ~/.ghidra/.ghidra_11.3.2_PUBLIC/application.log
+  version: 11.3.2
+
+server:
+  user: root
+  pass: changeme
+  repository:
+    host: localhost
+    port: 13100
+  analysis:
+    host: localhost
+    port: 13300

@@ -95,3 +95,7 @@ Since compressed and encrypted data generally have high entropy, this minimap
 view makes it easy to find and navigate to such data.
 
 ![](assets/image25.png)
+
+<div align="right">
+<img src="../../assets/square_04.png" width="125" height="125">
+</div>

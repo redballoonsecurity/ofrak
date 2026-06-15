@@ -1,5 +1,5 @@
 # OFRAK
-OFRAK (Open Firmware Reverse Analysis Konsole) is a binary analysis and modification platform that combines the ability unpack, analyze, modify, and repack binaries.
+OFRAK (Open Firmware Reverse Analysis Konsole) is a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries.
 
 OFRAK combines the ability to:
 
@@ -41,40 +41,67 @@ OFRAK
 
 This is the package containing the core of the OFRAK framework. Install this first to get started with OFRAK!
 
-What is included:
+ ## What is included:
 
 - Definitions for core OFRAK data structures and services, such as `Resource`, `OFRAKContext`, and `DataService`.
 - Components to handle unpacking, modifying, and repacking common executable file formats:
   - ELF
   - PE Files
 - Definitions for common software and reverse engineering abstractions like `Instruction`, `File`, and `BasicBlock`
-- Unpackers & Packers for a number of file types, including:
-  - APK
-  - bzip2
-  - CPIO
-  - gip
-  - ISO 9660
-  - LZMA/XZ
-  - LZO
-  - 7z
-  - squashfs
-  - tar
-  - UImage
-  - zip
-  - zlib
-- Miscellaneous helpful components:
-  - `MagicAnalyzer` and two Identifier components which uses `python-libmagic` to automatically tag OFRAK `Resource`s
-  - Basic modifiers like `StringFindReplaceModifier` and `BinaryInjectorModifier`
-  - Basic useful analyzers like `Sha256Analyzer` and `MD5Analyzer` which calculate the respective checksums of OFRAK `Resource`s
-  - An unpacker for Linux device tree blobs (DTB)
-  - Analyzers wrapping `strings` and `binwalk`
-  - An analyzer to calculate Shannon entropy of binary data
 
-This is only a representative sampling of the features in the core OFRAK. Consult the code reference [docs](https://ofrak.com/docs) for a complete manifest.
+### Unpackers & Packers
 
-What is *not* included:
-- The OFRAK PatchMaker
-- Components which integrate the disassembler backends (Ghidra, BinaryNinja, Angr, Capstone)
+OFRAK core includes support for many file formats:
+
+**Compression/Archive Formats:**
+- 7z
+- bzip2
+- CPIO
+- gzip
+- LZMA/XZ
+- LZO
+- RAR
+- tar
+- zip
+- zlib
+- zstd (Zstandard)
+
+**Filesystem Formats:**
+- ext2/3/4 (Linux Extended Filesystem)
+- ISO 9660
+- JFFS2 (Journalling Flash File System v2)
+- squashfs
+- UBI (Unsorted Block Images)
+- UBIFS (Unsorted Block Image File System)
+
+**Firmware & Embedded Formats:**
+- DTB (Device Tree Blob)
+- Flash images (with OOB data support)
+- Intel HEX
+- OpenWrt TRX
+- UF2 (USB Flashing Format)
+- UEFI (Unified Extensible Firmware Interface)
+- UImage
+
+**Application Formats:**
+- APK (Android Package)
+- Java Archives (JAR)
+
+### Miscellaneous Components
+
+- `MagicAnalyzer` and Identifier components using `python-libmagic` to automatically tag OFRAK `Resource`s
+- Basic modifiers:
+  - `StringFindReplaceModifier` and `StringPatchingModifier` for string modifications
+  - `BinaryInjectorModifier` for binary patching
+- Analysis tools:
+  - `Sha256Analyzer` and `Md5Analyzer` for checksum calculation
+  - `StringsAnalyzer` wrapping the `strings` utility
+  - `BinwalkAnalyzer` wrapping `binwalk`
+  - Shannon entropy calculation for binary data
+- `RunScriptModifier` for running custom scripts on resources
+
+This is only a representative sampling of the features in the core OFRAK. Consult the code reference [docs](https://ofrak.com/docs) for a
+complete manifest.
 
 ## Testing
 This package maintains 100% test coverage of functions.

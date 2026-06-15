@@ -1,0 +1,26 @@
+# Note that this action does not include checkout b/c the workflows need to first checkout
+#  in order to access this action. Eventually we can publish this action and consolidate checkout
+#  into it.
+name: 'LFS Cache'
+description: 'Cache and fetch LFS objects for faster workflow execution'
+runs:
+  using: 'composite'
+  steps:
+    - name: List LFS files for cache key
+      shell: bash -euxo pipefail {0}
+      run: |
+        git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
+    
+    - name: Cache LFS files
+      uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        key: lfs-${{ hashFiles('.git/lfs-hashes.txt') }}
+        restore-keys: |
+          lfs-
+    
+    - name: Fetch LFS objects
+      shell: bash -euxo pipefail {0}
+      run: |
+        git lfs fetch --prune
+        git lfs checkout

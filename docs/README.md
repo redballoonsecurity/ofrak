@@ -2,11 +2,9 @@
 
 The latest build of the OFRAK docs can be found at [ofrak.com/docs](https://ofrak.com/docs).
 
-## Build the Docs Locally
-
 The source for OFRAK's documentation resides in this folder (`docs`), and is built using [MkDocs](https://www.mkdocs.org/). In the parent directory, [`mkdocs.yml`](../mkdocs.yml) contains the configuration for building the docs.
 
-Before building the docs, OFRAK and all of its dependencies must be installed and available on the Python path. 
+## Prepare environment for building the Docs inside the Docker container
 
 The documentation files (`docs/` and `mkdocs.yml`) likely need to be manually copied into the Docker container. If, for example, the container name is `rbs-ofrak-interactive`, the commands to copy in the necessary files would be:
 
@@ -19,6 +17,18 @@ docker cp examples/ rbs-ofrak-interactive:/
 # For Ghidra docs, copy them to the place MkDocs expects
 docker exec -it rbs-ofrak-interactive bash -c "mkdir -p /disassemblers; ln -s /ofrak_ghidra /disassemblers/ofrak_ghidra"
 ```
+
+## Prepare for building the Docs in a virtual environment
+
+Before building the docs, OFRAK, its dependencies, and the `ofrak-ghidra` package must be installed and available on the Python path, for example:
+
+```
+python3 -m venv venv
+source venv/bin/activate
+make develop
+```
+
+## Build the Docs
 
 To build the documentation locally, run one of the following commands from the root directory of the Docker (or from the root of the repo on macOS):
 
@@ -39,3 +49,42 @@ OFRAK documentation comes from two sources: manually-written markdown files in `
 For writing docstrings that will display well, see the [contributor guidelines](https://ofrak.com/docs/contributor-guide/getting-started.html#docstrings). The list of packages whose docstrings are extracted can be found [in the script that does the extraction](https://github.com/redballoonsecurity/ofrak/blob/master/docs/gen_ref_nav.py#L69-L74).
 
 To add a markdown file to the docs, first write the documentation as a markdown file in the `docs/` directory of the repo. Then, add it to the documentation nav bar by [editing the `nav` property of `mkdocs.yml`](https://github.com/redballoonsecurity/ofrak/blob/master/mkdocs.yml#L50).
+
+### Decorative Footer Images
+
+**Each documentation page must have a decorative footer image at the end:**
+
+```html
+<div align="right">
+<img src="[PATH]/assets/square_[01-05].png" width="125" height="125">
+</div>
+```
+
+**Path calculation:**
+- Count directory levels from the file to `docs/` root
+- Use `../` for each level (e.g., `./assets/`, `../assets/`, `../../assets/`)
+
+**Image selection:**
+- Choose any number from 01-05 for visual variety
+
+**Examples:**
+```html
+<!-- docs/index.md -->
+<div align="right">
+<img src="./assets/square_02.png" width="125" height="125">
+</div>
+
+<!-- docs/install/docker.md -->
+<div align="right">
+<img src="../assets/square_03.png" width="125" height="125">
+</div>
+
+<!-- docs/user-guide/gui/settings.md -->
+<div align="right">
+<img src="../../assets/square_01.png" width="125" height="125">
+</div>
+```
+
+<div align="right">
+<img src="./assets/square_01.png" width="125" height="125">
+</div>

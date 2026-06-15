@@ -30,9 +30,9 @@ The key pieces of information stored are:
 - The data that was accessed by that component (this implies that the created attributes depend on the data)
 - Attributes of this `Resource` or another `Resource` that were accessed by that component (this implies that the attributes depend on those other attributes)
 
-The second two are both encapsulated in `ResourceAttributeDependency`, containing a reference to the `Resource` and `ResourceAttributes` with a dependency. The method `AbstractComponent._create_dependencies` is mainly responsible for registering these dependencies when components are run.
+The second two are both encapsulated in `ResourceAttributeDependency`, containing a reference to the `Resource` and `ResourceAttributes` with a dependency. The methods `DependencyHandler.create_component_dependencies` and `DependencyHandler.create_resource_dependencies` are mainly responsible for registering these dependencies when components are run.
 
-Data and attribute dependencies are invalidated whenever an OFRAK patcher is called, specifically in the method `AbstractHLPatcherComponent._invalidate_dependencies`.
+Data and attribute dependencies are invalidated whenever an OFRAK patcher is called, specifically in the method `DependencyHandler.handle_post_patch_dependencies`.
 
 Dependency invalidation means that the `ResourceAttributeDependency.component_id` is removed from `ResourceModel.components_by_attributes` and `ResourceModel.component_versions`. This means that the next time `Resource.analyze_attributes` is called to get that `ResourceAttributes type, the component ID called to analyze those attributes will not be found, triggering a search for the analyzer to produce those attributes and running it. Note that the attributes are **not** actually removed from the resource, which means get_attributes will still return the existing value.
 

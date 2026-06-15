@@ -426,3 +426,7 @@ written and oral agreements and communications relating to the subject matter
 of this OFRAK Pro Agreement.  In the event of any conflict between this OFRAK
 Pro License Agreement and the OFRAK Community License Agreement, located at
 <https://ofrak.com/docs/license.html>, this OFRAK Pro Agreement shall control.
+
+<div align="right">
+<img src="./assets/square_03.png" width="125" height="125">
+</div>

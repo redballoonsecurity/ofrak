@@ -84,11 +84,14 @@
     ofrakTagsPromise = new Promise(() => {}),
     selectedTag;
 
-  function refreshResource() {
+  async function refreshResource() {
     // Force tree view children refresh
     $resourceNodeDataMap[$selected].collapsed = false;
     $resourceNodeDataMap[$selected].childrenPromise =
       $selectedResource.get_children();
+
+    // Force resource refresh by getting latest model from backend
+    await $selectedResource.get_latest_model();
 
     // Force hex view refresh with colors
     const originalSelected = $selected;
@@ -96,10 +99,11 @@
     $selected = originalSelected;
   }
 
-  function chooseTag() {
+  async function chooseTag() {
     if (selectedTag) {
       modifierView = undefined;
-      $selectedResource.add_tag(selectedTag);
+      await $selectedResource.add_tag(selectedTag);
+      await refreshResource();
     }
   }
 

@@ -6,7 +6,6 @@ We want to strip out the ECC then modify the data before repacking.
 import argparse
 import os
 
-import test_ofrak.components
 from ofrak import OFRAK, OFRAKContext, ResourceFilter
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
 from ofrak.core.flash import (
@@ -19,8 +18,8 @@ from ofrak.core.flash import (
 )
 from ofrak.core.ecc.reedsolomon import ReedSolomon
 
-TEST_FILE = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_plain.bin")
-
+ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
+TEST_FILE = os.path.join(ASSETS_DIR, "flash_test_plain.bin")
 FLASH_ATTRIBUTES = FlashAttributes(
     data_block_format=[
         FlashField(FlashFieldType.DATA, 223),

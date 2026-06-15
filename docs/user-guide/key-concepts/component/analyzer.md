@@ -26,7 +26,7 @@ class MagicAnalyzer(Analyzer[None, Magic]):
 
     async def analyze(self, resource: Resource, config=None) -> Magic:
         data = await resource.get_data()
-        magic_mime = magic.from_buffer(await resource.get_data(), mime=True)
+        magic_mime = magic.from_buffer(data, mime=True)
         magic_description = magic.from_buffer(data)
         return Magic(magic_mime, magic_description)
 ```

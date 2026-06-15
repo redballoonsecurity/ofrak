@@ -9,6 +9,7 @@
   import AddTagView from "../views/AddTagView.svelte";
   import RunScriptView from "../views/RunScriptView.svelte";
   import Toolbar from "../utils/Toolbar.svelte";
+  import AddProgramAttributesView from "../views/AddProgramAttributesView.svelte";
 
   import {
     selectedResource,
@@ -160,6 +161,14 @@
         iconUrl: "/icons/tag.svg",
         onclick: async (e) => {
           modifierView = AddTagView;
+        },
+      },
+
+      {
+        text: "Add ProgramAttributes",
+        iconUrl: "/icons/program_attributes.svg",
+        onclick: async (e) => {
+          modifierView = AddProgramAttributesView;
         },
       },
 

@@ -1,0 +1,166 @@
+name: Build and test ofrak packages
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash -euxo pipefail {0}
+
+jobs:
+  build-ofrak-type:
+    name: Build ofrak-type sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-type
+          source-dir: ofrak_type
+
+  build-ofrak-io:
+    name: Build ofrak-io sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-io
+          source-dir: ofrak_io
+
+  build-ofrak-patch-maker:
+    name: Build ofrak-patch-maker sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-patch-maker
+          source-dir: ofrak_patch_maker
+
+  build-pytest-ofrak:
+    name: Build pytest-ofrak sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: pytest-ofrak
+          source-dir: pytest_ofrak
+          lfs: true
+
+  build-ofrak-angr:
+    name: Build ofrak-angr sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-angr
+          source-dir: disassemblers/ofrak_angr
+
+  build-ofrak-capstone:
+    name: Build ofrak-capstone sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-capstone
+          source-dir: disassemblers/ofrak_capstone
+
+  build-ofrak-wheels:
+    name: Build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-wheels
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+
+  test-ofrak-type:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs:
+      - build-ofrak-type
+    with:
+      package-under-test: ofrak-type
+      source-dir: ofrak_type
+      packages: ofrak-type
+
+  test-ofrak-io:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+    with:
+      package-under-test: ofrak-io
+      source-dir: ofrak_io
+      packages: ofrak-type ofrak-io
+
+  test-ofrak:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+      - build-ofrak-patch-maker
+      - build-pytest-ofrak
+      - build-ofrak-wheels
+    with:
+      package-under-test: ofrak
+      source-dir: ofrak_core
+      packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak
+      lfs: true
+      test-target: test-wheel
+
+  test-ofrak-angr:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+      - build-ofrak-patch-maker
+      - build-pytest-ofrak
+      - build-ofrak-wheels
+      - build-ofrak-angr
+    with:
+      package-under-test: ofrak-angr
+      source-dir: disassemblers/ofrak_angr
+      packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr
+      lfs: true
+      excludes: '[{"os": "macos-latest", "python-version": "3.9"}]'
+      # Compatible versions of angr have a dependency on pyvex 9.2.102, which depends on
+      #  unicorn 2.0.1.post1, which does not build on this platform
+
+  test-ofrak-capstone:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+      - build-ofrak-patch-maker
+      - build-pytest-ofrak
+      - build-ofrak-wheels
+      - build-ofrak-angr
+      - build-ofrak-capstone
+    with:
+      package-under-test: ofrak-capstone
+      source-dir: disassemblers/ofrak_capstone
+      packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr ofrak-capstone
+      lfs: true
+      excludes: '[{"os": "macos-latest"}]'
+      # keystone-engine is used to test ofrak-capstone (register_usage_analyzer.py); PyPI version
+      #  does not build with version of cmake in macos-latest runner

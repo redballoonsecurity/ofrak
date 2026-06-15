@@ -13,9 +13,9 @@ animals = list(Path("docs/assets").glob("square_*.png"))
 example_nav = mkdocs_gen_files.Nav()
 r = re.compile(r"^ex(\d+)", re.IGNORECASE)
 
-for i, path in enumerate(sorted(Path("examples").glob("**/ex*.py"))):
+for i, path in enumerate(sorted(Path("examples").glob("ex*.py"))):
     module_path = path.relative_to("examples").with_suffix("")
-    doc_path = path.relative_to("examples").with_suffix(".md")
+    doc_path = path.with_suffix(".md")
 
     parts = list(module_path.parts)
     parts[-1] = parts[-1].replace("_", " ")
@@ -33,7 +33,8 @@ for i, path in enumerate(sorted(Path("examples").glob("**/ex*.py"))):
 
     with mkdocs_gen_files.open(Path("examples", doc_path), "w") as f:
         # Build relative path to assets directory
-        animal_path = ("../" * len(module_path.parts)) / (
+        # Add 1 to account for the "examples" directory itself
+        animal_path = Path("../" * (len(module_path.parts) + 1)) / (
             animals[i % len(animals)].relative_to("docs")
         )
         print(

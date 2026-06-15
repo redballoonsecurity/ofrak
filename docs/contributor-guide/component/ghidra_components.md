@@ -90,3 +90,7 @@ If the script requires some arguments, they can also be passed to ``call_script`
 Often the OFRAK component needs to get some data back from the Ghidra script. This should be done by storing the data as a JSON string inside a [Ghidra headless variable](https://ghidra.re/ghidra_docs/api/ghidra/app/util/headless/HeadlessScript.html#storeHeadlessValue%28java.lang.String,java.lang.Object)
 at the end of the script.
 After running each script (e.g. `CustomScript`), the analysis server will get stored headless variable with the name `OfrakResult_<script name>` (e.g. `OfrakResult_CustomScript`) and send its data back to OFRAK. This data is then parsed as JSON and returned by the ``call_script`` method.
+
+<div align="right">
+<img src="../../assets/square_02.png" width="125" height="125">
+</div>

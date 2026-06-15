@@ -1,5 +1,4 @@
 import setuptools
-import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -20,33 +19,24 @@ with open("README.md") as f:
     long_description = f.read()
 
 
-# Should be the same as in build_image.py
-def read_requirements(requirements_path):
-    with open(requirements_path) as requirements_handle:
-        return [
-            str(requirement)
-            for requirement in pkg_resources.parse_requirements(requirements_handle)
-        ]
-
-
 setuptools.setup(
     name="ofrak_angr",
-    version="1.0.1",
+    version="1.2.0rc1",
     description="OFRAK angr Components",
-    packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
-        "ofrak",
-    ]
-    + read_requirements("requirements.txt"),
+        'angr>=9.2.93,<=9.2.102; python_version == "3.9"',
+        'angr>=9.2.93,<=9.2.174; python_version >= "3.10"',
+        "ofrak>=3.3.0,==3.*",
+        'networkx==3.2.1; python_version == "3.9"',
+        'networkx==3.4.2; python_version == "3.10"',
+        'networkx==3.5; python_version >= "3.11"',
+        "msgspec==0.19.0",
+        "pycparser==2.23",
+    ],
     extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-asyncio==0.19.0",
-            "pytest-cov",
-            "requests",
-        ],
         "graphical": ["pygraphviz"],
     },
     author="Red Balloon Security",

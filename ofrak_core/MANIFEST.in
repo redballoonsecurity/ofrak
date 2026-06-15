@@ -1,4 +1,4 @@
-recursive-exclude test_ofrak *
-recursive-include ofrak/core/entropy/ *
-recursive-include ofrak/gui/public *
+recursive-exclude tests *
+recursive-include src/ofrak/core/entropy/ *
+recursive-include src/ofrak/gui/public *
 include requirements*.txt

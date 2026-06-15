@@ -37,4 +37,8 @@ Once a user is happy with their settings, they must save them before closing
 the settings pane. Saved settings can be exported, which will download a
 `.json` file to the user's computer. That file can be shared with other OFRAK
 users and imported via the GUI. If you find a theme you really like, feel free
-to share it! 
+to share it!
+
+<div align="right">
+<img src="../../assets/square_01.png" width="125" height="125">
+</div> 

@@ -20,17 +20,13 @@ with open("LICENSE") as f:
 
 setuptools.setup(
     name="ofrak_binary_ninja",
-    version="0.1.0",
+    version="0.1.1rc0",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Binary Ninja Components",
     url="",  # TODO
-    packages=[
-        "ofrak_binary_ninja",
-        "ofrak_binary_ninja.components",
-        "ofrak_binary_ninja.components.blocks",
-        "ofrak_binary_ninja.components.symbols",
-    ],
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_binary_ninja": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -39,16 +35,7 @@ setuptools.setup(
     install_requires=[
         "ofrak[test]>=3.3.0rc0",
     ],
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-            "pytest-asyncio==0.19.0",
-            "requests",
-        ]
-    },
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     license=license,
     cmdclass={"egg_info": egg_info_ex},
     entry_points={"ofrak.packages": ["ofrak_binary_ninja_pkg = ofrak_binary_ninja"]},

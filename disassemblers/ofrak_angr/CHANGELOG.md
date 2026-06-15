@@ -5,13 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Removed
+- Remove dead `_create_dependencies` no-op override from `AngrAnalyzer` ([#727](https://github.com/redballoonsecurity/ofrak/pull/727))
+
+### Fixed
+- Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
+- Pin pycparser version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
+- Pin `angr<=9.2.102` for Python 3.9 (last version supporting it) and constrain setuptools to preserve `pkg_resources` during arm64 builds ([#718](https://github.com/redballoonsecurity/ofrak/pull/718))
+
+## [1.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-angr-v1.0.1...ofrak-angr-v1.1.0) - 2025-10-03
+
 ### Changed
-- Update to latest angr==9.2.93, which also necessitates Python >= 3.8.
-- Refactored AngrDecompilationAnalysis/Analyzer to use generic components in ofrak core. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
+- Update to latest "angr>=9.2.93,<=9.2.174" which also necessitates Python >= 3.8.
+- Add decompilation using angr backend ([#453](https://github.com/redballoonsecurity/ofrak/pull/453), [#600](https://github.com/redballoonsecurity/ofrak/pull/600))
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 
 ### Fixed
 - Add `importlib-resources` dependency as workaround for z3-solver dependency issue. ([#401](https://github.com/redballoonsecurity/ofrak/pull/401))
+- Fixed bug in Angr backend unpacking BasicBlock that don't have an exit address ([#615](https://github.com/redballoonsecurity/ofrak/pull/615))
 
 ## 1.0.1 - 2023-06-26
 ### Fixed

@@ -1,4 +1,3 @@
 recursive-include ofrak_ghidra/ghidra_scripts *
 include ofrak_ghidra/run_ghidra_server.sh
 include ofrak_ghidra/config/ofrak_ghidra.conf.yml.default
-include requirements*.txt

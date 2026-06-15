@@ -3,15 +3,27 @@ All notable changes to `ofrak-ghidra` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 0.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Added
+- Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 
 ### Changed
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Move to OpenJDK version 17 with the docker container move to Debian 12 ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 
 ### Fixed
+- Replace blocking `time.sleep` calls with `asyncio.sleep` in Ghidra analyzer ([#712](https://github.com/redballoonsecurity/ofrak/pull/712))
+- Bump `aiohttp` to >=3.13.3 to address CVE-2025-69223 ([#693](https://github.com/redballoonsecurity/ofrak/pull/693))
 - Speedup: do not run Ghidra auto-analysis upon importing a program. ([#473](https://github.com/redballoonsecurity/ofrak/pull/473))
 - Ensure large 64-bit addresses are interpreted as unsigned. ([#474](https://github.com/redballoonsecurity/ofrak/pull/474))
+- Update `GhidraDecompilationAnalyzer` to match API in ofrak 0.3.0rc10 ([#600](https://github.com/redballoonsecurity/ofrak/pull/600))
+- Handle escape (\) character in the JSON going from Java (Ghidra) to Python ([#604](https://github.com/redballoonsecurity/ofrak/pull/604))
+- Fix Ghidra and pyghidra CodeRegion unpacker to take into account the base address that ghidra sets for PIE executables.([#627](https://github.com/redballoonsecurity/ofrak/pull/627))
+- Pin java version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
+- Fix duplicate import and integer overflow in CreateMemoryBlocks.java and GetDecompilation.java ([#700](https://github.com/redballoonsecurity/ofrak/pull/700))
+- Fix issue installing JDK in AARCH64 Docker build ([#718](https://github.com/redballoonsecurity/ofrak/pull/718))
+- Pass `usedforsecurity=False` to non-cryptographic `hashlib` calls to prevent failures when Python links against FIPS OpenSSL ([#744](https://github.com/redballoonsecurity/ofrak/pull/744))
 
 ## 0.1.1 - 2024-02-15
 ### Added
