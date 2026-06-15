@@ -1,190 +1,126 @@
-import pytest
-from pathlib import Path
-from typing import Any, Dict, Union
+import os
+import subprocess
+import sys
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.esp import (
     ESPApp,
-    ESPAppHeader,
-    ESPAppExtendedHeader,
-    ESPAppChecksum,
-    ESPAppHash,
     ESPAppAttributes,
     ESPAppHeaderModifier,
     ESPAppHeaderModifierConfig,
     ESPAppPacker,
+    ESPChip,
 )
-from ofrak.service.resource_service_i import ResourceFilter
-from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyPattern, UnpackAndVerifyTestCase
 from pytest_ofrak.patterns.modify import ModifyPattern
+from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 
 def load_esp_asset(filename: str) -> bytes:
-    """Load ESP binary from test assets."""
+    """Load an ESP binary from the test assets."""
     asset_path = Path(__file__).parent / "assets" / "esp" / filename
     return asset_path.read_bytes()
 
 
 @dataclass
-class ESPAppUnpackTestCase(
-    UnpackAndVerifyTestCase[
-        str, Union[ESPAppHeader, ESPAppExtendedHeader, ESPAppChecksum, ESPAppHash, dict]
-    ]
-):
+class ESPAppUnpackTestCase:
+    label: str
     binary_path: str
     has_extended_header: bool
     has_hash: bool
     num_sections: int
+    magic: int
     entry_point: int
     checksum: int
+    chip: ESPChip
+    chip_id: Optional[int] = None
+    stored_hash: Optional[bytes] = None
 
 
-class TestESPAppUnpackAndVerify(UnpackAndVerifyPattern):
-    @pytest.fixture(
-        params=[
-            ESPAppUnpackTestCase(
-                label="ESP32 App",
-                binary_path="esp32_hello.bin",
-                has_extended_header=True,
-                has_hash=True,
-                num_sections=5,
-                entry_point=0x400829AC,
-                checksum=0xEA,
-                expected_results={
-                    "header": {
-                        "magic": 0xE9,
-                        "entry_point": 0x400829AC,
-                        "num_segments": 5,
-                    },
-                    "extended_header": {
-                        "chip_id": 0x0000,  # ESP32
-                    },
-                    "checksum": {
-                        "checksum": 0xEA,
-                    },
-                    "hash": {
-                        "hash": bytes.fromhex(
-                            "0750ce50194e3125f218af81d7a07ad0f5c23500ac487f047d77e89acadb6300"
-                        ),
-                    },
-                },
-                optional_results=set(),
-            ),
-            ESPAppUnpackTestCase(
-                label="ESP32-S3 App",
-                binary_path="esp32s3_hello.bin",
-                has_extended_header=True,
-                has_hash=True,
-                num_sections=5,
-                entry_point=0x40376EC4,
-                checksum=0x70,
-                expected_results={
-                    "header": {
-                        "magic": 0xE9,
-                        "entry_point": 0x40376EC4,
-                        "num_segments": 5,
-                    },
-                    "extended_header": {
-                        "chip_id": 0x0009,  # ESP32-S3
-                    },
-                    "checksum": {
-                        "checksum": 0x70,
-                    },
-                    "hash": {
-                        "hash": bytes.fromhex(
-                            "fec85e5eee92d767571cf058f150907c988c482cb2a71c0fc280f5202667832e"
-                        ),
-                    },
-                },
-                optional_results=set(),
-            ),
-            ESPAppUnpackTestCase(
-                label="ESP8266 App",
-                binary_path="esp8266_hello.bin",
-                has_extended_header=False,
-                has_hash=False,
-                num_sections=2,
-                entry_point=0x4010F480,
-                checksum=0x2B,
-                expected_results={
-                    "header": {
-                        "magic": 0xE9,
-                        "entry_point": 0x4010F480,
-                        "num_segments": 2,
-                    },
-                    "checksum": {
-                        "checksum": 0x2B,
-                    },
-                },
-                optional_results=set(),
-            ),
-        ],
-        ids=lambda tc: tc.label,
+ESP_APP_TEST_CASES = [
+    ESPAppUnpackTestCase(
+        label="ESP32 App",
+        binary_path="esp32_hello.bin",
+        has_extended_header=True,
+        has_hash=True,
+        num_sections=5,
+        magic=0xE9,
+        entry_point=0x400829AC,
+        checksum=0xEA,
+        chip=ESPChip.ESP32,
+        chip_id=0x0000,  # ESP32
+        stored_hash=bytes.fromhex(
+            "0750ce50194e3125f218af81d7a07ad0f5c23500ac487f047d77e89acadb6300"
+        ),
+    ),
+    ESPAppUnpackTestCase(
+        label="ESP32-S3 App",
+        binary_path="esp32s3_hello.bin",
+        has_extended_header=True,
+        has_hash=True,
+        num_sections=5,
+        magic=0xE9,
+        entry_point=0x40376EC4,
+        checksum=0x70,
+        chip=ESPChip.ESP32S3,
+        chip_id=0x0009,  # ESP32-S3
+        stored_hash=bytes.fromhex(
+            "fec85e5eee92d767571cf058f150907c988c482cb2a71c0fc280f5202667832e"
+        ),
+    ),
+    ESPAppUnpackTestCase(
+        label="ESP8266 App",
+        binary_path="esp8266_hello.bin",
+        has_extended_header=False,
+        has_hash=False,
+        num_sections=2,
+        magic=0xE9,
+        entry_point=0x4010F480,
+        checksum=0x2B,
+        chip=ESPChip.ESP8266,
+    ),
+]
+
+
+@pytest.mark.parametrize("test_case", ESP_APP_TEST_CASES, ids=lambda tc: tc.label)
+async def test_esp_app_unpack(ofrak_context: OFRAKContext, test_case: ESPAppUnpackTestCase):
+    """Identify and unpack an ESP app, verifying its segments and parsed attributes."""
+    root_resource = await ofrak_context.create_root_resource(
+        test_case.label, load_esp_asset(test_case.binary_path)
     )
-    async def unpack_verify_test_case(self, request) -> ESPAppUnpackTestCase:
-        return request.param
+    await root_resource.identify()
+    assert root_resource.has_tag(ESPApp), "Resource was not identified as an ESPApp"
 
-    @pytest.fixture
-    async def root_resource(
-        self,
-        unpack_verify_test_case: ESPAppUnpackTestCase,
-        ofrak_context: OFRAKContext,
-        test_id: str,
-    ) -> Resource:
-        data = load_esp_asset(unpack_verify_test_case.binary_path)
-        return await ofrak_context.create_root_resource(test_id, data)
+    await root_resource.unpack()
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.identify()
-        await root_resource.unpack()
+    # Only the loadable segments become children.
+    esp_app = await root_resource.view_as(ESPApp)
+    sections = list(await esp_app.get_sections())
+    assert len(sections) == test_case.num_sections
 
-    async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
-        results: dict[
-            str, Union[Union[ESPAppHeader, ESPAppExtendedHeader, ESPAppChecksum, ESPAppHash, dict]]
-        ] = {}
+    # Header / extended header / checksum / hash are exposed as attributes, not children.
+    attributes = await root_resource.analyze(ESPAppAttributes)
+    assert attributes.magic == test_case.magic
+    assert attributes.entry_point == test_case.entry_point
+    assert attributes.num_segments == test_case.num_sections
+    assert attributes.checksum == test_case.checksum
+    assert attributes.chip == test_case.chip
+    assert attributes.has_extended_header == test_case.has_extended_header
 
-        results["header"] = await unpacked_root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        try:  # ESP8266 doesn't have extended header or hash
-            results["extended_header"] = await unpacked_root_resource.get_only_child_as_view(
-                ESPAppExtendedHeader, ResourceFilter(tags=(ESPAppExtendedHeader,))
-            )
-            results["hash"] = await unpacked_root_resource.get_only_child_as_view(
-                ESPAppHash, ResourceFilter(tags=(ESPAppHash,))
-            )
-        except:
-            pass
-
-        results["checksum"] = await unpacked_root_resource.get_only_child_as_view(
-            ESPAppChecksum, ResourceFilter(tags=(ESPAppChecksum,))
-        )
-
-        return results
-
-    async def verify_descendant(self, unpacked_descendant: Any, specified_result: Dict):
-        if isinstance(unpacked_descendant, ESPAppHeader):
-            for key, expected_value in specified_result.items():
-                actual_value = getattr(unpacked_descendant, key)
-                assert (
-                    actual_value == expected_value
-                ), f"Header {key}: {actual_value} != {expected_value}"
-
-        elif isinstance(unpacked_descendant, ESPAppExtendedHeader):
-            for key, expected_value in specified_result.items():
-                actual_value = getattr(unpacked_descendant, key)
-                assert (
-                    actual_value == expected_value
-                ), f"Extended header {key}: {actual_value} != {expected_value}"
-
-        elif isinstance(unpacked_descendant, ESPAppChecksum):
-            assert unpacked_descendant.checksum == specified_result["checksum"]
-
-        elif isinstance(unpacked_descendant, ESPAppHash):
-            assert unpacked_descendant.hash == specified_result["hash"]
+    # The unmodified images are valid.
+    assert attributes.checksum_valid is True
+    if test_case.has_extended_header:
+        assert attributes.chip_id == test_case.chip_id
+    if test_case.has_hash:
+        assert attributes.hash_appended is True
+        assert attributes.stored_hash == test_case.stored_hash
+        assert attributes.hash_valid is True
 
 
 class TestESPAppHeaderModification(ModifyPattern):
@@ -197,78 +133,69 @@ class TestESPAppHeaderModification(ModifyPattern):
         return resource
 
     async def modify(self, root_resource: Resource) -> None:
-        header = await root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        self.original_entry_point = header.entry_point
+        attributes = await root_resource.analyze(ESPAppAttributes)
+        self.original_entry_point = attributes.entry_point
 
-        await header.resource.run(
+        await root_resource.run(
             ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=0x40080400)
         )
 
     async def verify(self, root_resource: Resource) -> None:
-        header = await root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        assert header.entry_point == 0x40080400
-        assert header.entry_point != self.original_entry_point
+        attributes = await root_resource.analyze(ESPAppAttributes)
+        assert attributes.entry_point == 0x40080400
+        assert attributes.entry_point != self.original_entry_point
 
 
 def _verify_with_esptool(packed_data: bytes, has_hash: bool = True):
-    """Helper function to verify packed ESP app data with esptool."""
-    import tempfile
-    import subprocess
-    import os
-
+    """Verify packed ESP app data with esptool's image_info, skipping if esptool is unavailable."""
     with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as temp_file:
         temp_file.write(packed_data)
         temp_file.flush()
+        temp_path = temp_file.name
 
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "esptool", "image_info", "--version", "2", temp_path],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0, f"esptool failed: {result.stderr}"
+
+        output = result.stdout
+        assert "Checksum:" in output, "esptool output should contain checksum information"
+        assert "invalid" not in output.lower(), "Checksum should not be invalid"
+
+        if has_hash:
+            assert any(
+                word in output.lower() for word in ["hash", "digest", "sha256"]
+            ), "Output should contain hash information for ESP32 images"
+
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        pytest.skip(f"esptool not available or timed out: {e}")
+    finally:
         try:
-            result = subprocess.run(
-                ["python", "-m", "esptool", "image_info", "--version", "2", temp_file.name],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
-            assert result.returncode == 0, f"esptool failed: {result.stderr}"
-
-            output = result.stdout
-            assert "Checksum:" in output, "esptool output should contain checksum information"
-            assert "invalid" not in output.lower(), "Checksum should not be invalid"
-
-            if has_hash:
-                assert any(
-                    word in output.lower() for word in ["hash", "digest", "sha256"]
-                ), "Output should contain hash information for ESP32 images"
-
-        except (subprocess.TimeoutExpired, FileNotFoundError) as e:
-            pytest.skip(f"esptool not available or timed out: {e}")
-        finally:
-            try:
-                os.unlink(temp_file.name)
-            except:
-                pass
+            os.unlink(temp_path)
+        except OSError:
+            pass
 
 
 class TestESP32AppUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        app_data = load_esp_asset("esp32_hello.bin")
-        return await ofrak_context.create_root_resource("test.bin", app_data)
+        return await ofrak_context.create_root_resource(
+            "test.bin", load_esp_asset("esp32_hello.bin")
+        )
 
     async def unpack(self, root_resource: Resource) -> None:
         await root_resource.identify()
         await root_resource.unpack()
 
     async def modify(self, unpacked_root_resource: Resource) -> None:
-        header = await unpacked_root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        original_entry = header.entry_point
-        self.new_entry_point = 0x40080400 if original_entry != 0x40080400 else 0x40080500
+        attributes = await unpacked_root_resource.analyze(ESPAppAttributes)
+        self.new_entry_point = 0x40080400 if attributes.entry_point != 0x40080400 else 0x40080500
 
-        await header.resource.run(
+        await unpacked_root_resource.run(
             ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=self.new_entry_point)
         )
 
@@ -279,38 +206,29 @@ class TestESP32AppUnpackModifyPack(UnpackModifyPackPattern):
         await repacked_root_resource.identify()
         assert repacked_root_resource.has_tag(ESPApp)
 
-        await repacked_root_resource.unpack()
+        attributes = await repacked_root_resource.analyze(ESPAppAttributes)
+        assert attributes.entry_point == self.new_entry_point
+        assert attributes.checksum_valid is True
+        assert attributes.hash_valid is True
 
-        header = await repacked_root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        assert header.entry_point == self.new_entry_point
-
-        attrs = await repacked_root_resource.analyze(ESPAppAttributes)
-        assert attrs.checksum_valid == True
-        assert attrs.hash_valid == True
-
-        packed_data = await repacked_root_resource.get_data()
-        _verify_with_esptool(packed_data, has_hash=True)
+        _verify_with_esptool(await repacked_root_resource.get_data(), has_hash=True)
 
 
 class TestESP8266AppUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        app_data = load_esp_asset("esp8266_hello.bin")
-        return await ofrak_context.create_root_resource("test.bin", app_data)
+        return await ofrak_context.create_root_resource(
+            "test.bin", load_esp_asset("esp8266_hello.bin")
+        )
 
     async def unpack(self, root_resource: Resource) -> None:
         await root_resource.identify()
         await root_resource.unpack()
 
     async def modify(self, unpacked_root_resource: Resource) -> None:
-        header = await unpacked_root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        original_entry = header.entry_point
-        self.new_entry_point = 0x40080400 if original_entry != 0x40080400 else 0x40080500
+        attributes = await unpacked_root_resource.analyze(ESPAppAttributes)
+        self.new_entry_point = 0x40080400 if attributes.entry_point != 0x40080400 else 0x40080500
 
-        await header.resource.run(
+        await unpacked_root_resource.run(
             ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=self.new_entry_point)
         )
 
@@ -321,15 +239,8 @@ class TestESP8266AppUnpackModifyPack(UnpackModifyPackPattern):
         await repacked_root_resource.identify()
         assert repacked_root_resource.has_tag(ESPApp)
 
-        await repacked_root_resource.unpack()
+        attributes = await repacked_root_resource.analyze(ESPAppAttributes)
+        assert attributes.entry_point == self.new_entry_point
+        assert attributes.checksum_valid is True
 
-        header = await repacked_root_resource.get_only_child_as_view(
-            ESPAppHeader, ResourceFilter(tags=(ESPAppHeader,))
-        )
-        assert header.entry_point == self.new_entry_point
-
-        attrs = await repacked_root_resource.analyze(ESPAppAttributes)
-        assert attrs.checksum_valid == True
-
-        packed_data = await repacked_root_resource.get_data()
-        _verify_with_esptool(packed_data, has_hash=False)
+        _verify_with_esptool(await repacked_root_resource.get_data(), has_hash=False)

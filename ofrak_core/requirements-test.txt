@@ -1,2 +1,5 @@
+# esptool is only used by the ESP app tests to independently validate repacked images
+# (`python -m esptool image_info`); the ESP components themselves have no esptool dependency.
+esptool==4.8.1
 filelock==3.19.1
 pyelftools==0.29

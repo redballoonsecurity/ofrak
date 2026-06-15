@@ -6,18 +6,11 @@ from typing import Iterable, Optional
 from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection
 from ofrak.model.resource_model import index, ResourceAttributes
-from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceFilter,
 )
-from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.model.component_model import ComponentConfig
-
-from esptool.bin_image import ESP8266V2FirmwareImage  # type: ignore
-from esptool.targets import ROM_LIST  # type: ignore
-
-from tempfile import _TemporaryFileWrapper
 
 """
 # ESP-IDF Firmware Image Format Documentation
@@ -25,7 +18,7 @@ from tempfile import _TemporaryFileWrapper
 
 ## Header:
 ### ESP8266:
-    Consists of a header, multiple data segments and a footer. 
+    Consists of a header, multiple data segments and a footer.
     +--------+------------------------------------------------------------------+
     | Byte   | Description                                                      |
     +========+==================================================================+
@@ -47,62 +40,6 @@ from tempfile import _TemporaryFileWrapper
 ### ESP32:
     * Consists of a header, extended header, multiple data segments and a footer.
     * ITFF_0, ITFF_1, ITFF_2, ITFF_F are the IDF Target Flash Frequencies in MHz.
-
-#### ESP32S2 or ESP32S3:
-    +--------+------------------------------------------------------------------+
-    | Byte   | Description                                                      |
-    +========+==================================================================+
-    | 0      | Magic number (0xE9)                                              |
-    +--------+------------------------------------------------------------------+
-    | 1      | Number of segments                                               |
-    +--------+------------------------------------------------------------------+
-    | 2      | SPI Flash Mode (0 = QIO, 1 = QOUT, 2 = DIO, 3 = DOUT)            |
-    +--------+------------------------------------------------------------------+
-    | 3      | High four bits - Flash size (0 = 1MB, 1 = 2MB, 2 = 4MB, 3 = 8MB, |
-    |        |                              4=16MB,5=32MB,6=64MB,7=128MB")      |
-    |        | Low four bits - Flash frequency (0 = ITFF_0MHz, 1 = ITFF_1MHz,   |
-    |        |                                  2 = ITFF_2MHz, 0xf = ITFF_FMHz) |
-    +--------+------------------------------------------------------------------+
-    | 4-7    | Entry point address                                              |
-    +--------+------------------------------------------------------------------+
-
-
-#### ESP32C6:
-    +--------+------------------------------------------------------------------+
-    | Byte   | Description                                                      |
-    +========+==================================================================+
-    | 0      | Magic number (0xE9)                                              |
-    +--------+------------------------------------------------------------------+
-    | 1      | Number of segments                                               |
-    +--------+------------------------------------------------------------------+
-    | 2      | SPI Flash Mode (0 = QIO, 1 = QOUT, 2 = DIO, 3 = DOUT)            |
-    +--------+------------------------------------------------------------------+
-    | 3      | High four bits - Flash size (0 = 1MB, 1 = 2MB, 2 = 4MB, 3 = 8MB, |
-    |        |                              4 = 16MB)                           |
-    |        | Low four bits - Flash frequency (0 = 80MHz, 0 = 40MHz, 2 = 20MHz)|
-    +--------+------------------------------------------------------------------+
-    | 4-7    | Entry point address                                              |
-    +--------+------------------------------------------------------------------+
-
-    Note: Frequency 0 can means 80MHz or 40MHz based on MSPI clock source mode.
-
-#### IF NONE OF THE ABOVE:
-    +--------+------------------------------------------------------------------+
-    | Byte   | Description                                                      |
-    +========+==================================================================+
-    | 0      | Magic number (0xE9)                                              |
-    +--------+------------------------------------------------------------------+
-    | 1      | Number of segments                                               |
-    +--------+------------------------------------------------------------------+
-    | 2      | SPI Flash Mode (0 = QIO, 1 = QOUT, 2 = DIO, 3 = DOUT)            |
-    +--------+------------------------------------------------------------------+
-    | 3      | High four bits - Flash size (0 = 1MB, 1 = 2MB, 2 = 4MB, 3 = 8MB, |
-    |        |                              4 = 16MB)                           |
-    |        | Low four bits - Flash frequency (0 = ITFF_0MHz, 1 = ITFF_1MHz,   |
-    |        |                                  2 = ITFF_3MHz, 0xf = ITFF_FMHz) |
-    +--------+------------------------------------------------------------------+
-    | 4-7    | Entry point address                                              |
-    +--------+------------------------------------------------------------------+
 
 #### Extended File Header:
     The 16-byte extended header right after image header, then segments:
@@ -146,24 +83,10 @@ checksum of the data of all segments. The checksum is defined as the xor-sum of
 all bytes and the byte ``0xEF``.
 
 ### Not in ESP8266:
-
     If ``hash appended`` in the extended file header is ``0x01``, a SHA256
-    digest “simple hash” (of the entire image) is appended after the checksum.
+    digest "simple hash" (of the entire image) is appended after the checksum.
     This digest is separate to secure boot and only used for detecting
-    corruption. The SPI flash info cannot be changed during flashing if hash is
-    appended after the image.
-
-    If secure boot is enabled, a signature is also appended (and the simple hash
-    is included in the signed data). This image signature is `Secure Boot V1
-    <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/secure-boot-v1.html#image-signing-algorithm>`_
-    and `Secure Boot V2
-    <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/secure-boot-v2.html#signature-block-format>`_
-    specific.
-
-## Analyzing a Binary Image
-To analyze a binary image and get a complete summary of its headers and
-segments, use the :ref:`image_info <image-info>` command with the ``--version
-2`` option.
+    corruption.
 """
 
 LOGGER = logging.getLogger(__name__)
@@ -180,6 +103,33 @@ ESP_APP_CHECKSUM_MAGIC = 0xEF
 #####################
 #       Enums       #
 #####################
+class ESPChip(Enum):
+    """
+    ESP chip type, keyed by the `chip_id` field of the extended header (the same
+    `IMAGE_CHIP_ID` values esptool uses). `ESP8266` is a sentinel for images
+    without an extended header (and therefore no chip id).
+    """
+
+    ESP8266 = -1
+    ESP32 = 0x0000
+    ESP32S2 = 0x0002
+    ESP32C3 = 0x0005
+    ESP32S3 = 0x0009
+    ESP32C2 = 0x000C
+    ESP32C6 = 0x000D
+    ESP32H2 = 0x0010
+    ESP32P4 = 0x0012
+    ESP32C5 = 0x0017
+    UNKNOWN = 0xFFFF
+
+    @classmethod
+    def from_chip_id(cls, chip_id: int) -> "ESPChip":
+        try:
+            return cls(chip_id)
+        except ValueError:
+            return cls.UNKNOWN
+
+
 class ESPAppFlashMode(Enum):
     QIO = 0
     QOUT = 1
@@ -235,29 +185,26 @@ class FlashFrequencyESP32(IntEnum):
 
 class FlashFrequencyESP32C6(IntEnum):
     F_80MHz = 0
-    F_40MHz = 0  # Note: Frequency 0 can mean either 80MHz or 40MHz based on MSPI clock source mode.
     F_20MHz = 2
 
 
 class FlashSize:
     @staticmethod
-    def from_value(value: int, chip_type: Optional[str] = None):
-        if chip_type:
-            if chip_type == ROM_LIST[0].CHIP_NAME.lower():
-                return FlashSizeESP8266(value)
-            elif chip_type.lower().endswith("s2") or chip_type.lower().endswith("s3"):
-                return FlashSizeESP32S2S3(value)
+    def from_value(value: int, chip: Optional[ESPChip] = None) -> IntEnum:
+        if chip is ESPChip.ESP8266:
+            return FlashSizeESP8266(value)
+        elif chip in (ESPChip.ESP32S2, ESPChip.ESP32S3):
+            return FlashSizeESP32S2S3(value)
         return FlashSizeESP32(value)
 
 
 class FlashFrequency:
     @staticmethod
-    def from_value(value: int, chip_type: Optional[str] = None):
-        if chip_type:
-            if chip_type == ROM_LIST[0].CHIP_NAME.lower():
-                return FlashFrequencyESP8266(value)
-            elif chip_type.lower().endswith("c6"):
-                return FlashFrequencyESP32C6(value)
+    def from_value(value: int, chip: Optional[ESPChip] = None) -> IntEnum:
+        if chip is ESPChip.ESP8266:
+            return FlashFrequencyESP8266(value)
+        elif chip is ESPChip.ESP32C6:
+            return FlashFrequencyESP32C6(value)
         return FlashFrequencyESP32(value)
 
 
@@ -265,243 +212,38 @@ class FlashFrequency:
 # UNPACKER RESOURCES #
 ######################
 @dataclass
-class ESPAppHeader(ResourceView):
+class ESPAppSection(NamedProgramSection):
     """
-    ESP app header.
+    A loadable segment of an ESP app image.
 
-    :param magic: Magic number indicating the start of the header
-    :param num_segments: Number of segments in the binary
-    :param flash_mode: Flash mode used by the ESP
-    :param flash_size: Size of the flash
-    :param flash_frequency: Frequency of the flash
-    :param entry_point: Entry point address for execution
-    """
+    The only semantically meaningful children of an `ESPApp`: each corresponds to one
+    firmware segment that is loaded to `virtual_address`. Header, checksum, hash, and other
+    metadata are exposed as `ESPAppAttributes` rather than as child resources.
 
-    magic: int
-    num_segments: int
-    flash_mode: ESPAppFlashMode
-    flash_size: IntEnum
-    flash_frequency: IntEnum
-    entry_point: int
-
-
-@dataclass
-class ESPAppExtendedHeader(ResourceView):
-    """
-    ESP app extended header.
-
-    Describes additional configuration parameters not included in the basic header.
-
-    :param wp_pin: Write protection pin setting
-    :param clk_drv: Clock driver strength
-    :param q_drv: Q driver strength
-    :param d_drv: D driver strength
-    :param cs_drv: CS driver strength
-    :param hd_drv: HD driver strength
-    :param wp_drv: WP driver strength
-    :param chip_id: Chip ID for identification
-    :param min_chip_rev_deprecated: Deprecated minimum chip revision
-    :param min_chip_rev: Minimum chip revision supported
-    :param max_chip_rev: Maximum chip revision supported
-    :param hash_appended: Indicates if a hash is appended to the binary
-    """
-
-    wp_pin: int
-    clk_drv: int
-    q_drv: int
-    d_drv: int
-    cs_drv: int
-    hd_drv: int
-    wp_drv: int
-    chip_id: int
-    min_chip_rev_deprecated: int
-    min_chip_rev: int
-    max_chip_rev: int
-    hash_appended: bool
-
-
-@dataclass
-class ESPAppDescription(ResourceView):
-    """
-    ESP App Description.
-
-    Provides metadata about the application binary.
-
-    :param magic: Magic word indicating the start of the app description
-    :param secure_version: Secure version number
-    :param reserv1: Reserved bytes
-    :param version: Application version
-    :param project_name: Name of the project
-    :param time: Time of the build
-    :param date: Date of the build
-    :param idf_ver: IDF version used for building
-    :param app_eld_sha256: SHA-256 hash of the app
-    :param reserv2: Additional reserved bytes
-    """
-
-    magic: int
-    secure_version: int
-    reserv1: bytes
-    version: bytes
-    project_name: bytes
-    time: bytes
-    date: bytes
-    idf_ver: bytes
-    app_eld_sha256: bytes
-    reserv2: bytes
-
-
-@dataclass
-class ESPBootloaderDescription(ResourceView):
-    """
-    ESP Bootloader Description.
-
-    Contains metadata specific to the bootloader.
-
-    :param magic: Magic byte indicating the start of the bootloader description
-    :param reserved: Reserved bytes
-    :param version: Bootloader version
-    :param idf_ver: IDF version used for the bootloader
-    :param date_time: Build date and time of the bootloader
-    :param reserved2: Additional reserved bytes
-    """
-
-    magic: bytes
-    reserved: bytes
-    version: int
-    idf_ver: bytes
-    date_time: bytes
-    reserved2: bytes
-
-
-@dataclass
-class ESPAppChecksum(ResourceView):
-    """
-    ESP app checksum.
-
-    :param checksum: Checksum value
-    """
-
-    checksum: int
-
-
-@dataclass
-class ESPAppHash(ResourceView):
-    """
-    ESP app hash.
-
-    :param hash: Hash value
-    """
-
-    hash: bytes
-
-
-@dataclass
-class ESPAppSignature(ResourceView):
-    """
-    ESP app Signature.
-
-    :param version: Version of the signature
-    :param signature: Signature bytes
-    """
-
-    version: int
-    signature: bytes
-
-
-@dataclass
-class ESPAppSectionStructure(ResourceView):
-    """
-    Base class for section headers and sections, linking them via index.
-
-    :param section_index: Index of the section
+    :ivar virtual_address: The address the segment is loaded to
+    :ivar size: The size of the segment in bytes
+    :ivar name: The memory-type name of the segment (e.g. "DROM", "IRAM")
+    :ivar section_index: Index of the segment within the image (0-based)
     """
 
     section_index: int
 
     @index
     def SectionIndex(self) -> int:
-        """
-        Returns the index of the section.
-
-        :return: Index of the section
-        """
         return self.section_index
-
-
-@dataclass
-class ESPAppSection(ESPAppSectionStructure, NamedProgramSection):
-    """
-    ESP app section.
-
-    Represents a section within the ESP app.
-    """
-
-    async def get_header(self) -> "ESPAppSectionHeader":
-        """
-        Retrieves the header for this section.
-
-        :return: The header of the section
-        """
-        return await self.resource.get_only_sibling_as_view(
-            ESPAppSectionHeader,
-            ResourceFilter(
-                tags=(ESPAppSectionHeader,),
-                attribute_filters=[
-                    ResourceAttributeValueFilter(
-                        ESPAppSectionStructure.SectionIndex, self.section_index
-                    )
-                ],
-            ),
-        )
-
-
-@dataclass
-class ESPAppSectionHeader(ESPAppSectionStructure):
-    """
-    ESP app section header.
-
-    Represents the header for a section within the ESP binary.
-
-    :param name: Name of the section
-    :param memory_offset: Memory offset for the section
-    :param segment_size: Size of the section segment
-    """
-
-    name: str
-    memory_offset: int
-    segment_size: int
-
-    async def get_body(self) -> "ESPAppSection":
-        """
-        Retrieves the body of the section.
-
-        :return: The body of the section
-        """
-        return await self.resource.get_only_sibling_as_view(
-            ESPAppSection,
-            ResourceFilter(
-                tags=(ESPAppSection,),
-                attribute_filters=[
-                    ResourceAttributeValueFilter(
-                        ESPAppSectionStructure.SectionIndex, self.section_index
-                    )
-                ],
-            ),
-        )
 
 
 @dataclass
 class ESPApp(Program):
     """
-    App file for ESP chips.
+    App image for ESP chips.
     """
 
     async def get_sections(self) -> Iterable[ESPAppSection]:
         """
-        Return the children `ESPSection` resources.
+        Return the children `ESPAppSection` resources.
 
-        :return: An iterable of `ESPSection` instances
+        :return: An iterable of `ESPAppSection` instances
         """
         return await self.resource.get_children_as_view(
             ESPAppSection,
@@ -512,14 +254,12 @@ class ESPApp(Program):
 
     async def get_section_by_name(self, name: str) -> ESPAppSection:
         """
-        Get a specific `ESPSection` by its name.
+        Get a specific `ESPAppSection` by its name.
 
         :param name: The name of the section to retrieve
         :raises NotFoundError: If no section with the given name is found
-        :return: The `ESPSection` instance with the specified name
+        :return: The `ESPAppSection` instance with the specified name
         """
-        await self.get_sections()
-
         return await self.resource.get_only_child_as_view(
             ESPAppSection,
             ResourceFilter(
@@ -534,35 +274,32 @@ class ESPApp(Program):
 ######################
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class ESPAppAttributes(ResourceAttributes):
-    chip_name: str
-    checksum_valid: bool
+    """
+    Metadata parsed from an ESP app image, attached to the `ESPApp` resource.
+
+    The header, extended header, checksum and SHA256 digest are recorded here as attributes
+    rather than as tagged child resources (only loadable segments get child resources).
+    Extended-header and hash fields are only populated for ESP32-family images (ESP8266 images
+    have neither), and are otherwise left at their defaults.
+    """
+
+    magic: int
+    num_segments: int
+    flash_mode: int
+    flash_size: int
+    flash_frequency: int
+    entry_point: int
+    chip: ESPChip
+    checksum: int
     calculated_checksum: int
+    checksum_valid: bool
+    has_extended_header: bool
+    hash_appended: bool
     hash_valid: bool
-    calculated_hash: int
-
-
-@dataclass
-class ESPAppConfig(ComponentConfig):
-    f: _TemporaryFileWrapper
-    offset: int
-    magic: bytes
-    chip: str
-    image: ESP8266V2FirmwareImage
-
-
-######################
-# MODIFIER RESOURCES #
-######################
-@dataclass
-class ESPAppHeaderModifierConfig(ComponentConfig):
-    flash_mode: Optional[ESPAppFlashMode] = None
-    flash_size: Optional[int] = None
-    flash_frequency: Optional[int] = None
-    entry_point: Optional[int] = None
-
-
-@dataclass
-class ESPAppExtendedHeaderModifierConfig(ComponentConfig):
+    chip_id: Optional[int] = None
+    min_chip_rev_deprecated: Optional[int] = None
+    min_chip_rev: Optional[int] = None
+    max_chip_rev: Optional[int] = None
     wp_pin: Optional[int] = None
     clk_drv: Optional[int] = None
     q_drv: Optional[int] = None
@@ -570,30 +307,21 @@ class ESPAppExtendedHeaderModifierConfig(ComponentConfig):
     cs_drv: Optional[int] = None
     hd_drv: Optional[int] = None
     wp_drv: Optional[int] = None
-    chip_id: Optional[int] = None
-    min_chip_rev_deprecated: Optional[int] = None
-    min_chip_rev: Optional[int] = None
-    max_chip_rev: Optional[int] = None
-    hash_appended: Optional[bool] = None
+    stored_hash: Optional[bytes] = None
+    calculated_hash: Optional[bytes] = None
 
 
+######################
+# MODIFIER RESOURCES #
+######################
 @dataclass
-class ESPAppDescriptionModifierConfig(ComponentConfig):
-    secure_version: Optional[int] = None
-    reserv1: Optional[bytes] = None
-    version: Optional[bytes] = None
-    project_name: Optional[bytes] = None
-    time: Optional[bytes] = None
-    date: Optional[bytes] = None
-    idf_ver: Optional[bytes] = None
-    app_eld_sha256: Optional[bytes] = None
-    reserv2: Optional[bytes] = None
+class ESPAppHeaderModifierConfig(ComponentConfig):
+    """
+    Configuration for editing the 8-byte ESP app header in place. Any field left `None` is
+    left unchanged.
+    """
 
-
-@dataclass
-class ESPBootloaderDescriptionModifierConfig(ComponentConfig):
-    reserved: Optional[bytes] = None
-    version: Optional[int] = None
-    idf_ver: Optional[bytes] = None
-    date_time: Optional[bytes] = None
-    reserved2: Optional[bytes] = None
+    flash_mode: Optional[ESPAppFlashMode] = None
+    flash_size: Optional[int] = None
+    flash_frequency: Optional[int] = None
+    entry_point: Optional[int] = None
