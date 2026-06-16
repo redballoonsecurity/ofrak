@@ -1,6 +1,8 @@
+import binascii
 import hashlib
 import struct
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
@@ -26,6 +28,9 @@ from ofrak.core.esp.app_model import (
     ESP_APP_SEGMENT_HEADER_SIZE,
     ESP8266V2_APP_MAGIC,
 )
+
+# The "segment count" byte of an ESP8266 v2 first header is a constant marker, not a real count.
+ESP8266_V2_SEGMENT_MARKER = 4
 
 # Per-chip memory maps, mirroring esptool's ``ROM_LOADER.MEMORY_MAP``. A segment's memory type is
 # determined by the region its load address falls into (this is how esptool names segments). These
@@ -66,6 +71,12 @@ _ESP_MEMORY_MAP = {
         (0x600FE000, 0x60100000, "RTC_IRAM"),
         (0x50000000, 0x50002000, "RTC_DATA"),
     ),
+    ESPChip.ESP32C2: (
+        (0x3C000000, 0x3C400000, "DROM"),
+        (0x3FCA0000, 0x3FCE0000, "DRAM"),
+        (0x42000000, 0x42400000, "IROM"),
+        (0x4037C000, 0x403C0000, "IRAM"),
+    ),
     ESPChip.ESP32C3: (
         (0x3C000000, 0x3C800000, "DROM"),
         (0x3FC80000, 0x3FCE0000, "DRAM"),
@@ -73,7 +84,41 @@ _ESP_MEMORY_MAP = {
         (0x4037C000, 0x403E0000, "IRAM"),
         (0x50000000, 0x50002000, "RTC_IRAM"),
     ),
+    ESPChip.ESP32C6: (
+        (0x42800000, 0x43000000, "DROM"),
+        (0x40800000, 0x40880000, "DRAM"),
+        (0x42000000, 0x42800000, "IROM"),
+        (0x40800000, 0x40880000, "IRAM"),
+        (0x50000000, 0x50004000, "RTC_IRAM"),
+    ),
+    ESPChip.ESP32H2: (
+        (0x42800000, 0x43000000, "DROM"),
+        (0x40800000, 0x40880000, "DRAM"),
+        (0x42000000, 0x42800000, "IROM"),
+        (0x40800000, 0x40880000, "IRAM"),
+        (0x50000000, 0x50004000, "RTC_IRAM"),
+    ),
+    ESPChip.ESP32P4: (
+        (0x40000000, 0x4C000000, "DROM"),
+        (0x4FF00000, 0x4FFA0000, "DRAM"),
+        (0x40000000, 0x4C000000, "IROM"),
+        (0x4FF00000, 0x4FFA0000, "IRAM"),
+        (0x50108000, 0x50110000, "RTC_IRAM"),
+    ),
+    ESPChip.ESP32C5: (
+        (0x42800000, 0x43000000, "DROM"),
+        (0x40800000, 0x40860000, "DRAM"),
+        (0x42000000, 0x42800000, "IROM"),
+        (0x40800000, 0x40860000, "IRAM"),
+        (0x50000000, 0x50004000, "RTC_IRAM"),
+    ),
 }
+
+
+def _esp8266_crc32(data: bytes) -> int:
+    """CRC32 variant used by the ESP8266 SDK bootloader for v2 images (matches esptool)."""
+    crc = binascii.crc32(data, 0) & 0xFFFFFFFF
+    return (crc ^ 0xFFFFFFFF) if crc & 0x80000000 else (crc + 1) & 0xFFFFFFFF
 
 
 def _determine_chip(data: bytes) -> ESPChip:
@@ -89,7 +134,8 @@ def _determine_chip(data: bytes) -> ESPChip:
         return ESPChip.ESP8266
     if data[23] not in (0, 1):  # hash_appended flag (last byte of the extended header)
         return ESPChip.ESP8266
-    chip = ESPChip.from_chip_id(data[12])  # chip id (low byte) within the extended header
+    (chip_id,) = struct.unpack_from("<H", data, 12)  # 16-bit chip id within the extended header
+    chip = ESPChip.from_chip_id(chip_id)
     if chip is ESPChip.UNKNOWN:
         return ESPChip.ESP8266
     return chip
@@ -100,35 +146,186 @@ def _segment_memory_types(virtual_address: int, chip: ESPChip) -> List[str]:
     return [name for start, end, name in memory_map if start <= virtual_address < end]
 
 
-def _segment_name(virtual_address: int, chip: ESPChip, index: int) -> str:
+def _classify_segment(
+    virtual_address: int, chip: ESPChip, index: int, is_v2_irom: bool
+) -> Tuple[str, bool]:
+    """Return ``(name, is_code)`` for a segment based on its load address."""
+    if is_v2_irom:
+        return "irom0", True
     memory_types = _segment_memory_types(virtual_address, chip)
-    return ", ".join(memory_types) if memory_types else f"segment_{index}"
-
-
-def _is_code_segment(virtual_address: int, chip: ESPChip) -> bool:
-    return any("IRAM" in t or "IROM" in t for t in _segment_memory_types(virtual_address, chip))
-
-
-def _iter_segments(data: bytes, has_extended_header: bool, num_segments: int):
-    """
-    Yield ``(index, virtual_address, data_offset, size)`` for each segment, statelessly walking
-    the segment table that follows the (extended) header.
-    """
-    offset = ESP_APP_HEADER_SIZE + (ESP_APP_EXTENDED_HEADER_SIZE if has_extended_header else 0)
-    for index in range(num_segments):
-        if offset + ESP_APP_SEGMENT_HEADER_SIZE > len(data):
-            break
-        virtual_address, size = struct.unpack_from("<II", data, offset)
-        data_offset = offset + ESP_APP_SEGMENT_HEADER_SIZE
-        if data_offset + size > len(data):
-            break
-        yield index, virtual_address, data_offset, size
-        offset = data_offset + size
+    name = ", ".join(memory_types) if memory_types else f"segment_{index}"
+    is_code = any("IRAM" in t or "IROM" in t for t in memory_types)
+    return name, is_code
 
 
 def _checksum_offset(end_of_segments: int) -> int:
     """The checksum is the last byte of the 16-byte-aligned block following the segments."""
     return ((end_of_segments + 16) // 16) * 16 - 1
+
+
+@dataclass
+class _Segment:
+    index: int
+    virtual_address: int
+    data_offset: int
+    size: int
+    in_checksum: bool
+    name: str
+    is_code: bool
+
+
+@dataclass
+class _ParsedImage:
+    """Stateless structural parse of an ESP app image, shared by the unpacker/analyzer/packer."""
+
+    image_version: int  # 1 (ESP8266 v1 / ESP32 family) or 2 (ESP8266 v2)
+    chip: ESPChip
+    has_extended_header: bool
+    primary_header_offset: int  # offset of the header whose entry_point/flash fields are used
+    flash_mode: int
+    flash_size_freq: int
+    entry_point: int
+    segments: List[_Segment] = field(default_factory=list)
+    checksum_offset: int = 0
+    stored_checksum: int = 0
+    hash_appended: bool = False
+    hash_offset: Optional[int] = None  # v1 SHA256 digest location (32 bytes)
+    crc_offset: Optional[int] = None  # v2 CRC32 location (4 bytes)
+
+
+def _read_segment(
+    data: bytes, offset: int, index: int, chip: ESPChip, in_checksum: bool, is_v2_irom: bool
+) -> Tuple[_Segment, int]:
+    """Parse one segment (8-byte header + data) at ``offset``, returning it and the next offset."""
+    if offset + ESP_APP_SEGMENT_HEADER_SIZE > len(data):
+        raise UnpackerError(f"ESP image truncated: segment {index} header past end of data")
+    virtual_address, size = struct.unpack_from("<II", data, offset)
+    data_offset = offset + ESP_APP_SEGMENT_HEADER_SIZE
+    if data_offset + size > len(data):
+        raise UnpackerError(
+            f"ESP image truncated: segment {index} (size {size}) extends past end of data"
+        )
+    name, is_code = _classify_segment(virtual_address, chip, index, is_v2_irom)
+    segment = _Segment(index, virtual_address, data_offset, size, in_checksum, name, is_code)
+    return segment, data_offset + size
+
+
+def _parse_image(data: bytes) -> _ParsedImage:
+    """
+    Statelessly parse an ESP app image (ESP8266 v1, ESP32 family, or ESP8266 v2) into a structural
+    description. Raises :class:`UnpackerError` on a missing magic or a truncated/malformed image.
+    """
+    if len(data) < ESP_APP_HEADER_SIZE:
+        raise UnpackerError("ESP image too small to contain a header")
+    magic = data[0]
+    if magic == ESP_APP_MAGIC:
+        return _parse_v1_image(data)
+    elif magic == ESP8266V2_APP_MAGIC:
+        return _parse_v2_image(data)
+    raise UnpackerError(f"This is not a valid ESP image (invalid magic number {magic:#x})")
+
+
+def _parse_v1_image(data: bytes) -> _ParsedImage:
+    chip = _determine_chip(data)
+    has_extended_header = chip is not ESPChip.ESP8266
+    header_size = ESP_APP_HEADER_SIZE + (ESP_APP_EXTENDED_HEADER_SIZE if has_extended_header else 0)
+    if len(data) < header_size:
+        raise UnpackerError("ESP image truncated: missing extended header")
+
+    num_segments = data[1]
+    flash_mode = data[2]
+    flash_size_freq = data[3]
+    (entry_point,) = struct.unpack_from("<I", data, 4)
+
+    segments: List[_Segment] = []
+    offset = header_size
+    for index in range(num_segments):
+        segment, offset = _read_segment(data, offset, index, chip, True, False)
+        segments.append(segment)
+
+    checksum_offset = _checksum_offset(offset)
+    if checksum_offset >= len(data):
+        raise UnpackerError("ESP image truncated: checksum byte past end of data")
+    stored_checksum = data[checksum_offset]
+
+    hash_appended = has_extended_header and data[23] == 1
+    hash_offset = None
+    if hash_appended:
+        hash_offset = checksum_offset + 1
+        if hash_offset + 32 > len(data):
+            raise UnpackerError("ESP image truncated: appended SHA256 digest past end of data")
+
+    return _ParsedImage(
+        image_version=1,
+        chip=chip,
+        has_extended_header=has_extended_header,
+        primary_header_offset=0,
+        flash_mode=flash_mode,
+        flash_size_freq=flash_size_freq,
+        entry_point=entry_point,
+        segments=segments,
+        checksum_offset=checksum_offset,
+        stored_checksum=stored_checksum,
+        hash_appended=hash_appended,
+        hash_offset=hash_offset,
+    )
+
+
+def _parse_v2_image(data: bytes) -> _ParsedImage:
+    # First header: magic (0xEA), constant segment marker, flash settings, entry point. The irom0
+    # segment follows; the loadable segments and the authoritative flash/entry values live behind a
+    # second (0xE9) header. The checksum covers only the post-second-header segments; a CRC32 of
+    # the whole file is appended last.
+    chip = ESPChip.ESP8266
+    irom_segment, offset = _read_segment(data, ESP_APP_HEADER_SIZE, 0, chip, False, True)
+
+    if offset + ESP_APP_HEADER_SIZE > len(data):
+        raise UnpackerError("ESP8266 v2 image truncated: missing second header")
+    if data[offset] != ESP_APP_MAGIC:
+        raise UnpackerError(
+            f"ESP8266 v2 image: expected second header magic {ESP_APP_MAGIC:#x}, "
+            f"got {data[offset]:#x}"
+        )
+    second_header_offset = offset
+    num_segments = data[offset + 1]
+    flash_mode = data[offset + 2]
+    flash_size_freq = data[offset + 3]
+    (entry_point,) = struct.unpack_from("<I", data, offset + 4)
+
+    segments: List[_Segment] = [irom_segment]
+    offset += ESP_APP_HEADER_SIZE
+    for index in range(num_segments):
+        segment, offset = _read_segment(data, offset, index + 1, chip, True, False)
+        segments.append(segment)
+
+    checksum_offset = _checksum_offset(offset)
+    if checksum_offset + 4 >= len(data):  # checksum byte + trailing 4-byte CRC32
+        raise UnpackerError("ESP8266 v2 image truncated: checksum/CRC32 past end of data")
+    stored_checksum = data[checksum_offset]
+    crc_offset = checksum_offset + 1
+
+    return _ParsedImage(
+        image_version=2,
+        chip=chip,
+        has_extended_header=False,
+        primary_header_offset=second_header_offset,
+        flash_mode=flash_mode,
+        flash_size_freq=flash_size_freq,
+        entry_point=entry_point,
+        segments=segments,
+        checksum_offset=checksum_offset,
+        stored_checksum=stored_checksum,
+        crc_offset=crc_offset,
+    )
+
+
+def _calculate_checksum(data: bytes, parsed: _ParsedImage) -> int:
+    checksum = ESP_APP_CHECKSUM_MAGIC
+    for segment in parsed.segments:
+        if segment.in_checksum:
+            for byte in data[segment.data_offset : segment.data_offset + segment.size]:
+                checksum ^= byte
+    return checksum & 0xFF
 
 
 ####################
@@ -150,13 +347,14 @@ class ESPAppIdentifier(Identifier):
         :param resource: The resource to identify
         :param config: Optional configuration for identification
         """
-        data = await resource.get_data(range=Range(0, 8))
-        if data:
-            magicByte_check = data[0] == ESP_APP_MAGIC or data[0] == ESP8266V2_APP_MAGIC
-            flashmode_check = data[2] in {0, 1, 2, 3}
-            lower_byte_three_check = (data[3] & 0xF) in {0, 1, 2, 0xF}
-            if magicByte_check and flashmode_check and lower_byte_three_check:
-                resource.add_tag(ESPApp)
+        data = await resource.get_data(range=Range(0, ESP_APP_HEADER_SIZE))
+        if len(data) < ESP_APP_HEADER_SIZE:
+            return
+        magic_check = data[0] == ESP_APP_MAGIC or data[0] == ESP8266V2_APP_MAGIC
+        flash_mode_check = data[2] in {0, 1, 2, 3}
+        flash_freq_check = (data[3] & 0xF) in {0, 1, 2, 0xF}
+        if magic_check and flash_mode_check and flash_freq_check:
+            resource.add_tag(ESPApp)
 
 
 ####################
@@ -164,10 +362,10 @@ class ESPAppIdentifier(Identifier):
 ####################
 class ESPAppUnpacker(Unpacker[None]):
     """
-    Unpacker for ESP apps (ESP8266 and the ESP32 family).
+    Unpacker for ESP apps (ESP8266 v1/v2 and the ESP32 family).
 
     Only the loadable segments are unpacked into child resources (`ESPAppSection`); the header,
-    extended header, checksum, and SHA256 digest are exposed as `ESPAppAttributes` via
+    extended header, checksum, and SHA256/CRC32 footer are exposed as `ESPAppAttributes` via
     `ESPAppAnalyzer` rather than as tagged children. Segments mapped to instruction memory
     (IRAM / IROM) are additionally tagged as `CodeRegion`.
 
@@ -182,25 +380,20 @@ class ESPAppUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None) -> None:
         data = bytes(await resource.get_data())
-        if not data or data[0] not in (ESP_APP_MAGIC, ESP8266V2_APP_MAGIC):
-            raise UnpackerError("This is not a valid ESP image (invalid or missing magic number).")
+        parsed = _parse_image(data)
 
-        chip = _determine_chip(data)
-        has_extended_header = chip is not ESPChip.ESP8266
-        num_segments = data[1]
-
-        for index, virtual_address, data_offset, size in _iter_segments(
-            data, has_extended_header, num_segments
-        ):
+        for segment in parsed.segments:
             section = ESPAppSection(
-                virtual_address=virtual_address,
-                size=size,
-                name=_segment_name(virtual_address, chip, index),
-                section_index=index,
+                virtual_address=segment.virtual_address,
+                size=segment.size,
+                name=segment.name,
+                section_index=segment.index,
             )
-            data_range = Range.from_size(data_offset, size) if size > 0 else None
+            data_range = (
+                Range.from_size(segment.data_offset, segment.size) if segment.size > 0 else None
+            )
             section_r = await resource.create_child_from_view(section, data_range=data_range)
-            if _is_code_segment(virtual_address, chip):
+            if segment.is_code:
                 section_r.add_tag(CodeRegion)
 
 
@@ -209,10 +402,10 @@ class ESPAppUnpacker(Unpacker[None]):
 ####################
 class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
     """
-    Statelessly parse an ESP app's header, extended header, checksum, and SHA256 digest into
-    `ESPAppAttributes`. The checksum (XOR of all segment bytes with `0xEF`) and digest (SHA256 of
-    the image up to and including the checksum byte) are recomputed and compared against the
-    stored values to report validity.
+    Statelessly parse an ESP app's header, extended header, checksum, and SHA256/CRC32 footer into
+    `ESPAppAttributes`. The checksum (XOR of all checksummed segment bytes with `0xEF`), the v1
+    SHA256 digest, and the v2 CRC32 are recomputed and compared against the stored values to
+    report validity.
     """
 
     targets = (ESPApp,)
@@ -220,17 +413,11 @@ class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
 
     async def analyze(self, resource: Resource, config=None) -> ESPAppAttributes:
         data = bytes(await resource.get_data())
-
-        magic, num_segments, flash_mode, flash_size_freq = data[0], data[1], data[2], data[3]
-        (entry_point,) = struct.unpack_from("<I", data, 4)
-
-        chip = _determine_chip(data)
-        has_extended_header = chip is not ESPChip.ESP8266
+        parsed = _parse_image(data)
 
         chip_id = min_chip_rev_deprecated = min_chip_rev = max_chip_rev = None
         wp_pin = clk_drv = q_drv = d_drv = cs_drv = hd_drv = wp_drv = None
-        hash_appended = False
-        if has_extended_header:
+        if parsed.has_extended_header:
             ext = data[ESP_APP_HEADER_SIZE : ESP_APP_HEADER_SIZE + ESP_APP_EXTENDED_HEADER_SIZE]
             wp_pin = ext[0]
             drive_settings = ext[1] | (ext[2] << 8) | (ext[3] << 16)
@@ -243,49 +430,37 @@ class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
             chip_id, min_chip_rev_deprecated, min_chip_rev, max_chip_rev = struct.unpack_from(
                 "<HBHH", ext, 4
             )
-            hash_appended = ext[15] == 1
 
-        # Walk the segments to find where the footer (checksum / hash) sits and to gather the
-        # bytes the checksum is computed over.
-        segment_bytes = bytearray()
-        end_of_segments = ESP_APP_HEADER_SIZE + (
-            ESP_APP_EXTENDED_HEADER_SIZE if has_extended_header else 0
-        )
-        for _index, _vaddr, data_offset, size in _iter_segments(
-            data, has_extended_header, num_segments
-        ):
-            segment_bytes += data[data_offset : data_offset + size]
-            end_of_segments = data_offset + size
-
-        checksum_offset = _checksum_offset(end_of_segments)
-        stored_checksum = data[checksum_offset] if checksum_offset < len(data) else 0
-        calculated_checksum = ESP_APP_CHECKSUM_MAGIC
-        for byte in segment_bytes:
-            calculated_checksum ^= byte
-        calculated_checksum &= 0xFF
-        checksum_valid = stored_checksum == calculated_checksum
+        calculated_checksum = _calculate_checksum(data, parsed)
+        checksum_valid = parsed.stored_checksum == calculated_checksum
 
         stored_hash = calculated_hash = None
         hash_valid = False
-        if hash_appended:
-            hash_offset = checksum_offset + 1
-            stored_hash = data[hash_offset : hash_offset + 32]
-            calculated_hash = hashlib.sha256(data[:hash_offset]).digest()
+        if parsed.hash_appended and parsed.hash_offset is not None:
+            stored_hash = data[parsed.hash_offset : parsed.hash_offset + 32]
+            calculated_hash = hashlib.sha256(data[: parsed.hash_offset]).digest()
             hash_valid = stored_hash == calculated_hash
 
+        crc32 = None
+        crc32_valid = False
+        if parsed.crc_offset is not None:
+            (crc32,) = struct.unpack_from("<I", data, parsed.crc_offset)
+            crc32_valid = crc32 == _esp8266_crc32(data[: parsed.crc_offset])
+
         return ESPAppAttributes(
-            magic=magic,
-            num_segments=num_segments,
-            flash_mode=flash_mode,
-            flash_size=flash_size_freq & 0xF0,
-            flash_frequency=flash_size_freq & 0x0F,
-            entry_point=entry_point,
-            chip=chip,
-            checksum=stored_checksum,
+            magic=data[0],
+            image_version=parsed.image_version,
+            num_segments=len(parsed.segments),
+            flash_mode=parsed.flash_mode,
+            flash_size=parsed.flash_size_freq & 0xF0,
+            flash_frequency=parsed.flash_size_freq & 0x0F,
+            entry_point=parsed.entry_point,
+            chip=parsed.chip,
+            checksum=parsed.stored_checksum,
             calculated_checksum=calculated_checksum,
             checksum_valid=checksum_valid,
-            has_extended_header=has_extended_header,
-            hash_appended=hash_appended,
+            has_extended_header=parsed.has_extended_header,
+            hash_appended=parsed.hash_appended,
             hash_valid=hash_valid,
             chip_id=chip_id,
             min_chip_rev_deprecated=min_chip_rev_deprecated,
@@ -300,6 +475,8 @@ class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
             wp_drv=wp_drv,
             stored_hash=stored_hash,
             calculated_hash=calculated_hash,
+            crc32=crc32,
+            crc32_valid=crc32_valid,
         )
 
 
@@ -308,15 +485,19 @@ class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
 ####################
 class ESPAppHeaderModifier(Modifier[ESPAppHeaderModifierConfig]):
     """
-    Edit the 8-byte ESP app header in place (flash mode/size/frequency and entry point). Run
-    `ESPAppPacker` afterwards to recompute the checksum and SHA256 digest for the modified image.
+    Edit the ESP app header in place (flash mode/size/frequency and entry point). For ESP8266 v2
+    images the authoritative header is the second one, so that is the header edited. Run
+    `ESPAppPacker` afterwards to recompute the checksum and SHA256/CRC32 footer for the image.
     """
 
     id = b"ESPAppHeaderModifier"
     targets = (ESPApp,)
 
     async def modify(self, resource: Resource, config: ESPAppHeaderModifierConfig) -> None:
-        header = bytearray(await resource.get_data(range=Range(0, ESP_APP_HEADER_SIZE)))
+        data = bytes(await resource.get_data())
+        parsed = _parse_image(data)
+        base = parsed.primary_header_offset
+        header = bytearray(data[base : base + ESP_APP_HEADER_SIZE])
         if config.flash_mode is not None:
             header[2] = config.flash_mode.value
         if config.flash_size is not None or config.flash_frequency is not None:
@@ -327,7 +508,7 @@ class ESPAppHeaderModifier(Modifier[ESPAppHeaderModifierConfig]):
             header[3] = (size_bits & 0xF0) | (freq_bits & 0x0F)
         if config.entry_point is not None:
             struct.pack_into("<I", header, 4, config.entry_point)
-        resource.queue_patch(Range(0, ESP_APP_HEADER_SIZE), bytes(header))
+        resource.queue_patch(Range.from_size(base, ESP_APP_HEADER_SIZE), bytes(header))
 
 
 ####################
@@ -335,10 +516,11 @@ class ESPAppHeaderModifier(Modifier[ESPAppHeaderModifierConfig]):
 ####################
 class ESPAppPacker(Packer[None]):
     """
-    Packer for ESP apps that recomputes the checksum and SHA256 digest in place.
+    Packer for ESP apps that recomputes the checksum and SHA256/CRC32 footer in place.
 
-    Header / segment edits leave the trailing checksum byte and (for ESP32-family images) the
-    appended SHA256 digest stale; this packer recalculates both so the repacked image is valid.
+    Header / segment edits leave the trailing checksum byte and (depending on the format) the
+    appended SHA256 digest or the v2 CRC32 stale; this packer recalculates all of them so the
+    repacked image is valid.
     """
 
     id = b"ESPAppPacker"
@@ -346,31 +528,18 @@ class ESPAppPacker(Packer[None]):
 
     async def pack(self, resource: Resource, config=None) -> None:
         data = bytearray(await resource.get_data())
-        chip = _determine_chip(data)
-        has_extended_header = chip is not ESPChip.ESP8266
-        num_segments = data[1]
+        parsed = _parse_image(bytes(data))
 
-        segment_bytes = bytearray()
-        end_of_segments = ESP_APP_HEADER_SIZE + (
-            ESP_APP_EXTENDED_HEADER_SIZE if has_extended_header else 0
-        )
-        for _index, _vaddr, data_offset, size in _iter_segments(
-            data, has_extended_header, num_segments
-        ):
-            segment_bytes += data[data_offset : data_offset + size]
-            end_of_segments = data_offset + size
+        data[parsed.checksum_offset] = _calculate_checksum(bytes(data), parsed)
 
-        checksum_offset = _checksum_offset(end_of_segments)
-        calculated_checksum = ESP_APP_CHECKSUM_MAGIC
-        for byte in segment_bytes:
-            calculated_checksum ^= byte
-        calculated_checksum &= 0xFF
-        if checksum_offset < len(data):
-            data[checksum_offset] = calculated_checksum
+        if parsed.hash_appended and parsed.hash_offset is not None:
+            data[parsed.hash_offset : parsed.hash_offset + 32] = hashlib.sha256(
+                bytes(data[: parsed.hash_offset])
+            ).digest()
 
-        # Recompute the appended SHA256 digest (ESP32-family images with hash_appended set).
-        hash_offset = checksum_offset + 1
-        if has_extended_header and data[23] == 1 and hash_offset + 32 <= len(data):
-            data[hash_offset : hash_offset + 32] = hashlib.sha256(data[:hash_offset]).digest()
+        if parsed.crc_offset is not None:
+            struct.pack_into(
+                "<I", data, parsed.crc_offset, _esp8266_crc32(bytes(data[: parsed.crc_offset]))
+            )
 
         resource.queue_patch(Range.from_size(0, len(data)), bytes(data))

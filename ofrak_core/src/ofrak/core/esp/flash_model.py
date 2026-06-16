@@ -245,7 +245,14 @@ class ESPPartition(ESPPartitionStructure, ESPFlashSection):
 
         :return: The header of the section
         """
-        return await self.resource.get_only_sibling_as_view(
+        # The partition is a child of the flash; its matching table entry is a child of the
+        # partition table (also a child of the flash), so navigate flash -> table -> entry.
+        flash_resource = await self.resource.get_parent()
+        partition_table = await flash_resource.get_only_child_as_view(
+            ESPPartitionTable,
+            ResourceFilter(tags=(ESPPartitionTable,)),
+        )
+        return await partition_table.resource.get_only_child_as_view(
             ESPPartitionTableEntry,
             ResourceFilter(
                 tags=(ESPPartitionTableEntry,),

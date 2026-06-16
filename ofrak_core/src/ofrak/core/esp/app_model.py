@@ -284,6 +284,7 @@ class ESPAppAttributes(ResourceAttributes):
     """
 
     magic: int
+    image_version: int
     num_segments: int
     flash_mode: int
     flash_size: int
@@ -309,6 +310,9 @@ class ESPAppAttributes(ResourceAttributes):
     wp_drv: Optional[int] = None
     stored_hash: Optional[bytes] = None
     calculated_hash: Optional[bytes] = None
+    # ESP8266 "v2" images carry a trailing CRC32 instead of an appended SHA256 digest.
+    crc32: Optional[int] = None
+    crc32_valid: bool = False
 
 
 ######################

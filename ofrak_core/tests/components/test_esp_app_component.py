@@ -1,4 +1,5 @@
 import os
+import struct
 import subprocess
 import sys
 import tempfile
@@ -7,6 +8,9 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
+
+from ofrak.component.unpacker import UnpackerError
+from ofrak.core.esp.app import _parse_image
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
@@ -107,6 +111,7 @@ async def test_esp_app_unpack(ofrak_context: OFRAKContext, test_case: ESPAppUnpa
     # Header / extended header / checksum / hash are exposed as attributes, not children.
     attributes = await root_resource.analyze(ESPAppAttributes)
     assert attributes.magic == test_case.magic
+    assert attributes.image_version == 1
     assert attributes.entry_point == test_case.entry_point
     assert attributes.num_segments == test_case.num_sections
     assert attributes.checksum == test_case.checksum
@@ -244,3 +249,119 @@ class TestESP8266AppUnpackModifyPack(UnpackModifyPackPattern):
         assert attributes.checksum_valid is True
 
         _verify_with_esptool(await repacked_root_resource.get_data(), has_hash=False)
+
+
+# ---------------------------------------------------------------------------
+# ESP8266 v2 (magic 0xEA) images
+# ---------------------------------------------------------------------------
+V2_IROM_ADDR = 0x40201010
+V2_IRAM_ADDR = 0x40100000
+V2_DRAM_ADDR = 0x3FFE8000
+V2_ENTRY_POINT = 0x40100000
+
+
+def _build_esp8266_v2_image() -> bytes:
+    """Build a valid ESP8266 v2 (0xEA) image with esptool, or skip if esptool is unavailable."""
+    try:
+        from esptool.bin_image import ESP8266V2FirmwareImage, ImageSegment
+    except ImportError:
+        pytest.skip("esptool not available to build a v2 fixture")
+
+    image = ESP8266V2FirmwareImage()
+    image.entrypoint = V2_ENTRY_POINT
+    image.flash_mode = 0
+    image.flash_size_freq = 0
+    image.segments.append(
+        ImageSegment(V2_IROM_ADDR, b"\xAA" * 48, 0)
+    )  # irom0 (excluded from cksum)
+    image.segments.append(ImageSegment(V2_IRAM_ADDR, b"\xBB" * 32, 0))
+    image.segments.append(ImageSegment(V2_DRAM_ADDR, b"\xCC" * 16, 0))
+
+    path = tempfile.mktemp(suffix=".bin")
+    try:
+        image.save(path)
+        with open(path, "rb") as f:
+            return f.read()
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+
+async def test_esp8266_v2_unpack(ofrak_context: OFRAKContext):
+    """An ESP8266 v2 image is identified, unpacked into irom0 + segments, and validated."""
+    data = _build_esp8266_v2_image()
+    root_resource = await ofrak_context.create_root_resource("v2.bin", data)
+    await root_resource.identify()
+    assert root_resource.has_tag(ESPApp)
+
+    await root_resource.unpack()
+    esp_app = await root_resource.view_as(ESPApp)
+    sections = list(await esp_app.get_sections())
+    assert len(sections) == 3  # irom0 + iram + dram
+
+    attributes = await root_resource.analyze(ESPAppAttributes)
+    assert attributes.image_version == 2
+    assert attributes.magic == 0xEA
+    assert attributes.chip == ESPChip.ESP8266
+    assert attributes.entry_point == V2_ENTRY_POINT
+    assert attributes.has_extended_header is False
+    assert attributes.hash_appended is False
+    # v2 images carry a CRC32 footer (not a SHA256 digest); both checksum and CRC must be valid.
+    assert attributes.checksum_valid is True
+    assert attributes.crc32 is not None
+    assert attributes.crc32_valid is True
+
+
+class TestESP8266V2UnpackModifyPack(UnpackModifyPackPattern):
+    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+        return await ofrak_context.create_root_resource("v2.bin", _build_esp8266_v2_image())
+
+    async def unpack(self, root_resource: Resource) -> None:
+        await root_resource.identify()
+        await root_resource.unpack()
+
+    async def modify(self, unpacked_root_resource: Resource) -> None:
+        self.new_entry_point = 0x40108000
+        await unpacked_root_resource.run(
+            ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=self.new_entry_point)
+        )
+
+    async def repack(self, modified_root_resource: Resource) -> None:
+        await modified_root_resource.run(ESPAppPacker)
+
+    async def verify(self, repacked_root_resource: Resource) -> None:
+        await repacked_root_resource.identify()
+        assert repacked_root_resource.has_tag(ESPApp)
+
+        attributes = await repacked_root_resource.analyze(ESPAppAttributes)
+        assert attributes.image_version == 2
+        assert attributes.entry_point == self.new_entry_point
+        # The packer must recompute both the XOR checksum and the trailing CRC32.
+        assert attributes.checksum_valid is True
+        assert attributes.crc32_valid is True
+
+
+# ---------------------------------------------------------------------------
+# Robustness: malformed / truncated input must fail cleanly, not crash
+# ---------------------------------------------------------------------------
+def test_parse_image_rejects_malformed():
+    """_parse_image raises UnpackerError (not IndexError/struct.error) on bad input."""
+    # Too small to hold even a header.
+    with pytest.raises(UnpackerError):
+        _parse_image(b"\xe9")
+    # Valid magic but the declared segments run past the end of the data.
+    truncated = bytes([0xE9, 3, 0, 0]) + struct.pack("<I", 0x40080000)
+    with pytest.raises(UnpackerError):
+        _parse_image(truncated)
+    # Unknown magic.
+    with pytest.raises(UnpackerError):
+        _parse_image(b"\x00" * 64)
+
+
+async def test_identifier_ignores_short_resource(ofrak_context: OFRAKContext):
+    """A 1-3 byte resource starting with 0xE9 must not crash the ESP app identifier."""
+    root_resource = await ofrak_context.create_root_resource("tiny.bin", b"\xe9\x00")
+    await root_resource.identify()  # must not raise IndexError
+    assert not root_resource.has_tag(ESPApp)
