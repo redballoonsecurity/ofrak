@@ -374,7 +374,7 @@ class ESPAppUnpacker(Unpacker[None]):
     :param children: A tuple containing the children resource types created when unpacking
     """
 
-    id = b"ESP32AppUnpacker"
+    id = b"ESPAppUnpacker"
     targets = (ESPApp,)
     children = (ESPAppSection,)
 
