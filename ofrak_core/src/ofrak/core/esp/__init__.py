@@ -44,7 +44,6 @@ from .flash import (
     ESPFlashIdentifier,
     ESPFlashUnpacker,
     ESPFlashAnalyzer,
-    ESPFlashAttributes,
     ESPPartitionTableEntryModifier,
     ESPPartitionTableEntryModifierConfig,
 )
@@ -52,6 +51,7 @@ from .flash import (
 # Flash models
 from .flash_model import (
     ESPFlash,
+    ESPFlashAttributes,
     ESPPartitionTable,
     ESPPartition,
     ESPPartitionTableEntry,
@@ -63,7 +63,7 @@ from .flash_model import (
     ESPPartitionFlag,
     ESP_PARTITION_ENTRY_MAGIC,
     ESP_PARTITION_TABLE_OFFSET,
-    ESP_PARTITION_TABLE_EST_MAX,
+    ESP_PARTITION_TABLE_SIZE,
     ESP_PARTITION_ENTRY_SIZE,
     ESP_BOOTLOADER_OFFSET,
     ESP_BOOTLOADER_MAGIC,
@@ -118,7 +118,7 @@ __all__ = [
     "ESPPartitionFlag",
     "ESP_PARTITION_ENTRY_MAGIC",
     "ESP_PARTITION_TABLE_OFFSET",
-    "ESP_PARTITION_TABLE_EST_MAX",
+    "ESP_PARTITION_TABLE_SIZE",
     "ESP_PARTITION_ENTRY_SIZE",
     "ESP_BOOTLOADER_OFFSET",
     "ESP_BOOTLOADER_MAGIC",

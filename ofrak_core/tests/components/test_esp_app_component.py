@@ -1,5 +1,4 @@
 import os
-import struct
 import subprocess
 import sys
 import tempfile
@@ -10,17 +9,21 @@ from typing import Optional
 import pytest
 
 from ofrak.component.unpacker import UnpackerError
-from ofrak.core.esp.app import _parse_image
+from ofrak.core.esp.app import _determine_chip, _parse_image
+from ofrak.core.program import CodeRegion
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.esp import (
     ESPApp,
     ESPAppAttributes,
+    ESPAppFlashMode,
     ESPAppHeaderModifier,
     ESPAppHeaderModifierConfig,
     ESPAppPacker,
     ESPChip,
+    ESP_APP_HEADER_SIZE,
+    ESP_APP_SEGMENT_HEADER_SIZE,
 )
 from pytest_ofrak.patterns.modify import ModifyPattern
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
@@ -43,6 +46,10 @@ class ESPAppUnpackTestCase:
     entry_point: int
     checksum: int
     chip: ESPChip
+    # Expected names of the chip-aware decoded flash size / frequency (the analyzer turns the raw
+    # nibbles into these so the breakdown is interpretable in the GUI).
+    flash_size_decoded: str
+    flash_frequency_decoded: str
     chip_id: Optional[int] = None
     stored_hash: Optional[bytes] = None
 
@@ -58,6 +65,8 @@ ESP_APP_TEST_CASES = [
         entry_point=0x400829AC,
         checksum=0xEA,
         chip=ESPChip.ESP32,
+        flash_size_decoded="S_4MB",
+        flash_frequency_decoded="ITFF_0MHz",
         chip_id=0x0000,  # ESP32
         stored_hash=bytes.fromhex(
             "0750ce50194e3125f218af81d7a07ad0f5c23500ac487f047d77e89acadb6300"
@@ -73,6 +82,8 @@ ESP_APP_TEST_CASES = [
         entry_point=0x40376EC4,
         checksum=0x70,
         chip=ESPChip.ESP32S3,
+        flash_size_decoded="S_8MB",
+        flash_frequency_decoded="ITFF_FMHz",
         chip_id=0x0009,  # ESP32-S3
         stored_hash=bytes.fromhex(
             "fec85e5eee92d767571cf058f150907c988c482cb2a71c0fc280f5202667832e"
@@ -88,6 +99,43 @@ ESP_APP_TEST_CASES = [
         entry_point=0x4010F480,
         checksum=0x2B,
         chip=ESPChip.ESP8266,
+        flash_size_decoded="S_4MB",
+        flash_frequency_decoded="F_40MHz",
+    ),
+    ESPAppUnpackTestCase(
+        label="ESP32-C3 App (RISC-V)",
+        binary_path="esp32c3_hello.bin",
+        has_extended_header=True,
+        has_hash=True,
+        num_sections=1,
+        magic=0xE9,
+        entry_point=0x4037C000,
+        checksum=0x0F,
+        chip=ESPChip.ESP32C3,
+        flash_size_decoded="S_1MB",
+        flash_frequency_decoded="ITFF_0MHz",
+        chip_id=0x0005,  # ESP32-C3 (RISC-V)
+        stored_hash=bytes.fromhex(
+            "f4fff5fd5a1c7eaceeec150360b8e1ce94b231c74b3e5563d4dde2b43954a86e"
+        ),
+    ),
+    ESPAppUnpackTestCase(
+        label="ESP32-C6 App (RISC-V)",
+        binary_path="esp32c6_hello.bin",
+        has_extended_header=True,
+        has_hash=True,
+        num_sections=1,
+        magic=0xE9,
+        entry_point=0x40800000,
+        checksum=0x0F,
+        chip=ESPChip.ESP32C6,
+        flash_size_decoded="S_1MB",
+        # C6 uses a chip-specific frequency table (raw 0 -> 80 MHz, not the ESP32 ITFF encoding).
+        flash_frequency_decoded="F_80MHz",
+        chip_id=0x000D,  # ESP32-C6 (RISC-V)
+        stored_hash=bytes.fromhex(
+            "1f018e001c9410499711dc01c89e0e0f5e44407108009d3d3a51a1cf40bb0f70"
+        ),
     ),
 ]
 
@@ -117,6 +165,13 @@ async def test_esp_app_unpack(ofrak_context: OFRAKContext, test_case: ESPAppUnpa
     assert attributes.checksum == test_case.checksum
     assert attributes.chip == test_case.chip
     assert attributes.has_extended_header == test_case.has_extended_header
+
+    # The raw flash size/frequency nibbles are decoded (chip-aware) so the breakdown is readable.
+    # Compare names with ``is not None`` first -- the value-0 members (e.g. ITFF_0MHz) are falsy.
+    assert attributes.flash_size_decoded is not None
+    assert attributes.flash_size_decoded.name == test_case.flash_size_decoded
+    assert attributes.flash_frequency_decoded is not None
+    assert attributes.flash_frequency_decoded.name == test_case.flash_frequency_decoded
 
     # The unmodified images are valid.
     assert attributes.checksum_valid is True
@@ -152,7 +207,7 @@ class TestESPAppHeaderModification(ModifyPattern):
 
 
 def _verify_with_esptool(packed_data: bytes, has_hash: bool = True):
-    """Verify packed ESP app data with esptool's image_info, skipping if esptool is unavailable."""
+    """Independently validate packed ESP app data with esptool's ``image_info`` (a pinned test dep)."""
     with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as temp_file:
         temp_file.write(packed_data)
         temp_file.flush()
@@ -160,7 +215,15 @@ def _verify_with_esptool(packed_data: bytes, has_hash: bool = True):
 
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "esptool", "image_info", "--version", "2", temp_path],
+            [
+                sys.executable,
+                "-m",
+                "esptool",
+                "image_info",
+                "--version",
+                "2",
+                temp_path,
+            ],
             capture_output=True,
             text=True,
             timeout=30,
@@ -177,8 +240,6 @@ def _verify_with_esptool(packed_data: bytes, has_hash: bool = True):
                 word in output.lower() for word in ["hash", "digest", "sha256"]
             ), "Output should contain hash information for ESP32 images"
 
-    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
-        pytest.skip(f"esptool not available or timed out: {e}")
     finally:
         try:
             os.unlink(temp_path)
@@ -201,7 +262,8 @@ class TestESP32AppUnpackModifyPack(UnpackModifyPackPattern):
         self.new_entry_point = 0x40080400 if attributes.entry_point != 0x40080400 else 0x40080500
 
         await unpacked_root_resource.run(
-            ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=self.new_entry_point)
+            ESPAppHeaderModifier,
+            ESPAppHeaderModifierConfig(entry_point=self.new_entry_point),
         )
 
     async def repack(self, modified_root_resource: Resource) -> None:
@@ -234,7 +296,8 @@ class TestESP8266AppUnpackModifyPack(UnpackModifyPackPattern):
         self.new_entry_point = 0x40080400 if attributes.entry_point != 0x40080400 else 0x40080500
 
         await unpacked_root_resource.run(
-            ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=self.new_entry_point)
+            ESPAppHeaderModifier,
+            ESPAppHeaderModifierConfig(entry_point=self.new_entry_point),
         )
 
     async def repack(self, modified_root_resource: Resource) -> None:
@@ -254,44 +317,13 @@ class TestESP8266AppUnpackModifyPack(UnpackModifyPackPattern):
 # ---------------------------------------------------------------------------
 # ESP8266 v2 (magic 0xEA) images
 # ---------------------------------------------------------------------------
-V2_IROM_ADDR = 0x40201010
-V2_IRAM_ADDR = 0x40100000
-V2_DRAM_ADDR = 0x3FFE8000
+# Entry point of the committed esp8266v2_hello.bin fixture (its _start, in IRAM).
 V2_ENTRY_POINT = 0x40100000
-
-
-def _build_esp8266_v2_image() -> bytes:
-    """Build a valid ESP8266 v2 (0xEA) image with esptool, or skip if esptool is unavailable."""
-    try:
-        from esptool.bin_image import ESP8266V2FirmwareImage, ImageSegment
-    except ImportError:
-        pytest.skip("esptool not available to build a v2 fixture")
-
-    image = ESP8266V2FirmwareImage()
-    image.entrypoint = V2_ENTRY_POINT
-    image.flash_mode = 0
-    image.flash_size_freq = 0
-    image.segments.append(
-        ImageSegment(V2_IROM_ADDR, b"\xAA" * 48, 0)
-    )  # irom0 (excluded from cksum)
-    image.segments.append(ImageSegment(V2_IRAM_ADDR, b"\xBB" * 32, 0))
-    image.segments.append(ImageSegment(V2_DRAM_ADDR, b"\xCC" * 16, 0))
-
-    path = tempfile.mktemp(suffix=".bin")
-    try:
-        image.save(path)
-        with open(path, "rb") as f:
-            return f.read()
-    finally:
-        try:
-            os.unlink(path)
-        except OSError:
-            pass
 
 
 async def test_esp8266_v2_unpack(ofrak_context: OFRAKContext):
     """An ESP8266 v2 image is identified, unpacked into irom0 + segments, and validated."""
-    data = _build_esp8266_v2_image()
+    data = load_esp_asset("esp8266v2_hello.bin")
     root_resource = await ofrak_context.create_root_resource("v2.bin", data)
     await root_resource.identify()
     assert root_resource.has_tag(ESPApp)
@@ -316,7 +348,9 @@ async def test_esp8266_v2_unpack(ofrak_context: OFRAKContext):
 
 class TestESP8266V2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        return await ofrak_context.create_root_resource("v2.bin", _build_esp8266_v2_image())
+        return await ofrak_context.create_root_resource(
+            "v2.bin", load_esp_asset("esp8266v2_hello.bin")
+        )
 
     async def unpack(self, root_resource: Resource) -> None:
         await root_resource.identify()
@@ -325,7 +359,8 @@ class TestESP8266V2UnpackModifyPack(UnpackModifyPackPattern):
     async def modify(self, unpacked_root_resource: Resource) -> None:
         self.new_entry_point = 0x40108000
         await unpacked_root_resource.run(
-            ESPAppHeaderModifier, ESPAppHeaderModifierConfig(entry_point=self.new_entry_point)
+            ESPAppHeaderModifier,
+            ESPAppHeaderModifierConfig(entry_point=self.new_entry_point),
         )
 
     async def repack(self, modified_root_resource: Resource) -> None:
@@ -346,18 +381,49 @@ class TestESP8266V2UnpackModifyPack(UnpackModifyPackPattern):
 # ---------------------------------------------------------------------------
 # Robustness: malformed / truncated input must fail cleanly, not crash
 # ---------------------------------------------------------------------------
-def test_parse_image_rejects_malformed():
-    """_parse_image raises UnpackerError (not IndexError/struct.error) on bad input."""
-    # Too small to hold even a header.
+@pytest.mark.parametrize("asset", ["esp32c3_hello.bin", "esp8266v2_hello.bin"])
+def test_parse_image_truncation_never_crashes(asset: str):
+    """
+    Truncating a real image at any length must make ``_parse_image`` either parse it or raise a
+    clean ``UnpackerError`` -- never an IndexError/struct.error. Sweeping the small ESP32-family
+    image (extended header + appended SHA256) and the ESP8266 v2 image (CRC32 footer) exercises
+    every truncation guard with real data.
+    """
+    data = load_esp_asset(asset)
+    for n in range(len(data) + 1):
+        try:
+            _parse_image(data[:n])
+        except UnpackerError:
+            pass
+
+
+def test_parse_image_rejects_unknown_magic():
+    """A real image whose magic byte is corrupted is rejected, not misparsed."""
+    data = bytearray(load_esp_asset("esp32_hello.bin"))
+    data[0] = 0x00  # neither 0xE9 nor 0xEA
     with pytest.raises(UnpackerError):
-        _parse_image(b"\xe9")
-    # Valid magic but the declared segments run past the end of the data.
-    truncated = bytes([0xE9, 3, 0, 0]) + struct.pack("<I", 0x40080000)
+        _parse_image(bytes(data))
+
+
+def test_parse_image_rejects_bad_v2_second_header():
+    """An ESP8266 v2 image whose second header lacks the 0xE9 magic is rejected."""
+    data = bytearray(load_esp_asset("esp8266v2_hello.bin"))
+    # The second header follows the 8-byte first header and the irom0 segment (8-byte header + data).
+    irom_size = int.from_bytes(data[12:16], "little")
+    second_header = ESP_APP_HEADER_SIZE + ESP_APP_SEGMENT_HEADER_SIZE + irom_size
+    data[second_header] = 0x00  # corrupt the expected 0xE9 second-header magic
     with pytest.raises(UnpackerError):
-        _parse_image(truncated)
-    # Unknown magic.
-    with pytest.raises(UnpackerError):
-        _parse_image(b"\x00" * 64)
+        _parse_image(bytes(data))
+
+
+def test_determine_chip_unknown_chip_id_is_esp8266():
+    """
+    An extended header carrying an *unrecognized* chip id falls back to ESP8266 (the
+    ``_determine_chip`` UNKNOWN branch). Byte-patch a real ESP32 image's chip-id field.
+    """
+    data = bytearray(load_esp_asset("esp32_hello.bin"))
+    data[12:14] = (0xABCD).to_bytes(2, "little")  # not a known IMAGE_CHIP_ID
+    assert _determine_chip(bytes(data)) == ESPChip.ESP8266
 
 
 async def test_identifier_ignores_short_resource(ofrak_context: OFRAKContext):
@@ -365,3 +431,75 @@ async def test_identifier_ignores_short_resource(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource("tiny.bin", b"\xe9\x00")
     await root_resource.identify()  # must not raise IndexError
     assert not root_resource.has_tag(ESPApp)
+
+
+async def test_esp_app_header_modifier_flash_fields(ofrak_context: OFRAKContext):
+    """ESPAppHeaderModifier rewrites flash mode/size/frequency in place (packer revalidates)."""
+    root = await ofrak_context.create_root_resource("hdr.bin", load_esp_asset("esp32_hello.bin"))
+    await root.identify()
+    await root.run(
+        ESPAppHeaderModifier,
+        ESPAppHeaderModifierConfig(
+            flash_mode=ESPAppFlashMode.DIO,
+            flash_size=0x20,  # high nibble
+            flash_frequency=0x0F,  # low nibble
+        ),
+    )
+    await root.run(ESPAppPacker)
+    attributes = await root.analyze(ESPAppAttributes)
+    assert attributes.flash_mode == ESPAppFlashMode.DIO.value
+    assert attributes.flash_size == 0x20
+    assert attributes.flash_frequency == 0x0F
+    assert attributes.checksum_valid is True
+
+
+async def test_esp_app_get_section_by_name(ofrak_context: OFRAKContext):
+    """ESPApp.get_section_by_name returns the loadable segment with the given name."""
+    root = await ofrak_context.create_root_resource("byname.bin", load_esp_asset("esp32_hello.bin"))
+    await root.identify()
+    await root.unpack()
+    esp_app = await root.view_as(ESPApp)
+    names = [s.name for s in await esp_app.get_sections()]
+    unique_name = next(n for n in names if names.count(n) == 1)
+    section = await esp_app.get_section_by_name(unique_name)
+    assert section.name == unique_name
+
+
+async def test_flash_decode_handles_unknown_codes(ofrak_context: OFRAKContext):
+    """
+    A flash size/frequency code outside the chip's table decodes to None rather than crashing the
+    analyzer -- real-world firmware can carry non-standard or modified flash bytes.
+    """
+    data = bytearray(load_esp_asset("esp32c6_hello.bin"))
+    # High nibble 0x90 is not a valid ESP32 flash size; low nibble 0x1 is not a valid ESP32-C6
+    # frequency. The low nibble (1) still passes the identifier's flash-frequency sanity check.
+    data[3] = 0x91
+    root = await ofrak_context.create_root_resource("weird_flash.bin", bytes(data))
+    await root.identify()
+    assert root.has_tag(ESPApp)
+    attributes = await root.analyze(ESPAppAttributes)
+    assert attributes.flash_size_decoded is None
+    assert attributes.flash_frequency_decoded is None
+
+
+async def test_esp_code_region_tagging(ofrak_context: OFRAKContext):
+    """
+    Loadable segments mapped to instruction memory are tagged CodeRegion, but a segment must NOT be
+    tagged on the RISC-V parts where the IRAM and DRAM windows are the same address range (the bug
+    `_classify_segment` guards against). ESP32-C6's only segment loads into that coincident window.
+    """
+    # ESP32: IRAM/IROM are distinct from DRAM/DROM, so at least one segment is genuinely code.
+    esp32 = await ofrak_context.create_root_resource("esp32.bin", load_esp_asset("esp32_hello.bin"))
+    await esp32.identify()
+    await esp32.unpack()
+    esp32_sections = list(await (await esp32.view_as(ESPApp)).get_sections())
+    assert any(s.resource.has_tag(CodeRegion) for s in esp32_sections)
+
+    # ESP32-C6: IRAM == DRAM window, so its RAM segment must NOT be mistagged as code.
+    c6 = await ofrak_context.create_root_resource("c6.bin", load_esp_asset("esp32c6_hello.bin"))
+    await c6.identify()
+    await c6.unpack()
+    c6_sections = list(await (await c6.view_as(ESPApp)).get_sections())
+    coincident = [s for s in c6_sections if s.virtual_address == 0x40800000]
+    assert coincident, "expected the ESP32-C6 segment in the coincident IRAM/DRAM window"
+    assert all(not s.resource.has_tag(CodeRegion) for s in coincident)

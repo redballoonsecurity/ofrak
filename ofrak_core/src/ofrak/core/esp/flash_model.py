@@ -1,17 +1,15 @@
-import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable
 
 from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection
-from ofrak.model.resource_model import index
+from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceFilter,
 )
-from ofrak.service.resource_service_i import ResourceFilter
 
 """
 # ESP-IDF Flash Dump, Partition-table based, Documentation
@@ -64,12 +62,13 @@ from ofrak.service.resource_service_i import ResourceFilter
     +-------+----------------------------------------------+
 """
 
-LOGGER = logging.getLogger(__name__)
-
 ESP_PARTITION_ENTRY_MAGIC = 0x50AA.to_bytes(2, "little")
 ESP_PARTITION_TABLE_OFFSET = 0x8000
-ESP_PARTITION_TABLE_EST_MAX = 0x9000
-ESP_PARTITION_ENTRY_SIZE = 25
+# The partition table occupies a single 4 KB flash sector at ``ESP_PARTITION_TABLE_OFFSET``.
+ESP_PARTITION_TABLE_SIZE = 0x1000
+# Each partition-table entry is 32 bytes packed as ``<HBBII16sI`` (magic, type, subtype, offset,
+# size, 16-byte label, flags).
+ESP_PARTITION_ENTRY_SIZE = 32
 ESP_BOOTLOADER_OFFSET = 0x1000
 ESP_BOOTLOADER_MAGIC = 0xE9
 
@@ -83,7 +82,7 @@ class ESPPartitionType(Enum):
     INVALID = "Invalid"
 
     @staticmethod
-    def from_value(value):
+    def from_value(value: int) -> "ESPPartitionType":
         if value == 0:
             return ESPPartitionType.APP
         elif value == 1:
@@ -122,7 +121,7 @@ class ESPPartitionSubtype(Enum):
     INVALID = "Invalid"
 
     @staticmethod
-    def from_value(value):
+    def from_value(value: int) -> "ESPPartitionSubtype":
         for subtype in ESPPartitionSubtype:
             if subtype.value == value:
                 return subtype
@@ -135,7 +134,7 @@ class ESPPartitionFlag(Enum):
     INVALID = "Invalid"
 
     @staticmethod
-    def from_value(value):
+    def from_value(value: int) -> "ESPPartitionFlag":
         if value == 0:
             return ESPPartitionFlag.NOT_ENCRYPTED
         elif value == 1:
@@ -151,6 +150,7 @@ class ESPPartitionFlag(Enum):
 class ESPFlashSectionStructure(ResourceView):
     """
     Base class for section headers and sections, links them via index.
+
     :param section_index: Index of the section
     """
 
@@ -158,21 +158,17 @@ class ESPFlashSectionStructure(ResourceView):
 
     @index
     def SectionIndex(self) -> int:
-        """
-        Returns the index of the section.
-
-        :return: Index of the section
-        """
         return self.section_index
 
 
 @dataclass
 class ESPFlashSection(ESPFlashSectionStructure, NamedProgramSection):
     """
-    ESP Flash Section.
+    A section of an ESP flash dump (the bootloader, partition table, or a partition payload).
 
-    :param offset: offset of the partition/section.
-    :param size: size of the partition/section.
+    :param name: name of the section
+    :param virtual_address: flash offset the section starts at
+    :param size: size of the section in bytes
     """
 
 
@@ -180,18 +176,14 @@ class ESPFlashSection(ESPFlashSectionStructure, NamedProgramSection):
 class ESPPartitionStructure(ResourceView):
     """
     Base class for partition entries and sections, links them via index.
+
     :param partition_index: Index of the partition.
     """
 
     partition_index: int
 
     @index
-    def SectionIndex(self) -> int:
-        """
-        Returns the index of the section.
-
-        :return: Index of the section.
-        """
+    def PartitionIndex(self) -> int:
         return self.partition_index
 
 
@@ -224,7 +216,7 @@ class ESPPartitionTableEntry(ESPPartitionStructure, ESPFlashSection):
                 tags=(ESPPartition,),
                 attribute_filters=[
                     ResourceAttributeValueFilter(
-                        ESPPartitionStructure.SectionIndex, self.partition_index
+                        ESPPartitionStructure.PartitionIndex, self.partition_index
                     )
                 ],
             ),
@@ -258,7 +250,7 @@ class ESPPartition(ESPPartitionStructure, ESPFlashSection):
                 tags=(ESPPartitionTableEntry,),
                 attribute_filters=[
                     ResourceAttributeValueFilter(
-                        ESPPartitionStructure.SectionIndex, self.partition_index
+                        ESPPartitionStructure.PartitionIndex, self.partition_index
                     )
                 ],
             ),
@@ -285,11 +277,14 @@ class ESPPartitionTable(ESPFlashSection):
 
         :param name: The name of the section to retrieve
         :raises NotFoundError: If no section with the given name is found
-        :return: The `ESPSection` instance with the specified name
+        :return: The `ESPPartition` instance with the specified name
         """
         await self.get_entries()
 
-        return await self.resource.get_only_child_as_view(
+        # Partition payloads are children of the flash (this table's parent), not of the table
+        # itself (whose children are the partition-table entries).
+        flash_resource = await self.resource.get_parent()
+        return await flash_resource.get_only_child_as_view(
             ESPPartition,
             ResourceFilter(
                 tags=(ESPPartition,),
@@ -344,3 +339,24 @@ class ESPFlash(Program):
                 tags=(ESPPartitionTable,),
             ),
         )
+
+
+######################
+# ANALYZER RESOURCES #
+######################
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class ESPFlashAttributes(ResourceAttributes):
+    """
+    Summary attributes of an ESP flash dump, attached to the `ESPFlash` resource by
+    `ESPFlashAnalyzer`.
+
+    :ivar total_partitions: number of entries in the partition table
+    :ivar total_flash_size: size of the flash image in bytes
+    :ivar has_overlapping_partitions: whether any two partition payloads overlap
+    :ivar unused_space: bytes between the end of the last partition and the end of the flash image
+    """
+
+    total_partitions: int
+    total_flash_size: int
+    has_overlapping_partitions: bool
+    unused_space: int

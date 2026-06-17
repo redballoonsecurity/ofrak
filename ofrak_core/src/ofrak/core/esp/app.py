@@ -21,6 +21,8 @@ from ofrak.core.esp.app_model import (
     ESPAppHeaderModifierConfig,
     ESPAppSection,
     ESPChip,
+    FlashFrequency,
+    FlashSize,
     ESP_APP_CHECKSUM_MAGIC,
     ESP_APP_EXTENDED_HEADER_SIZE,
     ESP_APP_HEADER_SIZE,
@@ -28,9 +30,6 @@ from ofrak.core.esp.app_model import (
     ESP_APP_SEGMENT_HEADER_SIZE,
     ESP8266V2_APP_MAGIC,
 )
-
-# The "segment count" byte of an ESP8266 v2 first header is a constant marker, not a real count.
-ESP8266_V2_SEGMENT_MARKER = 4
 
 # Per-chip memory maps, mirroring esptool's ``ROM_LOADER.MEMORY_MAP``. A segment's memory type is
 # determined by the region its load address falls into (this is how esptool names segments). These
@@ -124,8 +123,11 @@ def _esp8266_crc32(data: bytes) -> int:
 def _determine_chip(data: bytes) -> ESPChip:
     """
     Determine the ESP chip type by inspecting the (optional) extended header. ESP8266 images have
-    no extended header, so an image is treated as ESP8266 unless the bytes where the extended
-    header would be carry a plausible ``hash_appended`` flag (0/1) and a known chip id.
+    no extended header, so this is a heuristic: an image is treated as ESP8266 unless the bytes
+    where an ESP32-family extended header would sit carry a plausible ``hash_appended`` flag (0 or
+    1) *and* a recognized chip id. The only case this can misread is a v1 ESP8266 image whose first
+    segment happens to mimic both of those (unlikely in practice); callers that already know the
+    target chip should not rely on this.
 
     :param data: the ESP app image bytes
     :return: the detected :class:`ESPChip` (``ESP8266`` when no extended header is present)
@@ -146,6 +148,16 @@ def _segment_memory_types(virtual_address: int, chip: ESPChip) -> List[str]:
     return [name for start, end, name in memory_map if start <= virtual_address < end]
 
 
+def _is_instruction_region(name: str) -> bool:
+    """Whether a memory-map region name denotes instruction memory (IRAM / IROM)."""
+    return "IRAM" in name or "IROM" in name
+
+
+def _is_data_region(name: str) -> bool:
+    """Whether a memory-map region name denotes data memory (DRAM / DROM / RTC_DATA / ...)."""
+    return "DRAM" in name or "DROM" in name or "DATA" in name or "DPORT" in name
+
+
 def _classify_segment(
     virtual_address: int, chip: ESPChip, index: int, is_v2_irom: bool
 ) -> Tuple[str, bool]:
@@ -154,7 +166,13 @@ def _classify_segment(
         return "irom0", True
     memory_types = _segment_memory_types(virtual_address, chip)
     name = ", ".join(memory_types) if memory_types else f"segment_{index}"
-    is_code = any("IRAM" in t or "IROM" in t for t in memory_types)
+    # A segment is code only when its load address falls in instruction memory and *not* also in
+    # data memory. On the RISC-V parts (ESP32-C6/H2/C5/P4) the IRAM and DRAM windows are the same
+    # address range, so a pure-data segment there would otherwise be mistagged as a CodeRegion by a
+    # plain "IRAM" substring match.
+    is_code = any(_is_instruction_region(t) for t in memory_types) and not any(
+        _is_data_region(t) for t in memory_types
+    )
     return name, is_code
 
 
@@ -194,7 +212,12 @@ class _ParsedImage:
 
 
 def _read_segment(
-    data: bytes, offset: int, index: int, chip: ESPChip, in_checksum: bool, is_v2_irom: bool
+    data: bytes,
+    offset: int,
+    index: int,
+    chip: ESPChip,
+    in_checksum: bool,
+    is_v2_irom: bool,
 ) -> Tuple[_Segment, int]:
     """Parse one segment (8-byte header + data) at ``offset``, returning it and the next offset."""
     if offset + ESP_APP_SEGMENT_HEADER_SIZE > len(data):
@@ -228,9 +251,10 @@ def _parse_image(data: bytes) -> _ParsedImage:
 def _parse_v1_image(data: bytes) -> _ParsedImage:
     chip = _determine_chip(data)
     has_extended_header = chip is not ESPChip.ESP8266
+    # ``_determine_chip`` only returns an extended-header chip when at least the full extended header
+    # is present, and ``_parse_image`` already guaranteed the 8-byte base header, so ``header_size``
+    # bytes are always available here.
     header_size = ESP_APP_HEADER_SIZE + (ESP_APP_EXTENDED_HEADER_SIZE if has_extended_header else 0)
-    if len(data) < header_size:
-        raise UnpackerError("ESP image truncated: missing extended header")
 
     num_segments = data[1]
     flash_mode = data[2]
@@ -333,9 +357,7 @@ def _calculate_checksum(data: bytes, parsed: _ParsedImage) -> int:
 ####################
 class ESPAppIdentifier(Identifier):
     """
-    Identify ESP apps.
-
-    :param targets: A tuple containing the target resource types for identification
+    Identify ESP apps (ESP8266 v1/v2 and the ESP32 family) by their image magic and header fields.
     """
 
     targets = (GenericBinary, ESPFlashSection)
@@ -368,10 +390,6 @@ class ESPAppUnpacker(Unpacker[None]):
     extended header, checksum, and SHA256/CRC32 footer are exposed as `ESPAppAttributes` via
     `ESPAppAnalyzer` rather than as tagged children. Segments mapped to instruction memory
     (IRAM / IROM) are additionally tagged as `CodeRegion`.
-
-    :param id: Identifier for the unpacker
-    :param targets: A tuple containing the target resource types for unpacking
-    :param children: A tuple containing the children resource types created when unpacking
     """
 
     id = b"ESPAppUnpacker"
@@ -420,16 +438,20 @@ class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
         if parsed.has_extended_header:
             ext = data[ESP_APP_HEADER_SIZE : ESP_APP_HEADER_SIZE + ESP_APP_EXTENDED_HEADER_SIZE]
             wp_pin = ext[0]
-            drive_settings = ext[1] | (ext[2] << 8) | (ext[3] << 16)
-            clk_drv = (drive_settings >> 0) & 0x3
-            q_drv = (drive_settings >> 2) & 0x3
-            d_drv = (drive_settings >> 4) & 0x3
-            cs_drv = (drive_settings >> 6) & 0x3
-            hd_drv = (drive_settings >> 8) & 0x3
-            wp_drv = (drive_settings >> 10) & 0x3
-            chip_id, min_chip_rev_deprecated, min_chip_rev, max_chip_rev = struct.unpack_from(
-                "<HBHH", ext, 4
-            )
+            # Drive strengths are packed two-per-byte as 4-bit nibbles (esptool's ``join_byte``):
+            # ext[1] = clk_drv | q_drv << 4, ext[2] = d_drv | cs_drv << 4, ext[3] = hd_drv | wp_drv << 4.
+            clk_drv = ext[1] & 0x0F
+            q_drv = (ext[1] >> 4) & 0x0F
+            d_drv = ext[2] & 0x0F
+            cs_drv = (ext[2] >> 4) & 0x0F
+            hd_drv = ext[3] & 0x0F
+            wp_drv = (ext[3] >> 4) & 0x0F
+            (
+                chip_id,
+                min_chip_rev_deprecated,
+                min_chip_rev,
+                max_chip_rev,
+            ) = struct.unpack_from("<HBHH", ext, 4)
 
         calculated_checksum = _calculate_checksum(data, parsed)
         checksum_valid = parsed.stored_checksum == calculated_checksum
@@ -447,13 +469,17 @@ class ESPAppAnalyzer(Analyzer[None, ESPAppAttributes]):
             (crc32,) = struct.unpack_from("<I", data, parsed.crc_offset)
             crc32_valid = crc32 == _esp8266_crc32(data[: parsed.crc_offset])
 
+        flash_size = parsed.flash_size_freq & 0xF0
+        flash_frequency = parsed.flash_size_freq & 0x0F
         return ESPAppAttributes(
             magic=data[0],
             image_version=parsed.image_version,
             num_segments=len(parsed.segments),
             flash_mode=parsed.flash_mode,
-            flash_size=parsed.flash_size_freq & 0xF0,
-            flash_frequency=parsed.flash_size_freq & 0x0F,
+            flash_size=flash_size,
+            flash_frequency=flash_frequency,
+            flash_size_decoded=FlashSize.from_value(flash_size, parsed.chip),
+            flash_frequency_decoded=FlashFrequency.from_value(flash_frequency, parsed.chip),
             entry_point=parsed.entry_point,
             chip=parsed.chip,
             checksum=parsed.stored_checksum,
@@ -539,7 +565,10 @@ class ESPAppPacker(Packer[None]):
 
         if parsed.crc_offset is not None:
             struct.pack_into(
-                "<I", data, parsed.crc_offset, _esp8266_crc32(bytes(data[: parsed.crc_offset]))
+                "<I",
+                data,
+                parsed.crc_offset,
+                _esp8266_crc32(bytes(data[: parsed.crc_offset])),
             )
 
         resource.queue_patch(Range.from_size(0, len(data)), bytes(data))

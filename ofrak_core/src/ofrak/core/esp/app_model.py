@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Iterable, Optional
@@ -88,8 +87,6 @@ all bytes and the byte ``0xEF``.
     This digest is separate to secure boot and only used for detecting
     corruption.
 """
-
-LOGGER = logging.getLogger(__name__)
 
 ESP_APP_MAGIC = 0xE9
 ESP8266V2_APP_MAGIC = 0xEA  # In the esptool.py code, but haven't seen it in the documentation
@@ -190,22 +187,30 @@ class FlashFrequencyESP32C6(IntEnum):
 
 class FlashSize:
     @staticmethod
-    def from_value(value: int, chip: Optional[ESPChip] = None) -> IntEnum:
-        if chip is ESPChip.ESP8266:
-            return FlashSizeESP8266(value)
-        elif chip in (ESPChip.ESP32S2, ESPChip.ESP32S3):
-            return FlashSizeESP32S2S3(value)
-        return FlashSizeESP32(value)
+    def from_value(value: int, chip: Optional[ESPChip] = None) -> Optional[IntEnum]:
+        """Decode the high-nibble flash-size code for ``chip`` (``None`` if the code is unknown)."""
+        try:
+            if chip is ESPChip.ESP8266:
+                return FlashSizeESP8266(value)
+            elif chip in (ESPChip.ESP32S2, ESPChip.ESP32S3):
+                return FlashSizeESP32S2S3(value)
+            return FlashSizeESP32(value)
+        except ValueError:
+            return None
 
 
 class FlashFrequency:
     @staticmethod
-    def from_value(value: int, chip: Optional[ESPChip] = None) -> IntEnum:
-        if chip is ESPChip.ESP8266:
-            return FlashFrequencyESP8266(value)
-        elif chip is ESPChip.ESP32C6:
-            return FlashFrequencyESP32C6(value)
-        return FlashFrequencyESP32(value)
+    def from_value(value: int, chip: Optional[ESPChip] = None) -> Optional[IntEnum]:
+        """Decode the low-nibble flash-frequency code for ``chip`` (``None`` if the code is unknown)."""
+        try:
+            if chip is ESPChip.ESP8266:
+                return FlashFrequencyESP8266(value)
+            elif chip is ESPChip.ESP32C6:
+                return FlashFrequencyESP32C6(value)
+            return FlashFrequencyESP32(value)
+        except ValueError:
+            return None
 
 
 ######################
@@ -313,6 +318,10 @@ class ESPAppAttributes(ResourceAttributes):
     # ESP8266 "v2" images carry a trailing CRC32 instead of an appended SHA256 digest.
     crc32: Optional[int] = None
     crc32_valid: bool = False
+    # Chip-aware decodings of the raw flash_size / flash_frequency nibbles (the same byte means
+    # different sizes/frequencies per chip), or None if the code is unrecognized for this chip.
+    flash_size_decoded: Optional[IntEnum] = None
+    flash_frequency_decoded: Optional[IntEnum] = None
 
 
 ######################
