@@ -1,44 +1,55 @@
-from dataclasses import dataclass
-from tempfile312 import mkdtemp
+import logging
 import os
-from typing import Dict
+import threading
+import time
+from dataclasses import dataclass
+from typing import Dict, Optional, Tuple, Union, List, Any, Callable
 from xml.etree import ElementTree
 
+import pyghidra
+
+from ofrak import Modifier
 from ofrak.component.analyzer import Analyzer
-from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.decompilation import DecompilationAnalysis
-from ofrak.core.memory_region import MemoryRegion
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
-from ofrak_type import ArchInfo, Endianness, InstructionSet
-
-
 from ofrak.component.identifier import Identifier
-from ofrak.core.elf.model import Elf
+from ofrak.core import (
+    CodeRegion,
+    CodeRegionUnpacker,
+    BasicBlock,
+    DataWord,
+    BasicBlockUnpacker,
+    Instruction,
+)
+from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
+from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
+from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 from ofrak.core.ihex import Ihex
+from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.pe.model import Pe
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource, ResourceFactory
-from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
-from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
-    CachedAnalysis,
-    CachedCodeRegionUnpacker,
-    CachedComplexBlockUnpacker,
-    CachedBasicBlockUnpacker,
-    CachedGhidraCodeRegionModifier,
-    CachedDecompilationAnalyzer,
+from ofrak.resource_view import ResourceView
+from ofrak.service.abstract_ofrak_service import AbstractOfrakService
+from ofrak.service.component_locator_i import ComponentLocatorInterface
+from ofrak.service.data_service_i import DataServiceInterface
+from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
+from ofrak_pyghidra.standalone.pyghidra_analysis import _unpack_program, _unpack_code_region
+from ofrak_pyghidra.standalone.pyghidra_analysis import (
+    prepare_project,
+    _unpack_complex_block,
+    _unpack_basic_block,
 )
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
+from ofrak_type import ArchInfo, Endianness, InstructionSet, InstructionSetMode
 from ofrak_type.error import NotFoundError
-
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
+LOGGER = logging.getLogger("ofrak_pyghidra")
+
 
 @dataclass
-class PyGhidraProject(CachedAnalysis):
+class PyGhidraProject(ResourceView):
     """
     A resource which may be loaded into PyGhidra and analyzed.
     """
@@ -82,11 +93,224 @@ class PyGhidraUnpackerConfig(ComponentConfig):
     unpack_complex_blocks: bool
 
 
-class PyGhidraAnalysisStore(CachedAnalysisStore):
-    pass
+class PyGhidraAnalysisStore(AbstractOfrakService):
+    """
+    Manages open Ghidra project handles, keyed by a content-derived cache_key
+    (MD5 of binary + language + base_address + memory_regions).  Multiple OFRAK
+    resource IDs can share the same Ghidra project / JVM context; the project is
+    only closed when its last resource detaches.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._lock = threading.Lock()
+
+        # cache_key -> (flat_api, ctx)
+        self._projects: Dict[str, Tuple] = {}
+        # cache_key -> set of resource_ids currently using this project
+        self._project_refs: Dict[str, set] = {}
+
+        # resource_id -> cache_key
+        self._resource_to_project: Dict[bytes, str] = {}
+
+        self._base_address: Dict[str, int] = {}
+
+    # ------------------------------------------------------------------
+    # Lookups
+    # ------------------------------------------------------------------
+
+    def get_flat_api(self, resource_id: bytes):
+        """Return the cached flat_api for a resource, or None."""
+        with self._lock:
+            cache_key = self._resource_to_project.get(resource_id)
+            if cache_key is None:
+                return None
+            entry = self._projects.get(cache_key)
+            return entry[0] if entry is not None else None
+
+    def set_base_address(self, _id: bytes, address: int):
+        with self._lock:
+            cache_key = self._resource_to_project.get(_id)
+        if cache_key is not None:
+            self._base_address[cache_key] = address
+
+    def get_base_address(self, _id: bytes) -> Optional[int]:
+        with self._lock:
+            cache_key = self._resource_to_project.get(_id)
+        if cache_key is None:
+            return None
+        return self._base_address.get(cache_key)
+
+    # ------------------------------------------------------------------
+    # Project lifecycle
+    # ------------------------------------------------------------------
+
+    async def create_project(
+        self,
+        resource: Resource,
+        language: Optional[str] = None,
+        base_address: Union[str, int, None] = None,
+        memory_regions: Optional[List[Dict[str, Any]]] = None,
+        post_analysis_script: Optional[Callable] = None,
+    ) -> Tuple:
+        project_params = await prepare_project(resource, language, base_address, memory_regions)
+
+        cache_key = project_params["cache_key"]
+        program_file = project_params["program_file"]
+        cache_dir = project_params["project_location"]
+        project_name = project_params["project_name"]
+        cached = project_params["cached"]
+        resource_id = resource.get_id()
+
+        with self._lock:
+            if cache_key in self._projects:
+                self._project_refs[cache_key].add(resource_id)
+                self._resource_to_project[resource_id] = cache_key
+                flat_api = self._projects[cache_key][0]
+                LOGGER.warning(
+                    "Reusing already-open Ghidra project for resource %s (cache_key=%s, refs=%d)",
+                    resource_id.hex(),
+                    cache_key[:12],
+                    len(self._project_refs[cache_key]),
+                )
+                return flat_api
+
+        open_start = time.time()
+        if cached:
+            LOGGER.warning("Cache HIT: reusing Ghidra project on disk")
+        else:
+            LOGGER.warning("Cache MISS: creating new Ghidra project")
+        ctx = pyghidra.open_program(
+            program_file,
+            language=language,
+            project_location=cache_dir,
+            project_name=project_name,
+            analyze=not cached,
+        )
+        flat_api = ctx.__enter__()
+        open_elapsed = time.time() - open_start
+        LOGGER.warning(f"Ghidra project opened in {open_elapsed:.1f}s")
+
+        if not cached:
+            from ghidra.util.task import TaskMonitor
+            from java.io import ByteArrayInputStream
+
+            if memory_regions:
+                program = flat_api.getCurrentProgram()
+                memory = program.getMemory()
+                address_factory = program.getAddressFactory()
+                default_space = address_factory.getDefaultAddressSpace()
+
+                for block in memory.getBlocks():
+                    memory.removeBlock(block, TaskMonitor.DUMMY)
+
+                for region in memory_regions:
+                    addr = default_space.getAddress(region["virtual_address"])
+                    data_bytes = region["data"]
+                    block_name = f"region_{region['virtual_address']:x}"
+
+                    try:
+                        input_stream = ByteArrayInputStream(data_bytes)
+
+                        memory.createInitializedBlock(
+                            block_name,
+                            addr,
+                            input_stream,
+                            len(data_bytes),
+                            TaskMonitor.DUMMY,
+                            False,
+                        )
+
+                        block = memory.getBlock(addr)
+                        block.setExecute(True)
+                        block.setRead(True)
+                    except Exception as e:
+                        logging.warning(
+                            f"Failed to create memory block at "
+                            f"0x{region['virtual_address']:x}: {e}"
+                        )
+                flat_api.analyzeAll(program)
+
+            if base_address:
+                if isinstance(base_address, str):
+                    if base_address.startswith("0x"):
+                        base_address = int(base_address, 16)
+                    else:
+                        base_address = int(base_address)
+
+                program = flat_api.getCurrentProgram()
+                address_factory = program.getAddressFactory()
+                new_base_addr = address_factory.getDefaultAddressSpace().getAddress(
+                    hex(base_address)
+                )
+                program.setImageBase(new_base_addr, True)
+                LOGGER.info(f"Rebased program address to {hex(base_address)}")
+
+            if post_analysis_script:
+                post_analysis_script(flat_api)
+
+            LOGGER.warning("Flushing Ghidra project to reload")
+            ctx.__exit__(None, None, None)
+            ctx = pyghidra.open_program(
+                program_file,
+                language=language,
+                project_location=cache_dir,
+                project_name=project_name,
+                analyze=False,
+            )
+            flat_api = ctx.__enter__()
+            LOGGER.warning("Reloaded Ghidra project")
+
+        with self._lock:
+            self._projects[cache_key] = (flat_api, ctx)
+            self._project_refs.setdefault(cache_key, set()).add(resource_id)
+            self._resource_to_project[resource_id] = cache_key
+
+        return flat_api
+
+    def close_program(self, resource_id: bytes):
+        """Detach a resource from its project.  Closes the project only when
+        the last resource using it detaches."""
+        with self._lock:
+            cache_key = self._resource_to_project.pop(resource_id, None)
+            if cache_key is None:
+                return
+            refs = self._project_refs.get(cache_key)
+            if refs is not None:
+                refs.discard(resource_id)
+            if refs is not None and len(refs) > 0:
+                LOGGER.warning(
+                    "Resource %s detached from project %s (%d refs remain)",
+                    resource_id.hex(),
+                    cache_key[:12],
+                    len(refs),
+                )
+                return
+            self._project_refs.pop(cache_key, None)
+            entry = self._projects.pop(cache_key, None)
+            self._base_address.pop(cache_key, None)
+
+        if entry is not None:
+            _, ctx = entry
+            try:
+                ctx.__exit__(None, None, None)
+            except Exception as e:
+                LOGGER.warning(e)
+
+    def close_all(self):
+        """Close all open project handles."""
+        for rid in list(self._resource_to_project.keys()):
+            self.close_program(rid)
+
+    async def shutdown(self):
+        LOGGER.warning("SHUTTING DOWN NOW!")
+        return self.close_all()
+
+    def __del__(self):  # pragma: no cover
+        self.close_all()
 
 
-class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
+class PyGhidraCodeRegionModifier(Modifier[None]):
     """
     Modifies code regions while maintaining Ghidra analysis caching and context, preserving Ghidra's
     understanding of the code structure across modifications. This specialized modifier integrates
@@ -95,6 +319,72 @@ class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
     context across changes, or ensuring modifications are reflected in Ghidra's database. Important
     for maintaining analysis consistency in Ghidra-based workflows.
     """
+
+    targets = (CodeRegion,)
+
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+    ):
+        super().__init__(resource_factory, data_service, resource_service)
+        self.analysis_store = analysis_store
+
+    async def modify(self, resource: Resource, config: None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+        flat_api = self.analysis_store.get_flat_api(program_r.get_id())
+        if flat_api is None:
+            raise ValueError("Something is off")
+        ofrak_code_regions = await program_r.get_descendants_as_view(
+            v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion])
+        )
+
+        ghidra_code_regions = _unpack_program(flat_api)
+        filtered_code_region = [
+            CodeRegion(virtual_address=mem_region["virtual_address"], size=mem_region["size"])
+            for mem_region in ghidra_code_regions
+            if mem_region["executable"]
+        ]
+
+        ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
+        backend_code_regions = sorted(filtered_code_region, key=lambda cr: cr.virtual_address)
+
+        # We only want to adjust the address of a CodeRegion if the original binary is position-independent.
+        # Implement PIE-detection for other file types as necessary.
+        if program_r.has_tag(Elf):
+            elf_header = await program_r.get_only_descendant_as_view(
+                ElfHeader, r_filter=ResourceFilter(tags=[ElfHeader])
+            )
+            if elf_header is not None and elf_header.e_type == ElfType.ET_DYN.value:
+                code_region = await resource.view_as(CodeRegion)
+                base_addr = self.analysis_store.get_base_address(program_r.get_id())
+                if base_addr:
+                    new_cr = CodeRegion(
+                        code_region.virtual_address + base_addr,
+                        code_region.size,
+                    )
+                    code_region.resource.add_view(new_cr)
+                elif len(ofrak_code_regions) > 0:
+                    relative_va = (
+                        code_region.virtual_address - ofrak_code_regions[0].virtual_address
+                    )
+
+                    for backend_cr in backend_code_regions:
+                        backend_relative_va = (
+                            backend_cr.virtual_address - backend_code_regions[0].virtual_address
+                        )
+                        if (
+                            backend_relative_va == relative_va
+                            and backend_cr.size == code_region.size
+                        ):
+                            code_region.resource.add_view(backend_cr)
+                            self.analysis_store.set_base_address(
+                                program_r.get_id(),
+                                backend_cr.virtual_address - code_region.virtual_address,
+                            )
+                await resource.save()
 
 
 @dataclass
@@ -129,44 +419,41 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
+    def post_analysis_script(self, flat_api) -> None:
+        """Override in subclasses to run custom Ghidra code after analysis."""
+
     async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
-        tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
-        await resource.identify()  # useful for checking tags later
-        try:
-            program_attrs = resource.get_attributes(ProgramAttributes)
-            language = _arch_info_to_processor_id(program_attrs)
-        except NotFoundError:
-            language = None
-        program_file = os.path.join(tempdir, "program")
-        await resource.flush_data_to_disk(program_file, pack=False)
-        if config is None:
-            decomp = False
-        else:
-            decomp = config.decomp
-            language = config.language
-        for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
-            if resource.has_tag(tag):
-                self.analysis_store.store_analysis(
-                    resource.get_id(), unpack(program_file, decomp, language)
+        if not self.analysis_store.get_flat_api(resource.get_id()):
+            await resource.identify()  # Creates tags
+            try:
+                program_attrs = resource.get_attributes(ProgramAttributes)
+                language = _arch_info_to_processor_id(program_attrs)
+            except NotFoundError:
+                language = None
+            if config is None:
+                decomp = False
+            else:
+                decomp = config.decomp
+                language = config.language
+
+            base_address = None
+            for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
+                if resource.has_tag(tag):
+                    break
+            else:
+                program_attrs = resource.get_attributes(ProgramAttributes)
+                language = _arch_info_to_processor_id(program_attrs)
+                regions = await resource.get_children_as_view(
+                    MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
                 )
-                return PyGhidraAutoLoadProject()
+                base_address = min(code_region.virtual_address for code_region in regions)
 
-        program_attrs = resource.get_attributes(ProgramAttributes)
-        # Guess that the base address is the min start address of any memory region
-        regions = await resource.get_children_as_view(
-            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
-        )
-        base_address = min(code_region.virtual_address for code_region in regions)
-
-        self.analysis_store.store_analysis(
-            resource.get_id(),
-            unpack(
-                program_file,
-                decomp,
-                language=_arch_info_to_processor_id(program_attrs),
+            await self.analysis_store.create_project(
+                resource,
+                language,
                 base_address=base_address,
-            ),
-        )
+                post_analysis_script=self.post_analysis_script,
+            )
         return PyGhidraAutoLoadProject()
 
 
@@ -194,38 +481,44 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
+    def post_analysis_script(self, flat_api) -> None:
+        """Override in subclasses to run custom Ghidra code after analysis."""
+
     async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
-        if config is None:
-            try:
-                program_attrs = resource.get_attributes(ProgramAttributes)
-                language = _arch_info_to_processor_id(program_attrs)
-            except NotFoundError:
-                language = None
-            decomp = False
-        else:
-            decomp = config.decomp
-            language = config.language
+        if not self.analysis_store.get_flat_api(resource.get_id()):
+            if config is None:
+                try:
+                    program_attrs = resource.get_attributes(ProgramAttributes)
+                    language = _arch_info_to_processor_id(program_attrs)
+                except NotFoundError:
+                    language = None
+                decomp = False
+            else:
+                decomp = config.decomp
+                language = config.language
 
-        # Prepare memory regions data
-        regions = await resource.get_children_as_view(
-            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
-        )
-
-        memory_regions = []
-        for region in regions:
-            region_data = await region.resource.get_data()
-            memory_regions.append(
-                {
-                    "virtual_address": region.virtual_address,
-                    "size": region.size,
-                    "data": region_data,
-                }
+            # Prepare memory regions data
+            regions = await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
             )
 
-        self.analysis_store.store_analysis(
-            resource.get_id(),
-            unpack(None, decomp, language=language, memory_regions=memory_regions),
-        )
+            memory_regions = []
+            for region in regions:
+                region_data = await region.resource.get_data()
+                memory_regions.append(
+                    {
+                        "virtual_address": region.virtual_address,
+                        "size": region.size,
+                        "data": region_data,
+                    }
+                )
+
+            await self.analysis_store.create_project(
+                resource,
+                language,
+                memory_regions=memory_regions,
+                post_analysis_script=self.post_analysis_script,
+            )
         return PyGhidraCustomLoadProject()
 
 
@@ -235,7 +528,7 @@ class PyGhidraCodeRegionUnpackerConfig(ComponentConfig):
     language: str
 
 
-class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
+class PyGhidraCodeRegionUnpacker(CodeRegionUnpacker):
     """
     Uses Ghidra's analysis engine to automatically disassemble code regions and identify function
     boundaries (complex blocks). Ghidra analyzes control flow, recognizes function
@@ -245,9 +538,52 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
 
     id = b"PyGhidraCodeRegionUnpacker"
 
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
+
     async def unpack(self, resource: Resource, config: PyGhidraCodeRegionUnpackerConfig = None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
-        if not self.analysis_store.id_exists(program_r.get_id()):
+        flat_api = await self._get_or_create_flat_api(config, resource)
+        open_start = time.time()
+        code_region_view = await resource.view_as(CodeRegion)
+
+        await resource.run(PyGhidraCodeRegionModifier)
+        code_regions = _unpack_program(flat_api)
+        target_region = None
+        for cr in code_regions:
+            if cr["virtual_address"] == code_region_view.virtual_address:
+                target_region = cr
+                break
+        if target_region is None:
+            LOGGER.warning(
+                f"No Ghidra code region found matching virtual address "
+                f"0x{code_region_view.virtual_address:x}"
+            )
+            return
+
+        func_cbs = _unpack_code_region(target_region, flat_api)
+        for _func, complex_block in func_cbs:
+            cb = ComplexBlock(
+                virtual_address=complex_block["virtual_address"],
+                size=complex_block["size"],
+                name=complex_block["name"],
+            )
+            await code_region_view.create_child_region(cb)
+
+        LOGGER.warning(f"Pyghidra Analysis time: {time.time() - open_start:.1f}s")
+
+    async def _get_or_create_flat_api(self, config, resource):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        await program_r.identify()  # Enusre PyGhidra Project tags are applied
+        flat_api = self.analysis_store.get_flat_api(program_r.get_id())
+        if not flat_api:
             if config is not None:
                 analyzer_config = PyGhidraAnalyzerConfig(
                     decomp=config.decomp, language=config.language
@@ -268,10 +604,13 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
                 raise ValueError(
                     f"resource {resource} does not have any tag that allow analysis with the PyGhidra backend."
                 )
-        return await super().unpack(resource, config)
+            flat_api = self.analysis_store.get_flat_api(program_r.get_id())
+            if flat_api is None:
+                raise ValueError("Something went terribly wrong")
+        return flat_api
 
 
-class PyGhidraComplexBlockUnpacker(CachedComplexBlockUnpacker):
+class PyGhidraComplexBlockUnpacker(ComplexBlockUnpacker):
     """
     Uses Ghidra to disassemble complete functions (complex blocks) into their constituent basic
     blocks and data words. Basic blocks are sequences of instructions with a single entry point and
@@ -282,8 +621,95 @@ class PyGhidraComplexBlockUnpacker(CachedComplexBlockUnpacker):
 
     id = b"PyGhidraComplexBlockUnpacker"
 
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
 
-class PyGhidraBasicBlockUnpacker(CachedBasicBlockUnpacker):
+    async def unpack(self, resource: Resource, config=None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+        program_attributes = await program_r.analyze(ProgramAttributes)
+        flat_api = self.analysis_store.get_flat_api(program_r.get_id())
+        from ghidra.program.model.block import BasicBlockModel
+        from java.math import BigInteger
+
+        complex_block = await resource.view_as(ComplexBlock)
+        program = flat_api.getCurrentProgram()
+        addr = (
+            program.getAddressFactory()
+            .getDefaultAddressSpace()
+            .getAddress(hex(complex_block.virtual_address))
+        )
+        func = flat_api.getFunctionAt(addr)
+        if func is None:
+            func = flat_api.getFunctionContaining(addr)
+        if func is None:
+            raise ValueError("Could not get func")
+        bb_model = BasicBlockModel(flat_api.getCurrentProgram())
+        basic_blocks, data_words = _unpack_complex_block(func, flat_api, bb_model, BigInteger.ONE)
+
+        children = []
+        for block, bb in basic_blocks:
+            if bb["size"] == 0:
+                raise Exception(f"Basic block 0x{bb['virtual_address']:x} has no size")
+
+            if (
+                bb["virtual_address"] < complex_block.virtual_address
+                or (bb["virtual_address"] + bb["size"]) > complex_block.end_vaddr()
+            ):
+                LOGGER.warning(
+                    f"Basic Block 0x{bb['virtual_address']:x} does not fall "
+                    f"within complex block "
+                    f"{hex(complex_block.virtual_address)}-"
+                    f"{hex(complex_block.end_vaddr())}"
+                )
+                continue
+            mode = InstructionSetMode.NONE
+            if "mode" in bb:
+                mode = InstructionSetMode[bb["mode"].upper()]
+            children.append(
+                BasicBlock(
+                    virtual_address=bb["virtual_address"],
+                    size=bb["size"],
+                    mode=mode,
+                    is_exit_point=bb["is_exit_point"],
+                    exit_vaddr=bb["exit_vaddr"],
+                )
+            )
+        for data_word in data_words:
+            if (
+                data_word["virtual_address"] < complex_block.virtual_address
+                or (data_word["virtual_address"] + data_word["size"]) > complex_block.end_vaddr()
+            ):
+                LOGGER.warning(
+                    f"Data Word 0x{data_word['virtual_address']:x} does not fall "
+                    f"within complex block "
+                    f"{hex(complex_block.virtual_address)}-"
+                    f"{hex(complex_block.end_vaddr())}"
+                )
+                continue
+            fmt_string = (
+                program_attributes.endianness.get_struct_flag() + data_word["format_string"]
+            )
+            children.append(
+                DataWord(
+                    virtual_address=data_word["virtual_address"],
+                    size=data_word["size"],
+                    format_string=fmt_string,
+                    xrefs_to=tuple(data_word["xrefs_to"]),
+                )
+            )
+        for child in children:
+            await complex_block.create_child_region(child)
+
+
+class PyGhidraBasicBlockUnpacker(BasicBlockUnpacker):
     """
     Uses Ghidra to disassemble basic blocks into individual assembly instructions, providing the
     finest-grained view of executable code. Each instruction is extracted with its mnemonic,
@@ -294,8 +720,55 @@ class PyGhidraBasicBlockUnpacker(CachedBasicBlockUnpacker):
 
     id = b"PyGhidraBasicBlockUnpacker"
 
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
 
-class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
+    async def unpack(self, resource: Resource, config=None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+        program_attributes = await program_r.analyze(ProgramAttributes)
+        flat_api = self.analysis_store.get_flat_api(program_r.get_id())
+        if flat_api is None:
+            raise ValueError("Something's off!")
+        bb_view = await resource.view_as(BasicBlock)
+
+        from ghidra.program.model.block import BasicBlockModel
+        from ghidra.program.model.symbol import RefType
+        from java.math import BigInteger
+
+        program = flat_api.getCurrentProgram()
+        bb_model = BasicBlockModel(flat_api.getCurrentProgram())
+        addr = (
+            program.getAddressFactory()
+            .getDefaultAddressSpace()
+            .getAddress(hex(bb_view.virtual_address))
+        )
+        block = bb_model.getCodeBlockAt(addr, flat_api.monitor)
+        instructions = _unpack_basic_block(block, flat_api, RefType, BigInteger.ONE)
+        for instruction in instructions:
+            mode = InstructionSetMode.NONE
+            if instruction["mode"] == "thumb":
+                mode = InstructionSetMode.THUMB
+            elif instruction["mode"] == "vle":
+                mode = InstructionSetMode.VLE
+            instr = Instruction(
+                virtual_address=instruction["virtual_address"],
+                size=instruction["size"],
+                mnemonic=instruction["mnemonic"],
+                operands=instruction["operands"],
+                mode=mode,
+            )
+            await bb_view.create_child_region(instr)
+
+
+class PyGhidraDecompilationAnalyzer(DecompilationAnalyzer):
     """
     Uses Ghidra's decompiler to convert assembly instructions back into pseudo-C source code,
     applying data type inference, control flow reconstruction, variable naming, and structural
@@ -310,31 +783,49 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
 
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+    ):
+        super().__init__(resource_factory, data_service, resource_service)
+        self.analysis_store = analysis_store
+
     async def analyze(self, resource: Resource, config=None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
-        if self.analysis_store.id_exists(program_r.get_id()):
-            complex_block = await resource.view_as(ComplexBlock)
-            cb_key = f"func_{complex_block.virtual_address}"
-            analysis = self.analysis_store.get_analysis(program_r.get_id())
-            if "decompilation" not in analysis[cb_key]:
-                program_file = analysis["metadata"]["path"]
-                for cb_key, decomp in decompile_all_functions(program_file, None).items():
-                    analysis[cb_key]["decompilation"] = decomp
-                self.analysis_store.store_analysis(program_r.get_id(), analysis)
-        else:
-            tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
-            program_file = os.path.join(tempdir, "program")
-            await program_r.flush_data_to_disk(program_file)
-            try:
-                program_attrs = program_r.get_attributes(ProgramAttributes)
-            except NotFoundError:
-                program_attrs = await program_r.analyze(ProgramAttributes)
-            analysis = unpack(
-                program_file, True, language=_arch_info_to_processor_id(program_attrs)
-            )
-            self.analysis_store.store_analysis(program_r.get_id(), analysis)
+        flat_api = self.analysis_store.get_flat_api(program_r.get_id())
+        if flat_api is None:
+            raise ValueError("Something is up!")
+        complex_block = await resource.view_as(ComplexBlock)
 
-        return await super().analyze(resource, config)
+        from ghidra.app.decompiler import DecompInterface, DecompileOptions
+        from ghidra.util.task import TaskMonitor
+
+        program = flat_api.getCurrentProgram()
+        addr = (
+            program.getAddressFactory()
+            .getDefaultAddressSpace()
+            .getAddress(complex_block.virtual_address)
+        )
+        func = program.getFunctionManager().getFunctionContaining(addr)
+        if func is None:
+            raise RuntimeError(f"No function found at 0x{complex_block.virtual_address:x}")
+
+        decomp = DecompInterface()
+        options = DecompileOptions()
+        options.grabFromProgram(program)
+        decomp.setOptions(options)
+        decomp.openProgram(program)
+
+        result = decomp.decompileFunction(func, 0, TaskMonitor.DUMMY)
+        if not result.decompileCompleted():
+            raise RuntimeError(
+                f"Unable to decompile function at 0x{complex_block.virtual_address:x}"
+            )
+        resource.add_tag(DecompilationAnalysis)
+        return DecompilationAnalysis(result.getDecompiledFunction().getC())
 
 
 def _arch_info_to_processor_id(processor: ArchInfo):

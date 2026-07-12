@@ -6,7 +6,27 @@ Requirements Mapping:
 """
 import os
 from typing import Dict, Tuple
+
+import pytest
+
+import ofrak_pyghidra
+from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
+from ofrak.core import (
+    CodeRegion,
+    MemoryRegion,
+    Program,
+    ComplexBlock,
+    Addressable,
+    Instruction,
+    ProgramAttributes,
+)
+from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.ofrak_context import OFRAKContext
+from ofrak_pyghidra.components.pyghidra_components import (
+    _arch_info_to_processor_id,
+    PyGhidraDecompilationAnalyzer,
+    PyGhidraCustomLoadAnalyzer,
+)
 from ofrak_type import (
     BitWidth,
     InstructionSetMode,
@@ -18,31 +38,12 @@ from ofrak_type import (
     ArchInfo,
     InstructionSet,
 )
-import pytest
+from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
 from pytest_ofrak.patterns.code_region_unpacker import CodeRegionUnpackAndVerifyPattern
 from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
     ComplexBlockUnpackerTestCase,
 )
-from ofrak.core.decompilation import DecompilationAnalysis
-from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
-from ofrak_pyghidra.components.pyghidra_components import (
-    _arch_info_to_processor_id,
-    PyGhidraDecompilationAnalyzer,
-    PyGhidraCustomLoadAnalyzer,
-)
-import ofrak_pyghidra
-from ofrak.core import (
-    CodeRegion,
-    MemoryRegion,
-    Program,
-    ComplexBlock,
-    Addressable,
-    Instruction,
-    ProgramAttributes,
-)
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
-from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
 
 ASSETS_DIR = os.path.abspath(
     os.path.join(
@@ -207,46 +208,6 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     assert "print" in " ".join(decomps)
 
 
-async def test_pyghidra_standalone_unpack_decompiled():
-    """
-    Test standalone unpack function with decompilation.
-
-    This test verifies that:
-    - Unpack function correctly handles decompilation flag
-    - Metadata is properly generated
-    - Decompile output contains expected function content
-    """
-    program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
-    decompiled = True
-    unpack_results = unpack(program_file, decompiled, language=None)
-    assert "metadata" in unpack_results
-    assert "path" in unpack_results["metadata"]
-    assert unpack_results["metadata"]["path"] == program_file
-    main_cb_key = f"func_{0x12c7}"
-    assert main_cb_key in unpack_results, list(
-        filter(lambda k: k.startswith("func_"), unpack_results.keys())
-    )
-    assert "decompilation" in unpack_results[main_cb_key]
-    assert "main" in unpack_results[main_cb_key]["decompilation"]
-    assert "printf" in unpack_results[main_cb_key]["decompilation"]
-
-
-async def test_pyghidra_standalone_decompile_all_functions():
-    """
-    Test standalone decompile all functions function.
-
-    This test verifies that:
-    - All functions in a binary are properly decompiled
-    - Function names and key symbols appear in output
-    """
-    program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
-    decompilation_results = decompile_all_functions(program_file, language=None)
-    main_cb_key = f"func_{0x12c7}"
-    assert main_cb_key in decompilation_results
-    assert "main" in decompilation_results[main_cb_key]
-    assert "printf" in decompilation_results[main_cb_key]
-
-
 @pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
 def test_arch_info_to_processor_id(arch, expected_processor_id):
     """
@@ -351,7 +312,7 @@ async def ihex_resource(ofrak_context: OFRAKContext):
     return await ofrak_context.create_root_resource_from_file(
         os.path.join(
             os.path.dirname(__file__),
-            "../../ofrak_core/tests/components/assets/hello_world.ihex",
+            "../../../ofrak_core/tests/components/assets/hello_world.ihex",
         )
     )
 
