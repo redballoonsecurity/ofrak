@@ -142,6 +142,59 @@ ARCH_INFO_TEST_CASES = [
         ),
         "x86:LE:64:default",
     ),
+    # Sub-ISAs Ghidra names itself, which all resolved to ARM:LE:32:v8 before the exact match was
+    # given precedence over the looser one below it
+    (
+        ArchInfo(
+            isa=InstructionSet.ARM,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_32,
+            processor=None,
+            sub_isa=SubInstructionSet.ARMv6M,
+        ),
+        "ARM:LE:32:Cortex",
+    ),
+    (
+        ArchInfo(
+            isa=InstructionSet.ARM,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_32,
+            processor=None,
+            sub_isa=SubInstructionSet.ARMv7EM,
+        ),
+        "ARM:LE:32:Cortex",
+    ),
+    (
+        ArchInfo(
+            isa=InstructionSet.ARM,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_32,
+            processor=None,
+            sub_isa=SubInstructionSet.ARMv4T,
+        ),
+        "ARM:LE:32:v4t",
+    ),
+    (
+        ArchInfo(
+            isa=InstructionSet.ARM,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_32,
+            processor=None,
+            sub_isa=SubInstructionSet.ARMv8MMAIN,
+        ),
+        "ARM:LE:32:v8-m",
+    ),
+    # Named only by its language ID, so it relies on the looser match below the exact one
+    (
+        ArchInfo(
+            isa=InstructionSet.AARCH64,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_64,
+            processor=None,
+            sub_isa=SubInstructionSet.ARMv8A,
+        ),
+        "AARCH64:LE:64:v8A",
+    ),
 ]
 
 

@@ -359,7 +359,7 @@ def _arch_info_to_processor_id(processor: ArchInfo):
     if not ghidra_install_dir:
         raise ValueError("GHIDRA_INSTALL_DIR environment variable must be set")
     ldefs = os.path.join(ghidra_install_dir, "Ghidra", "Processors", family, "data", "languages")
-    processors_rejected = set()
+    candidates = []
     default_proc_id_found = False
     for file in os.listdir(ldefs):
         if not file.endswith(".ldefs"):
@@ -382,36 +382,40 @@ def _arch_info_to_processor_id(processor: ArchInfo):
                 name_elem.attrib["name"].lower() for name_elem in language.iter(tag="external_name")
             ]
             names.append(proc_id.split(":")[-1])
-            for name in names:
-                if not processor.sub_isa and not processor.processor:
-                    if name.endswith("_any"):
-                        return proc_id
+            candidates.append((proc_id, names))
 
-                if processor.sub_isa and processor.sub_isa.value.lower() == name:
-                    return proc_id
+    # sub-ISA is more specific than processor, so it is matched first
+    requested = [
+        requested_value.value.lower()
+        for requested_value in (processor.sub_isa, processor.processor)
+        if requested_value is not None
+    ]
 
-                if processor.processor and processor.processor.value.lower() == name:
-                    return proc_id
+    if not requested:
+        for proc_id, names in candidates:
+            if any(name.endswith("_any") for name in names):
+                return proc_id
 
-                #  Jank but necessary, for instance the last part of the language ID for ARMv8A is v8A, but the processor ID is armv8-a
-                if processor.sub_isa and all(
-                    char in processor.sub_isa.value.lower() for char in name.lower()
-                ):
-                    return proc_id
+    # Check for exact matches first
+    for requested_value in requested:
+        for proc_id, names in candidates:
+            if requested_value in names:
+                return proc_id
 
-                if processor.processor and all(
-                    char in processor.processor.value.lower() for char in name.lower()
-                ):
-                    return proc_id
-            processors_rejected.add(proc_id)
+    #  Jank but necessary, for instance the last part of the language ID for ARMv8A is v8A, but the processor ID is armv8-a
+    for requested_value in requested:
+        for proc_id, names in candidates:
+            if any(all(char in requested_value for char in name.lower()) for name in names):
+                return proc_id
 
     if default_proc_id_found:
         return default_proc_id
 
-    if len(processors_rejected) == 1:
-        return processors_rejected.pop()
+    if len(candidates) == 1:
+        return candidates[0][0]
 
     raise Exception(
         f"Could not determine a Ghidra language spec for the given architecture info "
-        f"{processor}. Considered the following specs:\n{', '.join(processors_rejected)}"
+        f"{processor}. Considered the following specs:\n"
+        f"{', '.join(proc_id for proc_id, _ in candidates)}"
     )
