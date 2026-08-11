@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix redundant re-analysis of complex blocks in the standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))
 - Pin Jpype1 (transitive dependency via PyGhidra) ([#736](https://github.com/redballoonsecurity/ofrak/pull/736))
 - Pass `usedforsecurity=False` to non-cryptographic `hashlib` calls to prevent failures when Python links against FIPS OpenSSL ([#744](https://github.com/redballoonsecurity/ofrak/pull/744))
-- Fix `sub_isa` being ignored when selecting a Ghidra language, which made every 32-bit ARM sub-ISA analyze as `ARM:LE:32:v8` and silently produced wrong disassembly and decompilation for Cortex-M firmware ([#N](https://github.com/redballoonsecurity/ofrak/pull/N))
+- Fix `sub_isa` being ignored when selecting a Ghidra language, which made every 32-bit ARM sub-ISA analyze as `ARM:LE:32:v8` and silently produced wrong disassembly and decompilation for Cortex-M firmware ([#756](https://github.com/redballoonsecurity/ofrak/pull/756))
 
 ### Changed
 - Reduce the decompilation time of PyGhidra by reusing cached unpacking results. ([#623](https://github.com/redballoonsecurity/ofrak/pull/623))
