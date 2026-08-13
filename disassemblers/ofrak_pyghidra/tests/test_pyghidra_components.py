@@ -5,7 +5,9 @@ Requirements Mapping:
 - REQ1.2
 """
 import os
+from tempfile import TemporaryDirectory
 from typing import Dict, Tuple
+import pyghidra
 from ofrak.ofrak_context import OFRAKContext
 from ofrak_type import (
     BitWidth,
@@ -42,6 +44,7 @@ from ofrak.core import (
     ProgramAttributes,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
+from ofrak_pyghidra.standalone.pyghidra_analysis import _unpack_basic_block
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
 
 ASSETS_DIR = os.path.abspath(
@@ -257,6 +260,40 @@ def test_arch_info_to_processor_id(arch, expected_processor_id):
     - Endianness and bit width are correctly considered
     """
     assert _arch_info_to_processor_id(arch) == expected_processor_id
+
+
+def test_unpack_powerpc_basic_block_without_vle_context():
+    """
+    Test that ordinary PowerPC instructions can be unpacked when Ghidra defines the ``vle``
+    context register but does not assign it a value.
+    """
+    program_file = os.path.join(os.path.dirname(__file__), "assets", "ppc_basic_block.bin")
+
+    with TemporaryDirectory() as project_location:
+        with pyghidra.open_program(
+            program_file,
+            project_location=project_location,
+            project_name="ppc_basic_block",
+            analyze=False,
+            language="PowerPC:BE:32:default",
+        ) as flat_api:
+            from ghidra.program.model.block import BasicBlockModel
+            from ghidra.program.model.symbol import RefType
+            from java.math import BigInteger
+
+            start_address = flat_api.toAddr(0)
+            assert flat_api.disassemble(start_address)
+            function = flat_api.createFunction(start_address, "_start")
+            basic_blocks = BasicBlockModel(flat_api.getCurrentProgram()).getCodeBlocksContaining(
+                function.getBody(), flat_api.monitor
+            )
+
+            instructions = _unpack_basic_block(
+                basic_blocks.next(), flat_api, RefType, BigInteger.ONE
+            )
+
+    assert [instruction["mnemonic"] for instruction in instructions] == ["li", "blr"]
+    assert all(instruction["mode"] == "none" for instruction in instructions)
 
 
 @pytest.fixture
