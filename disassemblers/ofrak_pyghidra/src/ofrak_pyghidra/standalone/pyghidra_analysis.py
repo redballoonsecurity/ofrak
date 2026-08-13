@@ -403,7 +403,7 @@ def _unpack_basic_block(block, flat_api, ref_type, one):
             vle_register = instr.getRegister("vle")
             if vle_register is not None:
                 vle_val = instr.getValue(vle_register, False)
-                if vle_val.equals(one):
+                if vle_val is not None and vle_val.equals(one):
                     instruction_mode = "vle"
         for i in range(int(instr.getNumOperands())):
             ops.append(instr.getDefaultOperandRepresentation(i))
