@@ -264,7 +264,7 @@ def test_arch_info_to_processor_id(arch, expected_processor_id):
 
 def test_unpack_powerpc_basic_block_without_vle_context():
     """
-    Test that ordinary PowerPC instructions can be unpacked when Ghidra defines the ``vle``
+    Test that ordinary PowerPC instructions can be unpacked when Ghidra defines the `vle`
     context register but does not assign it a value.
     """
     program_file = os.path.join(os.path.dirname(__file__), "assets", "ppc_basic_block.bin")
