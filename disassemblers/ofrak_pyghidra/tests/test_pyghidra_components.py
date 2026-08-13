@@ -43,7 +43,11 @@ from ofrak.core import (
     Instruction,
     ProgramAttributes,
 )
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions, _unpack_basic_block
+from ofrak_pyghidra.standalone.pyghidra_analysis import (
+    unpack,
+    decompile_all_functions,
+    _unpack_basic_block,
+)
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
 
 ASSETS_DIR = os.path.abspath(
