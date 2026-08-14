@@ -44,19 +44,20 @@ def unpack(
             program_file = os.path.join(tempdir, "program")
             with open(program_file, "wb") as f:
                 f.write(b"\x00")
-        with pyghidra.open_program(program_file, language=language) as flat_api:
+        with pyghidra.open_program(program_file, language=language, analyze=False) as flat_api:
             LOGGER.info("Analysis completed. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
             from ghidra.app.decompiler import DecompInterface, DecompileOptions
             from ghidra.util.task import TaskMonitor
             from ghidra.program.model.block import BasicBlockModel
             from ghidra.program.model.symbol import RefType
+            from ghidra.base.project import GhidraProject
             from java.math import BigInteger
             from java.io import ByteArrayInputStream
 
+            program = flat_api.getCurrentProgram()
             # If memory_regions are provided, delete all data and create new regions:
             if memory_regions:
-                program = flat_api.getCurrentProgram()
                 memory = program.getMemory()
                 address_factory = program.getAddressFactory()
                 default_space = address_factory.getDefaultAddressSpace()
@@ -90,9 +91,6 @@ def unpack(
                         logging.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
-                # Analyze all
-                analysis_mgr = program.getOptions("Analyzers")
-                flat_api.analyzeAll(program)
             # If base_address is provided, rebase the program
             if base_address is not None:
                 # Convert base_address to int if it's a string
@@ -103,13 +101,13 @@ def unpack(
                         base_address = int(base_address)
 
                 # Rebase the program to the specified base address
-                program = flat_api.getCurrentProgram()
                 address_factory = program.getAddressFactory()
                 new_base_addr = address_factory.getDefaultAddressSpace().getAddress(
                     hex(base_address)
                 )
                 program.setImageBase(new_base_addr, True)
                 LOGGER.info(f"Rebased program address to {hex(base_address)}")
+            GhidraProject.analyze(program)
 
             main_dictionary: Dict[str, Any] = {}
             code_regions = _unpack_program(flat_api)
@@ -117,6 +115,7 @@ def unpack(
             main_dictionary["metadata"]["backend"] = "ghidra"
             main_dictionary["metadata"]["decompiled"] = decompiled
             main_dictionary["metadata"]["path"] = program_file
+            main_dictionary["metadata"]["language"] = language
             if base_address is not None:
                 main_dictionary["metadata"]["base_address"] = base_address
             with open(program_file, "rb") as fh:
@@ -475,13 +474,19 @@ def _decompile(func, decomp_interface, task_monitor):
     return decomp
 
 
-def decompile_all_functions(program_file, language):
-    with pyghidra.open_program(program_file, language=language) as flat_api:
+def decompile_all_functions(program_file, language, base_addr):
+    with pyghidra.open_program(program_file, language=language, analyze=False) as flat_api:
         from ghidra.app.decompiler import DecompInterface, DecompileOptions
         from ghidra.util.task import TaskMonitor
+        from ghidra.base.project import GhidraProject
 
         decomp = DecompInterface()
         program = flat_api.getCurrentProgram()
+        if base_addr is not None:
+            address_factory = program.getAddressFactory()
+            new_base_addr = address_factory.getDefaultAddressSpace().getAddress(hex(base_addr))
+            program.setImageBase(new_base_addr, True)
+        GhidraProject.analyze(program)
         prog_options = DecompileOptions()
         prog_options.grabFromProgram(program)
         decomp.setOptions(prog_options)
