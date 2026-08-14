@@ -367,10 +367,10 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
 class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
     """
     After allocating some space from an `Allocatable`, fix up its descendants to make sure the
-    allocated space will not be allocated again. Remove FreeSpace tags from resources which
-    overlap with an allocated range. If part of one of these resources is not within an
-    allocated range, create a child tagged as FreeSpace to reflect that part of it is still
-    available as free space.
+    allocated space will not be allocated again. Deletes FreeSpace resources that overlap with
+    an allocated range. If part of an original resource is not within an allocated range,
+    create new sibling FreeSpace resources under the original resource's parent to reflect
+    that part of it is still available as free space.
     """
 
     targets = (Allocatable,)
@@ -385,6 +385,8 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                 AnyFreeSpace,
                 r_filter=ResourceFilter(
                     tags=(AnyFreeSpace,),
+                    # ResourceAttributeRangeFilter min is inclusive, max is exclusive.
+                    # +1 on EndVaddr bounds converts to the inclusive <= / exclusive > we need.
                     attribute_filters=(
                         ResourceAttributeValueFilter(
                             AnyFreeSpace.Permissions, config.permissions.value
@@ -392,10 +394,10 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                         ResourceAttributeRangeFilter(
                             AnyFreeSpace.VirtualAddress,
                             min=alloc.start,
-                            max=alloc.end - 1,
+                            max=alloc.end,
                         ),
                         ResourceAttributeRangeFilter(
-                            AnyFreeSpace.EndVaddr, min=alloc.start + 1, max=alloc.end
+                            AnyFreeSpace.EndVaddr, min=alloc.start + 1, max=alloc.end + 1
                         ),
                     ),
                 ),
@@ -421,18 +423,19 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                     )
 
         for fs in wholly_allocated_resources:
-            fs.resource.remove_tag(FreeSpace)
-            fs.resource.remove_tag(RuntimeFreeSpace)
-            fs.resource.remove_tag(AnyFreeSpace)
+            await fs.resource.delete()
 
         for fs, allocated_ranges in partially_allocated_resources.values():
             remaining_free_space_ranges = remove_subranges([fs.vaddr_range()], allocated_ranges)
+            parent = await fs.resource.get_parent()
             if fs.resource.has_tag(FreeSpace):
+                fs_offset_in_parent = (await fs.resource.get_data_range_within_parent()).start
                 for remaining_range in remaining_free_space_ranges:
                     remaining_data_range = Range.from_size(
-                        fs.get_offset_in_self(remaining_range.start), remaining_range.length()
+                        fs_offset_in_parent + fs.get_offset_in_self(remaining_range.start),
+                        remaining_range.length(),
                     )
-                    await fs.resource.create_child_from_view(
+                    await parent.create_child_from_view(
                         FreeSpace(
                             remaining_range.start,
                             remaining_range.length(),
@@ -440,10 +443,10 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                         ),
                         data_range=remaining_data_range,
                     )
-                fs.resource.remove_tag(FreeSpace)
+                await fs.resource.delete()
             elif fs.resource.has_tag(RuntimeFreeSpace):
                 for remaining_range in remaining_free_space_ranges:
-                    await fs.resource.create_child_from_view(
+                    await parent.create_child_from_view(
                         RuntimeFreeSpace(
                             remaining_range.start,
                             remaining_range.length(),
@@ -451,7 +454,7 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                         ),
                         data_range=None,
                     )
-                fs.resource.remove_tag(RuntimeFreeSpace)
+                await fs.resource.delete()
             else:
                 raise TypeError(f"Got AnyFreeSpace {fs} without FreeSpace or RuntimeFreeSpace tags")
 

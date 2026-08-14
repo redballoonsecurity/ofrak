@@ -71,7 +71,7 @@ async def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpac
 
 FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
     FreeSpaceAllocationModifierTestCase(
-        "allocation removes tag from an entire resource",
+        "allocation deletes a wholly-allocated FreeSpace resource",
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -87,13 +87,12 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
             [
                 (MemoryRegion(0x0, 0x40), None),
                 (MemoryRegion(0x40, 0x40), None),
-                (MemoryRegion(0x80, 0x40), None),
                 (MemoryRegion(0xC0, 0x40), None),
             ],
         ),
     ),
     FreeSpaceAllocationModifierTestCase(
-        "allocation removes tag from multiple entire resources",
+        "allocation deletes multiple wholly-allocated FreeSpace resources",
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -109,15 +108,11 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
             MemoryRegion(0x0, 0x100),
             [
                 (MemoryRegion(0x0, 0x40), None),
-                (MemoryRegion(0x40, 0x40), None),
-                (MemoryRegion(0x80, 0x40), None),
-                (MemoryRegion(0xC0, 0x40), None),
-                (MemoryRegion(0xD00, 0x40), None),
             ],
         ),
     ),
     FreeSpaceAllocationModifierTestCase(
-        "allocation removes tag from resource, creates FreeSpace resource child on right side",
+        "allocation creates sibling FreeSpace resource on right side",
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -133,16 +128,13 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
             [
                 (MemoryRegion(0x0, 0x40), None),
                 (MemoryRegion(0x40, 0x40), None),
-                (
-                    MemoryRegion(0x80, 0x40),
-                    [(FreeSpace(0xA0, 0x20, MemoryPermissions.RX), None)],
-                ),
+                (FreeSpace(0xA0, 0x20, MemoryPermissions.RX), None),
                 (MemoryRegion(0xC0, 0x40), None),
             ],
         ),
     ),
     FreeSpaceAllocationModifierTestCase(
-        "allocation removes tag from resource, creates FreeSpace resource child on left side",
+        "allocation creates sibling FreeSpace resource on left side",
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -158,16 +150,13 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
             [
                 (MemoryRegion(0x0, 0x40), None),
                 (MemoryRegion(0x40, 0x40), None),
-                (
-                    MemoryRegion(0x80, 0x40),
-                    [(FreeSpace(0x80, 0x20, MemoryPermissions.RX), None)],
-                ),
+                (FreeSpace(0x80, 0x20, MemoryPermissions.RX), None),
                 (MemoryRegion(0xC0, 0x40), None),
             ],
         ),
     ),
     FreeSpaceAllocationModifierTestCase(
-        "allocation removes tag from resource, creates FreeSpace resource child on left and right",
+        "allocation creates sibling FreeSpace resources on left and right",
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -183,19 +172,14 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
             [
                 (MemoryRegion(0x0, 0x40), None),
                 (MemoryRegion(0x40, 0x40), None),
-                (
-                    MemoryRegion(0x80, 0x40),
-                    [
-                        (FreeSpace(0x80, 0x10, MemoryPermissions.RX), None),
-                        (FreeSpace(0xB0, 0x10, MemoryPermissions.RX), None),
-                    ],
-                ),
+                (FreeSpace(0x80, 0x10, MemoryPermissions.RX), None),
+                (FreeSpace(0xB0, 0x10, MemoryPermissions.RX), None),
                 (MemoryRegion(0xC0, 0x40), None),
             ],
         ),
     ),
     FreeSpaceAllocationModifierTestCase(
-        "allocation removes tag from resource, creates FreeSpace resource child in middle",
+        "allocation creates sibling FreeSpace resource in middle",
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -214,12 +198,7 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
             [
                 (MemoryRegion(0x0, 0x40), None),
                 (MemoryRegion(0x40, 0x40), None),
-                (
-                    MemoryRegion(0x80, 0x40),
-                    [
-                        (FreeSpace(0x90, 0x20, MemoryPermissions.RX), None),
-                    ],
-                ),
+                (FreeSpace(0x90, 0x20, MemoryPermissions.RX), None),
                 (MemoryRegion(0xC0, 0x40), None),
             ],
         ),
@@ -248,3 +227,44 @@ async def test_free_space_analyzer(
         await allocatable_r.view_as(MemoryRegion),
         test_case.resulting_tree_structure,
     )
+
+
+async def test_repeated_partial_allocations_stay_flat(ofrak_context: OFRAKContext):
+    """
+    Regression test: N sequential partial allocations against a single FreeSpace must
+    produce N flat siblings under the Allocatable root, not a depth-N chain. The chained
+    form caused 30%-ish segfaults during deletion of injected pixel firmware due to C-stack
+    overflow in the recursive Resource.delete().
+    """
+    initial_tree: FreeSpaceTreeType = (
+        MemoryRegion(0x0, 0x1000),
+        [(FreeSpace(0x0, 0x1000, MemoryPermissions.RX), None)],
+    )
+    root_r = await inflate_tree(initial_tree, ofrak_context)
+
+    n_allocations = 50
+    chunk_size = 0x10
+    for i in range(n_allocations):
+        start = i * chunk_size
+        await root_r.run(
+            RemoveFreeSpaceModifier,
+            FreeSpaceAllocation(MemoryPermissions.RX, [Range(start, start + chunk_size)]),
+        )
+
+    root_region = await root_r.view_as(MemoryRegion)
+    direct_children = list(
+        await root_region.resource.get_children_as_view(
+            MemoryRegion, r_sort=ResourceSort(MemoryRegion.VirtualAddress)
+        )
+    )
+    for child in direct_children:
+        grandchildren = list(await child.resource.get_children())
+        assert grandchildren == [], (
+            f"Expected flat tree under Allocatable, but {child} has {len(grandchildren)} "
+            f"descendant(s). RemoveFreeSpaceModifier should create siblings, not children."
+        )
+
+    free_spaces = [c for c in direct_children if c.resource.has_tag(FreeSpace)]
+    assert len(free_spaces) == 1, f"Expected 1 surviving FreeSpace, found {len(free_spaces)}"
+    assert free_spaces[0].virtual_address == n_allocations * chunk_size
+    assert free_spaces[0].size == 0x1000 - n_allocations * chunk_size
