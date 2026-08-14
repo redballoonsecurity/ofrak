@@ -6,16 +6,17 @@ Requirements Mapping:
 - REQ2.3
 """
 import os
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak_type.architecture import InstructionSetMode
+from ofrak.core.code_region import CodeRegion
 from ofrak.core.instruction import Instruction
 from ofrak.resource import Resource
-from ofrak.core.code_region import CodeRegion
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
+from ofrak_type.architecture import InstructionSetMode
+from pytest_ofrak import ASSETS_DIR
 from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
 )
@@ -27,7 +28,7 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
 )
 
-ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
+LOCAL_ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -129,7 +130,7 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
 async def program_resource(ofrak_context: OFRAKContext):
     # program compiled from examples/src
     return await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/program")
+        os.path.join(LOCAL_ASSETS_DIR, "program")
     )
 
 
