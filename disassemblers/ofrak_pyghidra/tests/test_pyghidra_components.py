@@ -5,6 +5,7 @@ Requirements Mapping:
 - REQ1.2
 """
 import os
+import shutil
 from tempfile import TemporaryDirectory
 from typing import Dict, Tuple
 import pyghidra
@@ -30,8 +31,12 @@ from ofrak.core.decompilation import DecompilationAnalysis
 from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
 from ofrak_pyghidra.components.pyghidra_components import (
     _arch_info_to_processor_id,
+    PyGhidraAnalysisStore,
     PyGhidraDecompilationAnalyzer,
     PyGhidraCustomLoadAnalyzer,
+    PyGhidraScriptConfig,
+    PyGhidraScriptModifier,
+    PyGhidraScriptResults,
 )
 import ofrak_pyghidra
 from ofrak.core import (
@@ -48,6 +53,7 @@ from ofrak_pyghidra.standalone.pyghidra_analysis import (
     decompile_all_functions,
     _unpack_basic_block,
 )
+from ofrak_pyghidra.standalone.pyghidra_script import run_script
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
 
 ASSETS_DIR = os.path.abspath(
@@ -444,7 +450,7 @@ async def ihex_resource(ofrak_context: OFRAKContext):
     return await ofrak_context.create_root_resource_from_file(
         os.path.join(
             os.path.dirname(__file__),
-            "../../ofrak_core/tests/components/assets/hello_world.ihex",
+            "../../../ofrak_core/tests/components/assets/hello_world.ihex",
         )
     )
 
@@ -482,6 +488,96 @@ async def test_ihex_unpacking(ihex_resource):
     )
     assert any(cb.name == "FUN_0040040c" for cb in complex_blocks)
     assert any(cb.name == "FUN_004003be" for cb in complex_blocks)
+
+
+RENAME_MAIN_SCRIPT = """
+from ghidra.program.model.symbol import SourceType
+
+result = []
+for function in currentProgram.getFunctionManager().getFunctions(True):
+    if function.getName() == "main":
+        function.setName("ofrak_renamed_main", SourceType.USER_DEFINED)
+        result.append(str(function.getName()))
+"""
+
+LIST_FUNCTIONS_SCRIPT = """
+result = [
+    str(function.getName())
+    for function in currentProgram.getFunctionManager().getFunctions(True)
+]
+"""
+
+
+async def test_pyghidra_script_modifier(ofrak_context: OFRAKContext, tmp_path):
+    """
+    Test running arbitrary PyGhidra scripts through OFRAK with the PyGhidraScriptModifier.
+
+    This test verifies that:
+    - A script can be run against an already-analyzed program, reusing its saved Ghidra project
+    - Modifications the script makes to the Ghidra program state are saved and reflected in the
+      refreshed analysis cache
+    - The script result is stored as PyGhidraScriptResults attributes on the resource
+    - A script can also be provided as a file via the script_path config option, and state saved
+      by a previous script run is visible to later runs
+    """
+    root_resource = await ofrak_context.create_root_resource_from_file(
+        os.path.join(ASSETS_DIR, "hello.x64.elf")
+    )
+    await root_resource.unpack_recursively(
+        do_not_unpack=[
+            ComplexBlock,
+        ]
+    )
+
+    await root_resource.run(PyGhidraScriptModifier, PyGhidraScriptConfig(script=RENAME_MAIN_SCRIPT))
+    script_results = root_resource.get_attributes(PyGhidraScriptResults)
+    assert "ofrak_renamed_main" in script_results.script_result
+
+    # The refreshed analysis cache must reflect the rename
+    analysis_store = await ofrak_context.injector.get_instance(PyGhidraAnalysisStore)
+    analysis = analysis_store.get_analysis(root_resource.get_id())
+    function_names = [value["name"] for key, value in analysis.items() if key.startswith("func_")]
+    assert "ofrak_renamed_main" in function_names
+    assert "main" not in function_names
+
+    # A second script, provided as a file, sees the state saved by the first one
+    script_file = tmp_path / "list_functions.py"
+    script_file.write_text(LIST_FUNCTIONS_SCRIPT)
+    await root_resource.run(
+        PyGhidraScriptModifier,
+        PyGhidraScriptConfig(script_path=str(script_file), refresh_analysis=False),
+    )
+    script_results = root_resource.get_attributes(PyGhidraScriptResults)
+    assert "ofrak_renamed_main" in script_results.script_result
+
+
+def test_run_script_standalone(tmp_path):
+    """
+    Test the standalone run_script function.
+
+    This test verifies that:
+    - A script provided as a Python callable is run against the program
+    - A script provided as a source string runs with `currentProgram` in scope and returns the
+      `result` variable
+    - Ghidra state modified by one run_script call is saved and visible to the next call
+    - The refreshed analysis cache reflects the modified state
+    """
+    program_file = str(tmp_path / "hello.x64.elf")
+    shutil.copy(os.path.join(ASSETS_DIR, "hello.x64.elf"), program_file)
+
+    result, analysis = run_script(program_file, RENAME_MAIN_SCRIPT, refresh_analysis=False)
+    assert result == ["ofrak_renamed_main"]
+    assert analysis is None
+
+    def list_function_names(flat_api):
+        function_manager = flat_api.getCurrentProgram().getFunctionManager()
+        return [str(function.getName()) for function in function_manager.getFunctions(True)]
+
+    result, analysis = run_script(program_file, list_function_names)
+    assert "ofrak_renamed_main" in result
+    assert "main" not in result
+    function_names = [value["name"] for key, value in analysis.items() if key.startswith("func_")]
+    assert "ofrak_renamed_main" in function_names
 
 
 @pytest.fixture
