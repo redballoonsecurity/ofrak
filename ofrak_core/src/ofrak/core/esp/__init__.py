@@ -1,0 +1,125 @@
+"""
+ESP (Espressif) device support for OFRAK.
+
+This module provides unpackers, modifiers, and packers for ESP flash dumps and app images,
+supporting ESP8266, ESP32, ESP32-S2, ESP32-S3, and other Espressif devices.
+"""
+
+# App components
+from .app import (
+    ESPAppIdentifier,
+    ESPAppUnpacker,
+    ESPAppAnalyzer,
+    ESPAppHeaderModifier,
+    ESPAppPacker,
+)
+
+# App models
+from .app_model import (
+    ESPApp,
+    ESPAppSection,
+    ESPAppAttributes,
+    ESPAppHeaderModifierConfig,
+    ESP_APP_MAGIC,
+    ESP8266V2_APP_MAGIC,
+    ESP_APP_HEADER_SIZE,
+    ESP_APP_EXTENDED_HEADER_SIZE,
+    ESP_APP_SEGMENT_HEADER_SIZE,
+    ESP_APP_DESCRIPTION_MAGIC_WORD,
+    ESP_APP_CHECKSUM_MAGIC,
+    ESPChip,
+    ESPAppFlashMode,
+    FlashSizeESP8266,
+    FlashSizeESP32,
+    FlashSizeESP32S2S3,
+    FlashFrequencyESP8266,
+    FlashFrequencyESP32,
+    FlashFrequencyESP32C6,
+    FlashSize,
+    FlashFrequency,
+)
+
+# Flash components
+from .flash import (
+    ESPFlashIdentifier,
+    ESPFlashUnpacker,
+    ESPFlashAnalyzer,
+    ESPPartitionTableEntryModifier,
+    ESPPartitionTableEntryModifierConfig,
+)
+
+# Flash models
+from .flash_model import (
+    ESPFlash,
+    ESPFlashAttributes,
+    ESPPartitionTable,
+    ESPPartition,
+    ESPPartitionTableEntry,
+    ESPFlashSection,
+    ESPFlashSectionStructure,
+    ESPPartitionStructure,
+    ESPPartitionType,
+    ESPPartitionSubtype,
+    ESPPartitionFlag,
+    ESP_PARTITION_ENTRY_MAGIC,
+    ESP_PARTITION_TABLE_OFFSET,
+    ESP_PARTITION_TABLE_SIZE,
+    ESP_PARTITION_ENTRY_SIZE,
+    ESP_BOOTLOADER_OFFSET,
+    ESP_BOOTLOADER_MAGIC,
+)
+
+__all__ = [
+    # App components
+    "ESPApp",
+    "ESPAppIdentifier",
+    "ESPAppUnpacker",
+    "ESPAppAnalyzer",
+    "ESPAppHeaderModifier",
+    "ESPAppPacker",
+    # App models
+    "ESPAppSection",
+    "ESPAppAttributes",
+    "ESPAppHeaderModifierConfig",
+    "ESP_APP_MAGIC",
+    "ESP8266V2_APP_MAGIC",
+    "ESP_APP_HEADER_SIZE",
+    "ESP_APP_EXTENDED_HEADER_SIZE",
+    "ESP_APP_SEGMENT_HEADER_SIZE",
+    "ESP_APP_DESCRIPTION_MAGIC_WORD",
+    "ESP_APP_CHECKSUM_MAGIC",
+    "ESPChip",
+    "ESPAppFlashMode",
+    "FlashSizeESP8266",
+    "FlashSizeESP32",
+    "FlashSizeESP32S2S3",
+    "FlashFrequencyESP8266",
+    "FlashFrequencyESP32",
+    "FlashFrequencyESP32C6",
+    "FlashSize",
+    "FlashFrequency",
+    # Flash components
+    "ESPFlash",
+    "ESPFlashIdentifier",
+    "ESPFlashUnpacker",
+    "ESPFlashAnalyzer",
+    "ESPPartitionTableEntryModifier",
+    # Flash models
+    "ESPPartitionTable",
+    "ESPPartition",
+    "ESPPartitionTableEntry",
+    "ESPFlashSection",
+    "ESPFlashSectionStructure",
+    "ESPPartitionStructure",
+    "ESPFlashAttributes",
+    "ESPPartitionTableEntryModifierConfig",
+    "ESPPartitionType",
+    "ESPPartitionSubtype",
+    "ESPPartitionFlag",
+    "ESP_PARTITION_ENTRY_MAGIC",
+    "ESP_PARTITION_TABLE_OFFSET",
+    "ESP_PARTITION_TABLE_SIZE",
+    "ESP_PARTITION_ENTRY_SIZE",
+    "ESP_BOOTLOADER_OFFSET",
+    "ESP_BOOTLOADER_MAGIC",
+]
