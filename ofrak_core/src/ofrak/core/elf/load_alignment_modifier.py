@@ -160,7 +160,7 @@ async def main(ofrak_context: OFRAKContext, file: str, output_file: str):
         allocatable = await root_resource.view_as(Allocatable)
         print(f"[+] Free space found by ElfLoadAlignmentFreeSpaceModifier: {allocatable}")
         for key, value in allocatable.free_space_ranges.items():
-            print(f"[+] {key} free space: {hex(sum([v.length() for v in value]))} bytes")
+            print(f"[+] {key} free space: {hex(sum(v.length() for v in value))} bytes")
         # print(f"[+] Fre space by permissions: {}")
         await root_resource.flush_data_to_disk(output_file)
         print(f"[+] Output file written to {output_file}")
