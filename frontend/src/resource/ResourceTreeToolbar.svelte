@@ -73,23 +73,6 @@
   $: {
     toolbarButtons = [
       {
-        text: "Identify",
-        iconUrl: "/icons/identify.svg",
-        shortcut: "i",
-        onclick: async (e) => {
-          await rootResource.identify();
-          if (!$resourceNodeDataMap[$selected]) {
-            $resourceNodeDataMap[$selected] = {};
-          }
-          $resourceNodeDataMap[$selected].collapsed =
-            !!$resourceNodeDataMap[$selected]?.collapsed;
-          $resourceNodeDataMap[$selected].childrenPromise =
-            rootResource.get_children();
-          refreshResource();
-        },
-      },
-
-      {
         text: "Unpack",
         iconUrl: "/icons/unpack.svg",
         shortcut: "u",
