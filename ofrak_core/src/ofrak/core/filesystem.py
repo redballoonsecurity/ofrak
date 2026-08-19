@@ -1,3 +1,4 @@
+import errno
 import os
 import stat
 import sys
@@ -718,6 +719,12 @@ class FilesystemRoot(ResourceView):
     @classmethod
     def _get_xattr_map(cls, path):
         xattr_dict = {}
-        for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
-            xattr_dict[attr] = xattr.getxattr(path, attr)
+        try:
+            for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
+                xattr_dict[attr] = xattr.getxattr(path, attr, symlink=True)
+        except OSError as e:
+            # Dangling symlink: some platforms raise ENOENT instead of returning empty xattrs
+            if e.errno == errno.ENOENT and os.path.islink(path):
+                return {}
+            raise
         return xattr_dict

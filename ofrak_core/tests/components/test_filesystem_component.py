@@ -15,6 +15,11 @@ import tempfile312 as tempfile
 
 import pytest
 
+try:
+    import xattr
+except ImportError:
+    import ofrak.core.xattr_stub as xattr  # type: ignore[no-redef]
+
 from ofrak import OFRAKContext
 from ofrak.core import FilesystemRoot
 from ofrak.core.binary import GenericBinary
@@ -208,6 +213,92 @@ class TestFilesystemRoot:
         await filesystem_root.remove_file(CHILD_TEXTFILE_NAME)
         updated_list_dir_output = await filesystem_root.list_dir()
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
+
+    @pytest.mark.skipif_windows
+    async def test_initialize_from_disk_dangling_symlink(
+        self, ofrak_context: OFRAKContext, tmp_path
+    ):
+        """
+        Test that initialize_from_disk and flush_to_disk succeed with a dangling symlink (REQ1.4).
+
+        This test verifies that:
+        - A dangling symbolic link does not cause `_get_xattr_map` to fail with ENOENT
+        - The link is imported as a filesystem entry
+        - The link can be flushed back to disk
+        """
+        dangling_name = "resolv.conf"
+        dangling_path = os.path.join(str(tmp_path), dangling_name)
+        os.symlink("../run/systemd/resolve/stub-resolv.conf", dangling_path)
+        try:
+            xattr.setxattr(dangling_path, "user.foo", b"bar", symlink=True)
+        except OSError:
+            pass
+        hello_path = os.path.join(str(tmp_path), CHILD_TEXTFILE_NAME)
+        with open(hello_path, "w") as f:
+            f.write(CHILD_TEXT)
+
+        resource = await ofrak_context.create_root_resource(
+            name=str(tmp_path), data=b"", tags=[FilesystemRoot]
+        )
+        filesystem_root = await resource.view_as(FilesystemRoot)
+        await filesystem_root.initialize_from_disk(str(tmp_path))
+
+        entry = await filesystem_root.get_entry(dangling_name)
+        assert entry is not None
+        assert entry.is_link()
+
+        with tempfile.TemporaryDirectory() as flush_dir:
+            await filesystem_root.flush_to_disk(flush_dir)
+            flushed_link = os.path.join(flush_dir, dangling_name)
+            assert os.path.islink(flushed_link)
+            assert os.readlink(flushed_link) == "../run/systemd/resolve/stub-resolv.conf"
+
+
+@pytest.mark.skipif_windows
+class TestGetXattrMap:
+    """
+    Test FilesystemRoot._get_xattr_map handling of symbolic links.
+    """
+
+    def test_dangling_symlink_without_xattrs(self, tmp_path):
+        """
+        Test that `_get_xattr_map` treats a dangling symlink as having no xattrs (REQ1.4).
+
+        This test verifies that:
+        - Reading xattrs from a dangling symbolic link does not raise ENOENT
+        - An empty xattr map is returned
+        """
+        link_path = os.path.join(str(tmp_path), "resolv.conf")
+        os.symlink("../run/systemd/resolve/stub-resolv.conf", link_path)
+        assert FilesystemRoot._get_xattr_map(link_path) == {}
+
+    def test_dangling_symlink_with_xattrs(self, tmp_path):
+        """
+        Test that `_get_xattr_map` reads xattrs from the symlink itself (REQ1.4).
+
+        This test verifies that:
+        - xattrs stored on a dangling symbolic link are returned
+        - The link target is not followed (which would raise ENOENT)
+        """
+        link_path = os.path.join(str(tmp_path), "resolv.conf")
+        os.symlink("../run/systemd/resolve/stub-resolv.conf", link_path)
+        try:
+            xattr.setxattr(link_path, "user.foo", b"bar", symlink=True)
+        except OSError:
+            pytest.skip("Platform does not support extended attributes on symbolic links")
+        assert FilesystemRoot._get_xattr_map(link_path)["user.foo"] == b"bar"
+
+    def test_missing_path_raises(self, tmp_path):
+        """
+        Test that `_get_xattr_map` still raises when the path does not exist (REQ1.4).
+
+        This test verifies that:
+        - ENOENT is only treated as empty xattrs for dangling symbolic links
+        - A missing non-link path still raises FileNotFoundError
+        """
+        missing_path = os.path.join(str(tmp_path), "does-not-exist")
+        with pytest.raises(FileNotFoundError):
+            FilesystemRoot._get_xattr_map(missing_path)
 
 
 @pytest.mark.skipif_windows

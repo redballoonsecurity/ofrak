@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
+- Fix `_get_xattr_map` following dangling symlinks when reading xattrs, which broke `CramfsUnpacker` and `ExtPacker`
 - Remove libmagic 5.46 pin as the pinned manifest is not compatible with latest brew and libmagic 5.48 fixes the original regression ([#755](https://github.com/redballoonsecurity/ofrak/pull/755))
 - Fix thread-unsafe `os.chdir` in `ZipPacker` by passing `cwd` to subprocess ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))
 - Pin libmagic to 5.46 on macOS CI builds to work around a regression in 5.47 that breaks ELF identification; update documentation to reflect the libmagic 5.46 requirement ([#723](https://github.com/redballoonsecurity/ofrak/pull/723))
