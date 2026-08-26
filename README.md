@@ -35,13 +35,80 @@ The web-based GUI view provides a navigable resource tree. For the selected reso
 
 ### Installation Methods
 
-OFRAK can be installed in three ways:
+OFRAK can be installed in four ways:
 
 | Method | Best For | Installation Command |
 |--------|----------|---------------------|
+| **.deb / .AppImage** (this fork) | Ready-to-use desktop install with bundled Python 3.13 + GUI | Download from [Releases](https://github.com/Opanxxc/ofrak/releases) |
 | **PyPI** | Quick testing, users who prefer managing their own environment | `pip install ofrak` |
 | **Docker** | Comprehensive environment with all dependencies, consistent setup | `python3 build_image.py --config ofrak-ghidra.yml --base --finish` |
 | **Source** | Contributors, developers, modifying OFRAK code | Clone repo + `make develop` |
+
+**Install via .deb (Debian/Ubuntu):**
+
+```bash
+sudo apt install ./ofrak_*_amd64.deb
+ofrak license --community --i-agree   # first run only
+ofrak gui                             # opens web GUI at http://localhost:8888
+```
+
+**Run via .AppImage (any distro):**
+
+```bash
+chmod +x OFRAK-*-x86_64.AppImage
+./OFRAK-*-x86_64.AppImage license --community --i-agree
+./OFRAK-*-x86_64.AppImage gui
+```
+
+Both packages bundle a standalone Python 3.13 interpreter and the pre-built GUI frontend — no system Python or Node.js required.
+
+**Install on Android via Termux (recommended):**
+
+Option A — One-liner (auto-downloads prebuilt .deb, ~1 min):
+```bash
+curl -sL https://raw.githubusercontent.com/Opanxxc/ofrak/master/scripts/termux-install.sh | bash
+```
+
+Option B — Manual install with wget:
+```bash
+# 1. Install Termux from F-Droid (not Play Store)
+# 2. Open Termux and run:
+pkg update && pkg install git
+
+# 3. Download the latest prebuilt .deb
+cd $HOME
+wget -q https://github.com/Opanxxc/ofrak/releases/download/continuous/ofrak_3.4.0_aarch64.deb
+
+# 4. Install it
+apt install -y ./ofrak_3.4.0_aarch64.deb
+
+# 5. Accept the community license (first run only)
+ofrak license --community --i-agree
+
+# 6. Launch the GUI
+ofrak gui
+# Open http://127.0.0.1:8888 in your phone browser
+
+# Or use the terminal menu (no browser needed):
+ofrak-menu
+```
+
+The Termux .deb includes:
+- **ofrak core** — unpack, identify, modify, repack
+- **ofrak_angr** — angr-based symbolic analysis backend
+- **ofrak_capstone** — capstone disassembly engine
+- **GUI frontend** — web-based resource explorer
+- **TUI menu** — `ofrak-menu` for terminal-only usage
+
+If you need Ghidra integration, install it manually:
+```bash
+pip install ofrak_ghidra
+```
+
+**Build from source (20-40 min on device):**
+```bash
+curl -sL https://raw.githubusercontent.com/Opanxxc/ofrak/master/scripts/termux-install.sh | bash -s -- --build
+```
 
 See ([Install](docs/install/index.md)) for detailed installation instructions.
 
