@@ -47,6 +47,8 @@ jobs:
         exclude: ${{ fromJSON(inputs.excludes) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/test-package
         with:
           package-under-test: ${{ inputs.package-under-test }}
