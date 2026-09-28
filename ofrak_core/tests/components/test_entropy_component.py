@@ -4,12 +4,34 @@ Test entropy analysis component functionality.
 Requirements Mapping:
 - REQ2.2
 """
+
 import asyncio
+import importlib.util
 import os.path
+import platform
+import sys
 import time
 
 import pytest
-from ofrak.core.entropy import DataSummaryAnalyzer
+from ofrak.core.entropy import (
+    DataSummaryAnalyzer,
+    MlxDataSummaryAnalyzer,
+    MlxEntropyResource,
+    TorchDataSummaryAnalyzer,
+    TorchEntropyResource,
+)
+from ofrak.core.entropy.entropy_mlx import (
+    MlxDataSummaryCache,
+    _lookup_table,
+    _sample_positions,
+)
+from ofrak.core.entropy.entropy_torch import (
+    TorchDataSummaryCache,
+    _lookup_table as _torch_lookup_table,
+    _positions as _torch_positions,
+    sample_entropy_torch,
+)
+from ofrak_type.error import NotFoundError
 
 from ofrak import OFRAKContext
 from .. import components
@@ -143,3 +165,229 @@ async def test_entropy_parallel_faster_than_sequential(ofrak_context: OFRAKConte
         f"{sequential_time:.3f}s and parallel took {parallel_time:.3f}s "
         f"({parallel_time / sequential_time:.0%} of sequential)."
     )
+
+
+def test_mlx_sample_positions_are_exact():
+    assert list(_sample_positions(512, 256, 2**20)) == list(range(256))
+    assert list(_sample_positions(2048, 256, 4)) == [0, 448, 896, 1344]
+    large_length = 2**34 + 512
+    positions = _sample_positions(large_length, 256, 4)
+    assert positions.itemsize == 8
+    assert positions[-1] == 3 * (large_length - 256) // 4 > 2**32
+
+
+def test_mlx_lookup_table():
+    lookup = _lookup_table()
+    assert len(lookup) == 257
+    assert lookup[0] == lookup[1] == 0
+    assert lookup[256] == 256 * 8 * 2**32
+
+
+async def test_mlx_backend_selection(ofrak_context: OFRAKContext, monkeypatch):
+    from ofrak.core.entropy import entropy_mlx
+
+    expected = b"\x2a" * 4
+    received = []
+
+    def fake_entropy(data):
+        received.append(data)
+        return expected
+
+    monkeypatch.setattr(entropy_mlx, "sample_entropy_mlx", fake_entropy)
+    data = bytes(index % 256 for index in range(260))
+    root = await ofrak_context.create_root_resource("entropy", data)
+    compatibility_analyzer: DataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        DataSummaryAnalyzer.get_id()
+    )
+    compatibility_before = await compatibility_analyzer.get_data_summary(root)
+    analyzer: MlxDataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        MlxDataSummaryAnalyzer.get_id()
+    )
+    summary = await analyzer.get_data_summary(root)
+    compatibility_after = await compatibility_analyzer.get_data_summary(root)
+    assert summary.entropy_samples == expected
+    assert root.has_tag(MlxEntropyResource)
+    assert root.get_attributes(MlxDataSummaryCache).cache_key == root.get_id().hex()
+    assert compatibility_after == compatibility_before
+    assert received == [data]
+
+
+async def test_mlx_failure_cleans_up_tag(ofrak_context: OFRAKContext, monkeypatch):
+    from ofrak.core.entropy import entropy_mlx
+
+    def fake_fail(data):
+        raise RuntimeError("simulated MLX failure")
+
+    monkeypatch.setattr(entropy_mlx, "sample_entropy_mlx", fake_fail)
+    root = await ofrak_context.create_root_resource(
+        "entropy", bytes(index % 256 for index in range(260))
+    )
+    analyzer: MlxDataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        MlxDataSummaryAnalyzer.get_id()
+    )
+    with pytest.raises(RuntimeError, match="simulated MLX failure"):
+        await analyzer.get_data_summary(root)
+    assert not root.has_tag(MlxEntropyResource)
+
+
+async def test_mlx_analyzer_is_not_automatic(ofrak_context: OFRAKContext):
+    root = await ofrak_context.create_root_resource("entropy", bytes(range(255)))
+    await root.auto_run(all_analyzers=True)
+    with pytest.raises(NotFoundError):
+        root.get_attributes(MlxDataSummaryCache)
+
+
+def test_mlx_backend_dependency_error(monkeypatch):
+    import builtins
+
+    from ofrak.core.entropy.entropy_mlx import sample_entropy_mlx
+
+    original_import = builtins.__import__
+
+    def blocked_import(name, *args, **kwargs):
+        if name == "mlx.core":
+            raise ImportError("blocked for test")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+    with pytest.raises(ModuleNotFoundError, match="ofrak\\[entropy-mlx\\]"):
+        sample_entropy_mlx(bytes(range(256)) + b"\x00")
+
+
+@pytest.mark.skipif(
+    sys.platform != "darwin"
+    or platform.machine() != "arm64"
+    or importlib.util.find_spec("mlx") is None,
+    reason="MLX Metal requires Apple Silicon",
+)
+def test_mlx_backend_matches_python_entropy():
+    from ofrak.core.entropy.entropy_mlx import sample_entropy_mlx
+
+    fixtures = [
+        bytes([0]) * 512,
+        bytes(range(256)) * 2,
+        bytes((index * 73 + index // 11) % 256 for index in range(4096)),
+    ]
+    for data in fixtures:
+        assert sample_entropy_mlx(data) == entropy_py(data, 256)
+
+    sampled = fixtures[-1]
+    full = entropy_py(sampled, 256)
+    positions = _sample_positions(len(sampled), 256, 64)
+    expected = bytes(full[position] for position in positions)
+    assert sample_entropy_mlx(sampled, max_samples=64) == expected
+
+
+def test_torch_sample_positions_are_exact():
+    pytest.importorskip("torch")
+    assert list(_torch_positions(512, 256, 2**20).numpy()) == list(range(256))
+    assert list(_torch_positions(2048, 256, 4).numpy()) == [0, 448, 896, 1344]
+    large_length = 2**34 + 512
+    positions = _torch_positions(large_length, 256, 4)
+    assert positions.element_size() == 8
+    assert int(positions[-1]) == 3 * (large_length - 256) // 4 > 2**32
+
+
+def test_torch_lookup_table():
+    lookup = _torch_lookup_table()
+    assert len(lookup) == 257
+    assert lookup[0] == lookup[1] == 0
+    assert lookup[256] == 256 * 8 * 2**32
+
+
+async def test_torch_backend_selection(ofrak_context: OFRAKContext, monkeypatch):
+    from ofrak.core.entropy import entropy_torch
+
+    expected = b"\x2a" * 4
+    received = []
+
+    def fake_entropy(data):
+        received.append(data)
+        return expected
+
+    monkeypatch.setattr(entropy_torch, "sample_entropy_torch", fake_entropy)
+    data = bytes(index % 256 for index in range(260))
+    root = await ofrak_context.create_root_resource("entropy", data)
+    compatibility_analyzer: DataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        DataSummaryAnalyzer.get_id()
+    )
+    compatibility_before = await compatibility_analyzer.get_data_summary(root)
+    analyzer: TorchDataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        TorchDataSummaryAnalyzer.get_id()
+    )
+    summary = await analyzer.get_data_summary(root)
+    compatibility_after = await compatibility_analyzer.get_data_summary(root)
+    assert summary.entropy_samples == expected
+    assert root.has_tag(TorchEntropyResource)
+    assert root.get_attributes(TorchDataSummaryCache).cache_key == root.get_id().hex()
+    assert compatibility_after == compatibility_before
+    assert received == [data]
+
+
+async def test_torch_failure_cleans_up_tag(ofrak_context: OFRAKContext, monkeypatch):
+    from ofrak.core.entropy import entropy_torch
+
+    def fake_fail(data):
+        raise RuntimeError("simulated Torch failure")
+
+    monkeypatch.setattr(entropy_torch, "sample_entropy_torch", fake_fail)
+    root = await ofrak_context.create_root_resource(
+        "entropy", bytes(index % 256 for index in range(260))
+    )
+    analyzer: TorchDataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        TorchDataSummaryAnalyzer.get_id()
+    )
+    with pytest.raises(RuntimeError, match="simulated Torch failure"):
+        await analyzer.get_data_summary(root)
+    assert not root.has_tag(TorchEntropyResource)
+
+
+async def test_torch_analyzer_is_not_automatic(ofrak_context: OFRAKContext):
+    root = await ofrak_context.create_root_resource("entropy", bytes(range(255)))
+    await root.auto_run(all_analyzers=True)
+    with pytest.raises(NotFoundError):
+        root.get_attributes(TorchDataSummaryCache)
+
+
+def test_torch_backend_dependency_error(monkeypatch):
+    import builtins
+
+    from ofrak.core.entropy.entropy_torch import sample_entropy_torch
+
+    original_import = builtins.__import__
+
+    def blocked_import(name, *args, **kwargs):
+        if name == "torch":
+            raise ImportError("blocked for test")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+    with pytest.raises(ModuleNotFoundError, match="ofrak\\[entropy-torch\\]"):
+        sample_entropy_torch(bytes(range(256)) + b"\x00")
+
+
+def test_torch_backend_matches_python_entropy():
+    pytest.importorskip("torch")
+    from ofrak.core.entropy.entropy_torch import sample_entropy_torch
+
+    fixtures = [
+        bytes([0]) * 512,
+        bytes(range(256)) * 2,
+        bytes((index * 73 + index // 11) % 256 for index in range(4096)),
+    ]
+    for data in fixtures:
+        assert sample_entropy_torch(data, device="cpu") == entropy_py(data, 256)
+
+    sampled = fixtures[-1]
+    full = entropy_py(sampled, 256)
+    positions = _torch_positions(len(sampled), 256, 64)
+    expected = bytes(full[int(position)] for position in positions)
+    assert sample_entropy_torch(sampled, max_samples=64, device="cpu") == expected
+
+
+def test_torch_backend_matches_ofrak_c():
+    pytest.importorskip("torch")
+    from ofrak.core.entropy.entropy_torch import sample_entropy_torch
+
+    data = bytes((index * 73 + index // 11) % 256 for index in range(8192))
+    assert sample_entropy_torch(data, device="cpu") == entropy_c(data, 256)
