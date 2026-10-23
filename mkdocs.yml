@@ -86,6 +86,7 @@ nav:
           - User Guide: "user-guide/advanced/patch-maker/user-guide.md"
           - Troubleshooting: "user-guide/advanced/patch-maker/troubleshooting.md"
         - NAND Flash Component: "user-guide/advanced/flash_component.md"
+        - Portable RE Markup (proposal): "user-guide/advanced/portable_re_markup.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
       - Requirements: "contributor-guide/requirements.md"
