@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix duplicate import and integer overflow in CreateMemoryBlocks.java and GetDecompilation.java ([#700](https://github.com/redballoonsecurity/ofrak/pull/700))
 - Fix issue installing JDK in AARCH64 Docker build ([#718](https://github.com/redballoonsecurity/ofrak/pull/718))
 - Pass `usedforsecurity=False` to non-cryptographic `hashlib` calls to prevent failures when Python links against FIPS OpenSSL ([#744](https://github.com/redballoonsecurity/ofrak/pull/744))
+- `ReferencedDataAttributes` only hold references between addresses of the program's memory: references from the ELF headers and other structures Ghidra marks up outside of it appeared at the offsets of those structures, as references from the program's own low addresses ([#TBD](https://github.com/redballoonsecurity/ofrak/pull/TBD))
 
 ## 0.1.1 - 2024-02-15
 ### Added
