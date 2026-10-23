@@ -1,223 +1,355 @@
 # Anchor-Based Markup & Portable RE Annotations
 
-!!! warning "Status: design proposal — requires new components"
-    This page describes two proposed capabilities that do **not** exist in OFRAK, and whose
-    substrate also does not exist yet. OFRAK has **no producer** of function→string cross-references
-    today — only function→*data-address* references (`ReferencedDataAttributes`), and only on the
-    Ghidra and Binary Ninja backends. Building the string-reference substrate is itself part of the
-    work. Every code block is an illustrative sketch, not a copy-pasteable API.
+!!! warning "Requires the Ghidra or Binary Ninja backend"
+    These components find functions by the strings they reference, which OFRAK derives from the
+    function→data cross-references that only the Ghidra (`ofrak_ghidra`) and Binary Ninja
+    (`ofrak_binary_ninja`) backends provide. With any other backend (pyghidra, angr, Capstone,
+    cached disassembly) they raise
+    [ReferencedDataUnavailableError][ofrak.core.referenced_strings.ReferencedDataUnavailableError]
+    instead of silently doing nothing.
 
 ## Overview
 
 Reverse-engineering effort produces **markup**: the names and comments an analyst attaches to
-functions while figuring out what a binary does. In OFRAK today that markup is
-[`CommentsAttributes`][ofrak.core.comments.CommentsAttributes] (comments keyed to a byte
-[`Range`][ofrak_type.range.Range]) and [`ComplexBlock`][ofrak.core.complex_block.ComplexBlock]
-names — both **bound to addresses in one specific binary**.
+functions while figuring out what a binary does. In OFRAK that markup is
+[`CommentsAttributes`][ofrak.core.comments.CommentsAttributes] and
+[`ComplexBlock`][ofrak.core.complex_block.ComplexBlock] names, both bound to one binary.
 
-OFRAK already preserves that markup *for the same binary* across process/project loss: full-state
-serialization round-trips every attribute, and an [`OfrakProject`][ofrak.project.project.OfrakProject]
-persists the analysis as a committed script that regenerates the markup on a fresh root resource. So
-"losing your comments when the project goes away" is **not** the gap.
+OFRAK already preserves markup *for the same binary*: full-state serialization round-trips every
+attribute, and an [`OfrakProject`][ofrak.project.project.OfrakProject] replays a committed script
+that re-applies the markup to a fresh analysis. But that script selects functions by address, so
+it cannot carry markup to a *different* build of the same firmware (a new version, or a same-SoC
+sibling), where almost every function has moved. Two components close that gap:
 
-The real gap is **transfer to a *different* build**: the names and comments you wrote on build *A*
-cannot be carried to build *B* of the same firmware (a new version, or a same-SoC sibling), because
-every annotation is pinned to *A*'s addresses, which differ in *B*. This proposal adds two
-components to close that gap:
+1. **Anchor-based markup**: name and comment a function found by a stable property it references
+   (a string literal it uses) rather than by its address.
+2. **Portable RE annotations**: export a program's markup to a git-diffable document that
+   identifies each function without its address, and import it onto another build.
 
-1. **Anchor-based markup** — resolve a function by a *stable property it references* (a string
-   literal it uses; later, a hardware constant it touches) rather than by address, then attach a name
-   and comment to the enclosing `ComplexBlock`.
-2. **Portable RE annotations** — export a program's markup to a diffable document keyed on an
-   address-independent fingerprint, and re-import it onto a freshly-analyzed *sibling* build.
+Both run inside a headless OFRAK `unpack → modify → repack` pipeline (or the
+[`ofrak markup`](../../ofrak-cli.md#markup) command), with no GUI and no disassembler project to
+ship: the markup lives in reviewable text files. The intended win over external matchers (Ghidra
+Version Tracking, BSim, BinDiff, Diaphora) is that integration, not matching quality: those are
+stronger matchers.
 
-The intended payoff is OFRAK-specific: a **git-diffable markup artifact that re-applies inside a
-headless `unpack → modify → repack` pipeline**, with no GUI and no disassembler project to ship.
+See [Example 10](../../examples/examples/ex10_portable_re_markup.md) for a complete script, from
+an anchor set on one build to the repacked other build.
 
-## Building blocks: what exists, and what must be built
+## Building blocks
 
-The previous version of this page presented this as a table of things "already in OFRAK." The honest
-accounting is split — most of the load-bearing substrate is **missing**:
+### Function→string references
 
-**Exists today (reusable):**
+[`DerivedReferencedStringsAnalyzer`][ofrak.core.referenced_strings.DerivedReferencedStringsAnalyzer]
+is the implementation of [`ReferencedStringsAnalyzer`][ofrak.core.program.ReferencedStringsAnalyzer].
+It reads the backend's [`ReferencedDataAttributes`][ofrak.core.data.ReferencedDataAttributes],
+resolves each referenced data address to the program's largest memory region containing it, and
+keeps the addresses whose bytes are a printable, NUL-terminated UTF-8 string. Each reference is
+attributed to the [`ComplexBlock`][ofrak.core.complex_block.ComplexBlock] containing the
+referencing instruction. The resulting
+[`ReferencedStringsAttributes`][ofrak.core.data.ReferencedStringsAttributes] hold:
 
-- [`ReferencedDataAnalyzer`][ofrak.core.program.ReferencedDataAnalyzer] →
-  [`ReferencedDataAttributes`][ofrak.core.data.ReferencedDataAttributes]: function→*data-address*
-  cross-references, with `get_xrefs_from` / `get_xrefs_to` helpers. **Implemented only by the Ghidra
-  and Binary Ninja backends** (`GhidraReferencedDataAnalyzer`, `BinaryNinjaReferencedDataAnalyzer`) —
-  not pyghidra, angr, Capstone, or the cached backend.
-- [`ComplexBlock`][ofrak.core.complex_block.ComplexBlock] + `Program.get_memory_region_for_vaddr` /
-  `Program.get_function_complex_block(name)`: map an address to its enclosing function, and look a
-  function up by its `Symbol`-indexed name.
-- [`CommentsAttributes`][ofrak.core.comments.CommentsAttributes] /
-  [`AddCommentModifier`][ofrak.core.comments.AddCommentModifier]: store a comment on a resource.
+- `referencing_functions`: the virtual addresses of the complex blocks that reference strings;
+- `referenced_strings`: the virtual address range of each string's bytes, without its terminator
+  (ranges, not text);
+- `references`: (function index, string index) edges.
 
-**Does NOT exist — must be built by this work:**
-
-- **A function→string producer.** [`ReferencedStringsAnalyzer`][ofrak.core.program.ReferencedStringsAnalyzer]
-  is an *abstract class with no implementation*, and
-  [`ReferencedStringsAttributes`][ofrak.core.data.ReferencedStringsAttributes] is a dataclass that
-  **nothing constructs**. (Note its `referenced_strings` field is `Tuple[Range, ...]` — byte ranges,
-  not text.) The anchor and fingerprint mechanisms both need function→string *content*, which no
-  component produces. This is the central prerequisite (see below).
-- **A rename operation.** There is no modifier that sets `ComplexBlock.name`; the name is written
-  only at view-construction time by the disassembler's unpacker. Renaming must construct a fresh
-  `ComplexBlock` view and `resource.add_view(...)` it (the documented write-back pattern) — a small
-  but genuinely new `RenameComplexBlockModifier`.
-- **A function-prototype model.** OFRAK models no function signature/prototype anywhere; `ComplexBlock`
-  carries only `name`, `virtual_address`, `size`. Any "prototype" in exported markup has nothing to
-  read from or write to, so prototypes are **out of scope** for v1 (or require a new attribute first).
-
-### The prerequisite: a real `ReferencedStringsAnalyzer`
-
-Because the substrate is missing, the first deliverable is a concrete analyzer that derives
-function→string references from what *does* exist:
+[`get_function_string_references`][ofrak.core.referenced_strings.get_function_string_references]
+runs the analyzer if needed, and reads the text back:
 
 ```python
-# Sketch: derive string content from the data-reference graph that Ghidra/Binja already produce.
-class DerivedReferencedStringsAnalyzer(ReferencedStringsAnalyzer):
-    targets = (Program,)
-    outputs = (ReferencedStringsAttributes,)
-
-    async def analyze(self, resource, config=None):
-        program = await resource.view_as(Program)
-        data_refs = resource.get_attributes(ReferencedDataAttributes)   # Ghidra/Binja only
-        # For each referenced data vaddr, read bytes at (vaddr - region.virtual_address) via
-        # Program.get_memory_region_for_vaddr; if the bytes decode as a C string, keep it and its
-        # Range. Then rebuild the function->string edges from data_refs.get_xrefs_from().
-        ...
+program = await resource.view_as(Program)
+strings_by_function = await get_function_string_references(program)
+# {0x406990: ("bad argument #%d (%s)", "bad argument #%d to '%s' (%s)", ...), ...}
 ```
 
-This is the step the earlier draft wrongly assumed was free. It is real work, and it inherits the
-Ghidra/Binary-Ninja-only limitation of its input.
+The analyzer only runs when it is requested this way, by the components below, or with
+`resource.run(DerivedReferencedStringsAnalyzer)`: running every analyzer of a program (the GUI's
+Analyze, `Resource.analyze_recursively`) does not include it, since it needs one of the two
+backends and unpacks the program into functions. It does that itself if the program was only
+identified, so that no function is left out.
+
+What counts as a string:
+
+- Bytes are only read from the program's memory: not from ELF sections without the `SHF_ALLOC`
+  flag (symbol names, debug information), which have no address, and never from inside a function,
+  whose bytes are code.
+- A string short enough to fit in a pointer, at a pointer-aligned address, is taken for a pointer
+  (an entry of a pointer or jump table, or of a literal pool), not text, if the backend found a
+  reference at its address, or if its bytes are an address the backend found references to, the
+  start of a function, or an address of the program's memory, including variables without data
+  in the file (like `.bss`): the address of a RAM variable often reads like a short string.
+- Only the references the backend found count: a string reached through a pointer table in data
+  (like Lua's `luaL_Reg` arrays) is not attributed to the function that reads the table. On
+  processors like ARM, code loads addresses from words placed among it (literal pools), and Ghidra
+  turns such a load into a reference to the loaded address (see the limitations for firmware).
+- A string need not start right after a NUL: linkers store a string at the end of a longer one
+  that ends the same way (`"upvalues"` in `"too many upvalues"`), as 51 of the 438 strings
+  referenced in build A of the test pair are.
+- When the backend loads a position-independent ELF at other addresses than the file's and moves
+  OFRAK's code regions there, as Ghidra does, the referenced addresses are translated back to the
+  file's sections.
+- If the program is patched after its strings were derived, they are derived again when one of
+  them changed. The references themselves come from the backend's analysis of the program as it
+  was unpacked: a patch that makes code refer to another string (by changing a pointer, say) only
+  shows once the patched program is analyzed again, as a new resource.
+
+### Renaming with provenance
+
+[`RenameComplexBlockModifier`][ofrak.core.complex_block.RenameComplexBlockModifier] renames a
+function by replacing its `ComplexBlock` view with one that has the new name and the same address
+and size (view fields do not write back on their own). The `ComplexBlock.Symbol` index follows,
+so [`Program.get_function_complex_block`][ofrak.core.program.Program.get_function_complex_block]
+finds the function by its new name. It also records
+[`AnalystNameAttributes`][ofrak.core.complex_block.AnalystNameAttributes]: nothing else in OFRAK
+tells an analyst's name from a disassembler's default (`FUN_*`, `sub_*`), so the export relies on
+this marker, and both components rely on it to never overwrite a name an analyst gave a function:
+markup for a function that already has another analyst's name is reported as a conflict instead.
 
 ## Feature #1: Anchor-based markup
 
-An **anchor** names a function indirectly, by a stable property it references. v1 supports **string**
-anchors (constant/MMIO *scalar* anchors are deferred — they need instruction-operand resolution that
-is additional work):
+An [`Anchor`][ofrak.core.anchored_markup.Anchor] is a name (and optional comment) together with the
+exact text of a string that the target function references.
+[`ApplyAnchoredMarkupModifier`][ofrak.core.anchored_markup.ApplyAnchoredMarkupModifier] resolves
+the anchors of an [`ApplyAnchoredMarkupConfig`][ofrak.core.anchored_markup.ApplyAnchoredMarkupConfig]
+on a [`Program`][ofrak.core.program.Program], renames and comments each uniquely matched function,
+and records an [`AnchorResolutionReport`][ofrak.core.anchored_markup.AnchorResolutionReport], by
+anchor name:
 
-```python
-class AnchorType(Enum):
-    STRING = 0   # a literal string the target function references
-    SCALAR = 1   # DEFERRED: a hardware constant in an instruction operand
+- **hit**: exactly one function references the string, and it is named and commented;
+- **miss**: no function references the string;
+- **ambiguous**: several functions reference it, or another name's anchor resolves to the same
+  function. Ambiguous anchors are never applied, unless `apply_to_all` is set, which applies an
+  anchor to every function it matches;
+- **conflict**: the function already has a different name from an analyst, which is kept.
 
+The report also lists, by name, the strings that no function references, including those of a name
+that its other anchors made up for (see below): a sign that the function changed.
 
-@dataclass
-class Anchor:
-    name: str
-    anchor_type: AnchorType
-    value: Union[str, int]          # str|int, NOT `object` (the pjson AnySerializer is pass-through)
-    comment: Optional[str] = None
+Several anchors can have the same name, to identify a function by several of its strings: the
+function is the one all of them match, ignoring those that match nothing. An anchor on a string
+several functions use is thus narrowed down by another; an anchor whose string disappeared from
+a build is backed up by the others; and anchors that match different functions make the name
+ambiguous rather than applying it to one of them.
 
+Re-applying an anchor set changes nothing (comments are not duplicated), so the markup is
+reproducible from the recipe, and a miss or an ambiguous anchor on a new build is itself a signal
+that the function changed, moved, or no longer references that string. Only `STRING` anchors exist
+for now; anchors on constants in instruction operands (e.g. MMIO addresses) need operand constant
+resolution that OFRAK does not provide.
 
-@dataclass
-class ApplyAnchoredMarkupConfig(ComponentConfig):
-    anchors: List[Anchor]
+Anchor sets are written in JSON or YAML (UTF-8) and loaded with
+[`load_anchor_set`][ofrak.core.anchored_markup.load_anchor_set]:
+
+```yaml
+apply_to_all: false
+anchors:
+  - name: luaL_argerror
+    value: "bad argument #%d to '%s' (%s)"
+    comment: Raises the standard error for a bad argument to a C function.
+  - name: luaL_argerror
+    value: "calling '%s' on bad self (%s)"
+  - name: os_date
+    value: "date result cannot be represented in this installation"
 ```
 
-The `Modifier` targets [`Program`][ofrak.core.program.Program]; it depends on the derived
-string-reference analyzer above:
-
 ```python
-class ApplyAnchoredMarkupModifier(Modifier[ApplyAnchoredMarkupConfig]):
-    targets = (Program,)
-
-    async def modify(self, resource, config):
-        strings = await resource.analyze(ReferencedStringsAttributes)   # the NEW analyzer
-        report = AnchorResolutionReport()
-        for anchor in config.anchors:
-            blocks = await _functions_referencing(resource, strings, anchor)  # -> ComplexBlocks
-            if not blocks:
-                report.misses.append(anchor.name); continue
-            if len(blocks) > 1:
-                report.ambiguous.append(anchor.name); continue    # conservative: never mislabel
-            cb = blocks[0]
-            await cb.resource.run(RenameComplexBlockModifier, ...)   # NEW modifier (add_view)
-            if anchor.comment:
-                await cb.resource.run(AddCommentModifier,
-                                      AddCommentModifierConfig((None, anchor.comment)))
-            report.hits[anchor.name] = cb.virtual_address
-        resource.add_attributes(report)
+await resource.unpack()
+await resource.run(ApplyAnchoredMarkupModifier, await load_anchor_set("anchors.yml"))
+report = resource.get_attributes(AnchorResolutionReport)
+print(report.hits, report.misses, report.ambiguous, report.conflicts)
 ```
-
-Two useful properties: the markup is **reproducible from a recipe** (re-running the anchor set on a
-fresh analysis reproduces it), and **a miss/ambiguous result is itself a cross-version signal** (the
-function changed, moved, or no longer references that string).
 
 ## Feature #2: Portable RE annotations
 
-Export every analyst-named / commented `ComplexBlock` to a portable document, with an
-address-independent fingerprint so it can be re-located on a different build. The fingerprint is the
-set of string contents the function references (derived via the Feature-#1 analyzer):
+### Export
+
+[`export_portable_markup`][ofrak.core.portable_markup.export_portable_markup] is a helper rather
+than an analyzer, since its product is a document for other builds, not an attribute of this one.
+It exports every function that has an analyst name (`AnalystNameAttributes` matching its current
+name) or comments; disassembler-assigned names are never exported. Each
+[`PortableFunctionMarkup`][ofrak.core.portable_markup.PortableFunctionMarkup] record holds:
+
+| Field | Meaning |
+|---|---|
+| `name` | the analyst's name, or `null` |
+| `comments` | the function's comments (comments on a byte range become function comments) |
+| `string_refs` | the sorted texts of the strings the function references: the address-independent fingerprint |
+| `code_sha256` | the hash of the function's bytes: an exact identity in the same build, or in a build where the function did not change |
+| `size` | the function's size, to rule out implausible matches |
+
+The functions without markup that one with markup could be mistaken for (those that reference
+strings, and those whose code is identical to one with markup) are exported too, as records with
+neither a name nor comments: importing them applies nothing, but lets the import check that a
+function with markup is the best match of its counterpart among all the functions of the exported
+program, not only among those an analyst happened to name. The document also records the SHA-256
+of the program, to recognize it. There is no prototype field: OFRAK has no function signature
+model to export from or import to.
+[`restrict_portable_markup`][ofrak.core.portable_markup.restrict_portable_markup] keeps the markup
+of some functions only, as if the program had been exported with only that markup, for instance to
+share part of it.
+
+The document is serialized by OFRAK's `SerializationService` (PJSON) and written indented, one
+value per line, so a change to the markup is a small `git diff`:
 
 ```json
-{
-  "program": "abl_odin",
-  "functions": [
-    {
-      "name": "verify_image_policy",
-      "comments": ["Aggregates secure-boot / anti-rollback policy before image verification."],
-      "string_refs": ["Not enable the secure boot", "AVB", "rollback index %d"]
-    }
-  ]
-}
+[
+  "ofrak.core.portable_markup.PortableMarkup",
+  {
+    "program": "lua-gcc11-O2",
+    "program_sha256": "553c0ffa8637b6586ce9131211da18a4717a5d0d9d56c2e6246a814d23ccb473",
+    "functions": [
+      [
+        "ofrak.core.portable_markup.PortableFunctionMarkup",
+        {
+          "name": "luaL_argerror",
+          "comments": [
+            "Raises the standard error for a bad argument to a C function."
+          ],
+          "string_refs": [
+            "bad argument #%d (%s)",
+            "bad argument #%d to '%s' (%s)",
+            "calling '%s' on bad self (%s)",
+            "method"
+          ],
+          "code_sha256": "e577006c2a5f9307da1e185556a4bed6f56448ba16438c4bae3df63fabc95460",
+          "size": 281
+        }
+      ]
+    ]
+  }
+]
 ```
 
-Two caveats the earlier draft glossed:
+[`save_portable_markup`][ofrak.core.portable_markup.save_portable_markup] and
+[`load_portable_markup`][ofrak.core.portable_markup.load_portable_markup] read and write such files
+(UTF-8). Loading validates the whole document before deserializing it, so a document cannot make
+the serializer instantiate classes other than the markup's own.
 
-- **`string_refs` is derived, not stored.** It comes from reading bytes at the referenced ranges, not
-  from a ready-made attribute.
-- **"Analyst-named" is not distinguishable today.** OFRAK records no provenance separating a name an
-  analyst applied from a disassembler default (`FUN_*` / `sub_*`). Export must therefore track
-  provenance itself — e.g. only names applied via the rename modifier, or a dedicated marker — or it
-  will export machine defaults as if they were analysis.
+### Import and matching
 
-Component shapes, with the contract caveat the review flagged:
+[`MarkupImportModifier`][ofrak.core.portable_markup.MarkupImportModifier] applies a document to
+another build, finding each record's function by its fingerprint and never by address
+([`match_portable_markup`][ofrak.core.portable_markup.match_portable_markup]):
+
+1. **Exact identity.** A record and a function with the same `code_sha256` and the same strings
+   match if they are the only ones with that code. The strings must agree because identical code
+   can reference different data in another build. Byte-identical functions can only be told apart
+   by their order, which only holds in the same build: there (the program's SHA-256 is the
+   document's), they are paired in address order, and elsewhere they are left to the next step,
+   where they tie.
+2. **String fingerprint.** Every other record is compared with each remaining function whose size
+   is within `max_size_ratio` (default 4) of the record's, by the Jaccard similarity of their
+   string sets. A record matches its best function if the similarity is greater than
+   `similarity_threshold` (default 0.5: more than half of the strings of both in common), no other
+   function is as similar to the record, and no other record, with or without markup, is as
+   similar to the function (a mutual best match). Otherwise the record is ambiguous, or unmatched
+   if no function is above the threshold.
+
+Records are applied with the same rename and comment operations as anchors, and never
+force-applied: the [`MarkupImportReport`][ofrak.core.portable_markup.MarkupImportReport] lists the
+matched, ambiguous, unmatched and conflicting records with markup. A record without strings is
+only found again if its code did not change.
 
 ```python
-# Export is NOT analysis-to-attribute-store; writing a file is outside the Analyzer contract.
-# Prefer a helper / CLI (or flush_data_to_disk) over an Analyzer whose only output nobody consumes.
-def export_portable_markup(program: Program) -> PortableMarkup: ...
+markup = await export_portable_markup(await build_a.view_as(Program), "build_a.bin")
+await save_portable_markup(ofrak_context, markup, "build_a.markup.json")
 
-class MarkupImportModifier(Modifier[MarkupImportConfig]):
-    targets = (Program,)
-    # For each record: rank target functions by string_refs set-overlap; above a (to-be-designed)
-    # similarity threshold AND unique, apply name + comments via the Feature-#1 helpers; otherwise
-    # record unmatched. Conservative by default — never force-apply.
+markup = await load_portable_markup(ofrak_context, "build_a.markup.json")
+await build_b.run(MarkupImportModifier, MarkupImportConfig(markup))
+report = build_b.get_attributes(MarkupImportReport)
 ```
 
-Both the portable schema and the import matcher should ride OFRAK's existing
-`SerializationService` plumbing (it already serializes `Range`, etc.) rather than hand-rolled JSON.
-The set-overlap ranking + threshold is a real matching algorithm to be designed, not a one-liner.
+**Quality targets.** On a transfer between builds, at least 95% of the names the import applies
+must be correct (precision), also when the analyst named only part of the functions, and it must
+name at least 30% of the analyst's functions that exist in the other build (recall). Precision
+alone is not a pass: refusing every record would have perfect precision. The recall target is
+modest because most functions reference no string at all: 553 of the 805 functions Ghidra finds
+in the test program below.
 
-## Value
+## Measured value
 
-Honest value, after stripping the claims that didn't survive review:
+The value is measured, not asserted. `ofrak_core/tests/components/re_markup_experiment.py` runs
+the experiment on a committed pair of builds: the Lua 5.4.7 interpreter compiled by GCC 11 (build
+A) and GCC 15 (build B), both stripped, a toolchain upgrade between two releases. Only 0.14% of the
+functions keep their address, while 99% of the string literals (of four or more characters) are
+in both builds: what differs is the code, and with it which function references which string. A simulated analyst names and
+comments every function of A whose identity is known from A's symbol table (710 functions), a set
+fixed before any method runs; the recall denominator is the 704 of them that also exist in B,
+according to B's symbol table.
 
-- **Cross-build markup transfer is a real gap OFRAK does not fill.** Re-applying build *A*'s names and
-  comments onto a sibling build *B* is not possible today; this provides it.
-- **Markup becomes a git-diffable artifact.** A committed JSON keyed on stable fingerprints makes
-  cross-version triage a `git diff` and makes markup reviewable in a PR.
-- **Headless, no-GUI, pipeline-native.** The intended win over external matchers (Ghidra Version
-  Tracking, BSim, bindiff, Diaphora) is not matching quality — those are stronger — but that this runs
-  inside an OFRAK `unpack → modify → repack` pipeline with no GUI and no shipped disassembler project.
+| Method (A → B) | `transfer_recall` | `transfer_precision` | `divergence_flagged` |
+|---|---|---|---|
+| Baseline: OfrakProject script replayed on B (by address) | 0.001 | 0.019 | no |
+| Baseline: symbol table re-imported with Ghidra's ImportSymbolsScript | 0.001 | 0.003 | no |
+| #1: anchors derived from A (up to the two longest strings unique to each function) | 0.230 | 0.994 | no |
+| #2: portable markup import | 0.338 | 1.000 | yes |
 
-What this is **not**: it is not "survives project loss" (OFRAK already does, via serialization and
-project scripts), and it is **not backend-agnostic** — it requires the Ghidra or Binary Ninja data-ref
-analyzer and no-ops (and should fail loudly) elsewhere.
+- `transfer_recall`: functions named correctly in B, over the analyst-named functions of A with a
+  counterpart in B.
+- `transfer_precision`: functions named correctly in B, over all functions named in B.
+- `divergence_flagged`: every record the method was given but did not carry onto its function,
+  because the function is absent from B (6 here) or changed beyond what the method recognizes, is
+  in the method's own report of what it did not apply, rather than mislabeling another function or
+  going unreported.
 
-## Open questions / known limitations
+The baselines were measured with the OFRAK before these components. Both key the markup on
+addresses, which almost never match in B. Ghidra's ImportSymbolsScript renames the 53 functions of
+B that start at an exported address, and tries to create a function at each of the 657 other
+addresses: B ends up with 250 more functions, and 301 functions carrying one of the analyst's
+names, one of them correctly.
 
-- **No string-reference producer exists** — building `DerivedReferencedStringsAnalyzer` is the gating
-  prerequisite, and it is Ghidra/Binary-Ninja-only.
-- **Backend lock-in** — acceptable only if the core component fails loudly with a capability error on
-  backends that lack data refs, rather than silently doing nothing.
-- **Name provenance** — export needs a way to tell analyst names from disassembler defaults.
-- **Import matching** — set-overlap similarity, tie-breaking, and a precision/recall target are an
-  explicit design task; precision alone is not a sufficient quality bar.
-- **Scalar/MMIO anchors** — deferred; need instruction-operand constant resolution.
-- **String-less functions** — have no fingerprint; need a secondary identity or are non-portable.
+The anchors of #1 name 163 functions of B, one of them wrongly: GCC 11 inlines `forprep` into
+`luaV_execute`, so the two strings unique to `luaV_execute` in build A (`"'for' step is zero"` and
+`"initial value"`) are `forprep`'s, which build B does not inline (see the limitations). #2 matches 238 records, and reports the 472 others: 49
+ambiguous and 423 unmatched, including the 6 functions absent from B.
+
+The analyst rarely names every function, so #2 is also measured on 100 random subsets of 10% of
+the analyst's functions (71 each), exported as if only they were named: none of the 100 imports
+puts a name on a wrong function, and the mean recall is 0.347.
+
+The control is unchanged: on the same binary, the markup survives a serialize→restore and an
+OfrakProject replay entirely, both with the OFRAK before these components and with them, and the
+portable markup round trip onto a fresh analysis of A restores all 710 names and comments.
+
+The reports (`baseline_report.json`, `after_report.json`, `comparison.md`, with the exact assets,
+Ghidra version and commits they came from) are committed next to the binaries in
+`ofrak_core/tests/components/assets/re_markup`. To keep the results deterministic, the tests replay
+committed captures of Ghidra's analysis of both builds through the Ghidra backend; a test with live
+Ghidra analysis checks that the results, including the round trip, stay within a tolerance band.
+That band is the larger of twice the largest spread of any KPI between five live runs of the whole
+experiment (`variance_report.json`) and twice the ~1% run-to-run variance expected of Ghidra's
+auto-analysis. `test_value_add_holds` fails if the feature's KPIs stop beating the baseline by more
+than that band, or regress from the committed ones by more than it.
+
+## Limitations
+
+- **Backend lock-in**: Ghidra or Binary Ninja only, as above.
+- **Functions without strings** have no fingerprint, and are only found again if their code is
+  unchanged.
+- **Inlining moves strings between functions.** In the test pair, GCC 11 inlines `forprep` into
+  `luaV_execute`, so `"'for' step is zero"` is referenced by `luaV_execute` in build A but by
+  `forprep` in build B: an anchor on that string resolves to a different function in each build,
+  and names the wrong one. The more two builds differ in their inlining, the more such functions
+  there are. The portable import is less exposed, since it compares all of a function's strings
+  and checks the match both ways.
+- **Byte-identical functions** (such as identical error stubs) can only be told apart by their
+  order, so the import only restores their markup in the same build.
+- **Firmware mapped at low addresses**: Ghidra only turns an address that code loads and passes
+  on, to a function for instance, into a reference from 1024 up (the "Speculative reference min"
+  of its constant propagation analysis), while an address that code reads or writes through counts
+  from 4 (its "Min absolute reference"). So a string at a lower address, which code usually passes
+  to a function, is not attributed to the function using it. From 1024 up, any number that code
+  loads and passes to a function counts as an address when it falls within the program's memory:
+  in firmware whose flash starts at address 0, a function passing a constant (a register value,
+  say) can be attributed the string, or the end of a string, at that address.
+- **Very short strings in firmware**: a string of fewer characters than a pointer has bytes,
+  padded with zeros, cannot be told apart from a pointer by its bytes alone. On a 32-bit target
+  whose flash starts at address 0, a two-character string padded to four bytes reads as an address
+  of the flash, so it is not kept.
+- **Position-independent executables**: the addresses are translated for backends that move OFRAK's
+  code regions with the program, as the Ghidra backend does; this was not tested with Binary Ninja.
+- **Comments on a byte range** of a function are exported as comments on the whole function.
+- **No prototypes**: OFRAK models no function signatures.
 
 <div align="right">
 <img src="../../assets/square_02.png" width="125" height="125">
