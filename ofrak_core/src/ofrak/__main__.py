@@ -5,6 +5,7 @@ from ofrak.cli.command.gui import GUICommand
 from ofrak.cli.command.identify import IdentifyCommand
 from ofrak.cli.command.license import LicenseCommand
 from ofrak.cli.command.list import ListCommand
+from ofrak.cli.command.markup import MarkupCommand
 from ofrak.cli.command.unpack import UnpackCommand
 from ofrak.cli.ofrak_cli import OFRAKCommandLineInterface
 
@@ -18,6 +19,7 @@ def main():  # pragma: no cover
             UnpackCommand(),
             GUICommand(),
             LicenseCommand(),
+            MarkupCommand(),
         )
     )
     ofrak_cli.parse_and_run(sys.argv[1:])

@@ -1,0 +1,8 @@
+# Anchor set for ../hello.out, used by the `ofrak markup` command tests: its main() prints
+# "Hello World", and no function of it references "Goodbye World".
+anchors:
+  - name: hello_main
+    value: Hello World
+    comment: Prints the greeting.
+  - name: goodbye_main
+    value: Goodbye World

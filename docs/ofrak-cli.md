@@ -5,10 +5,10 @@ and run the GUI.
 For usage, see:
 ```bash
 $ ofrak --help
-usage: ofrak [-h] {list,deps,identify,unpack,gui,license} ...
+usage: ofrak [-h] {list,deps,identify,unpack,gui,license,markup} ...
 
 positional arguments:
-  {list,deps,identify,unpack,gui,license}
+  {list,deps,identify,unpack,gui,license,markup}
                         Command line utilities to use or configure OFRAK
     list                List installed OFRAK modules and/or components.
     deps                Show and check the external (non-Python) dependencies of OFRAK components. Can show the brew/apt install packages for dependencies, and
@@ -17,6 +17,7 @@ positional arguments:
     unpack              Unpack all identified structures that can be unpacked with OFRAK
     gui                 Launch the OFRAK GUI server.
     license             Configure the OFRAK license
+    markup              Name and comment functions from an anchor set or from portable markup
 
 options:
   -h, --help            show this help message and exit
@@ -55,6 +56,25 @@ To access the GUI, navigate to <http://localhost:8080> (or the port specified wi
 See [OFRAK GUI Docs](user-guide/gui/minimap.md) for more info on using the GUI.
 
 The GUI can also be used with the OFRAK CLI (via the `--gui` flag) and is typically running by default in the OFRAK Docker images.
+
+## Markup
+`ofrak markup` names and comments the functions of a binary headlessly, from an anchor set or from
+portable markup exported from another build of the program, and prints which markup was applied
+and which was not (see [Anchor-Based Markup & Portable RE Annotations](user-guide/advanced/portable_re_markup.md)).
+It needs a backend that provides data cross-references, Ghidra or Binary Ninja:
+
+```bash
+# Name functions of build A from an anchor set, and export the result as portable markup
+ofrak markup -b ghidra firmware_v1.bin --anchors anchors.yml -o firmware_v1.markup.json
+# Carry that markup over to build B, and export it again for the next build
+ofrak markup -b ghidra firmware_v2.bin --portable-markup firmware_v1.markup.json -o firmware_v2.markup.json
+```
+
+The import only applies a record to a function whose referenced strings it shares more than
+`--similarity-threshold` of (a Jaccard similarity, 0.5 by default), and that no other function or
+record matches as well. Markup is never applied to a function that already has a different name
+given by an analyst; the command reports such conflicts along with the ambiguous and unmatched
+markup.
 
 ## Configuring Dependencies (Quickstart)
 
