@@ -13,7 +13,9 @@ animals = list(Path("docs/assets").glob("square_*.png"))
 example_nav = mkdocs_gen_files.Nav()
 r = re.compile(r"^ex(\d+)", re.IGNORECASE)
 
-for i, path in enumerate(sorted(Path("examples").glob("ex*.py"))):
+# Sort by example number, so that Example 10 comes after Example 9
+example_paths = sorted(Path("examples").glob("ex*.py"), key=lambda p: int(r.match(p.name).group(1)))
+for i, path in enumerate(example_paths):
     module_path = path.relative_to("examples").with_suffix("")
     doc_path = path.with_suffix(".md")
 

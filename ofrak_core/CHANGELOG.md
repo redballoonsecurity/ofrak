@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
+- Add `DerivedReferencedStringsAnalyzer`, the first implementation of `ReferencedStringsAnalyzer`, and `get_function_string_references`: they derive which functions reference which strings from the function→data references of the Ghidra and Binary Ninja backends, and raise `ReferencedDataUnavailableError` with other backends. The analyzer runs when requested, not as part of analyzing everything about a program ([#765](https://github.com/redballoonsecurity/ofrak/pull/765))
+- Add `RenameComplexBlockModifier`, which renames a function and records the name as an analyst's with `AnalystNameAttributes` ([#765](https://github.com/redballoonsecurity/ofrak/pull/765))
+- Add anchor-based markup (`ApplyAnchoredMarkupModifier`, with anchor sets in YAML or JSON) and portable RE annotations (`export_portable_markup`, `MarkupImportModifier`, `restrict_portable_markup`), which carry function names and comments from one build of a program to another without relying on addresses, reporting what they could not carry over and never overwriting a name an analyst gave a function, and the `ofrak markup` command to apply them headlessly ([#765](https://github.com/redballoonsecurity/ofrak/pull/765))
 - Add DockerImage components (identifier and unpacker) ([#715](https://github.com/redballoonsecurity/ofrak/pull/715))
 - Add `FlashGeometryHeuristicAnalyzer` that infers `FlashAttributes` (page/OOB geometry) for raw NAND dumps tagged as `FlashResource`, using YAFFS2, Linux MTD large-page OOB, small-page OOB density, and exact Hamming ECC verification as signals ([#737](https://github.com/redballoonsecurity/ofrak/pull/737))
 - Add `FlashFieldType.SPARE` and `FlashSpareAreaResource` so `FlashOobResourceUnpacker` can preserve OOB bytes without ECC/Checksum computation, and extend `FlashLogicalDataResourcePacker` to consume the sibling `FlashSpareAreaResource` so the original OOB layout is reconstructed verbatim during repacking ([#738](https://github.com/redballoonsecurity/ofrak/pull/738))
@@ -20,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add YAFFS2 filesystem support ([#739](https://github.com/redballoonsecurity/ofrak/pull/739))
 
 ### Changed
+- `ofrak` now depends on PyYAML, to read anchor sets ([#765](https://github.com/redballoonsecurity/ofrak/pull/765))
 - Resources tagged as `FlashResource` now have their `FlashAttributes` inferred automatically by the new `FlashGeometryHeuristicAnalyzer` and become unpackable via `FlashResourceUnpacker` without user-supplied geometry. Workflows that previously attached a hand-crafted `FlashAttributes` should verify the inferred geometry matches. If no standard geometry fits the image, the analyzer logs a warning and returns no attributes so other analyzers (e.g. `BinwalkAnalyzer`) can still run ([#737](https://github.com/redballoonsecurity/ofrak/pull/737))
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
