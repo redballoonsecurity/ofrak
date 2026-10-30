@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove dead `_create_dependencies` no-op override from `AngrAnalyzer` ([#727](https://github.com/redballoonsecurity/ofrak/pull/727))
 
 ### Fixed
+- Pin `bitstring==4.3.1` to avoid the `tibs` type stubs pulled in by newer releases, which are incompatible with the pinned mypy version ([#766](https://github.com/redballoonsecurity/ofrak/pull/766))
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
 - Pin pycparser version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
 - Pin `angr<=9.2.102` for Python 3.9 (last version supporting it) and constrain setuptools to preserve `pkg_resources` during arm64 builds ([#718](https://github.com/redballoonsecurity/ofrak/pull/718))
