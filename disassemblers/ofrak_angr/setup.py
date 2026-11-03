@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_angr",
-    version="1.2.0rc1",
+    version="1.2.0rc2",
     description="OFRAK angr Components",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
@@ -35,6 +35,7 @@ setuptools.setup(
         'networkx==3.5; python_version >= "3.11"',
         "msgspec==0.19.0",
         "pycparser==2.23",
+        "bitstring==4.3.1",
     ],
     extras_require={
         "graphical": ["pygraphviz"],
