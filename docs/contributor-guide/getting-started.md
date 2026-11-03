@@ -180,6 +180,15 @@ OFRAK packages use a "src layout" structure where source code is organized in a 
 
 The build script `build_image.py` expects a config file similar to `ofrak-dev.yml`. Each of the packages listed under `packages_paths` in the YAML files should correspond to a directory containing two files: `Makefile` and `Dockerstub`. They may also contain a `Dockerstage` file for multi-stage builds.
 
+By default, package directories are flattened under `/` in the finished image. A configuration can preserve each `packages_paths` entry beneath a common container directory instead:
+
+```yaml
+source_root: "/root/project"
+preserve_package_paths: true
+```
+
+For example, `packages/component` is then installed from `/root/project/packages/component`. This is useful when a checkout will be mounted at the same location for editable development. Both settings are optional, so existing image configurations retain the flattened layout.
+
 When creating a new package, follow the src layout structure shown above. Your `setup.py` should reference the `src/` directory:
 
 ```python

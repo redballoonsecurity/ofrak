@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import PurePosixPath
 from typing import List, Optional
 
 import argparse
@@ -36,6 +37,8 @@ class OfrakImageConfig:
     cache_from: List[str]
     entrypoint: Optional[str]
     python_image: str
+    source_root: str = "/"
+    preserve_package_paths: bool = False
 
     def validate_serial_txt_existence(self):
         """
@@ -54,6 +57,19 @@ class OfrakImageConfig:
                 "Refer to the documentation for more details."
             )
             sys.exit(1)
+
+    def validate_source_layout(self):
+        if not self.source_root.startswith("/"):
+            raise ValueError("source_root must be an absolute container path")
+        if not self.preserve_package_paths:
+            return
+        for package_path in self.packages_paths:
+            path = PurePosixPath(package_path)
+            if path.is_absolute() or ".." in path.parts:
+                raise ValueError(
+                    "preserve_package_paths requires relative package paths without '..': "
+                    f"{package_path}"
+                )
 
 
 def main():
@@ -175,8 +191,11 @@ def parse_args() -> OfrakImageConfig:
         args.cache_from,
         config_dict.get("entrypoint"),
         config_dict.get("python_image", DEFAULT_PYTHON_IMAGE),
+        config_dict.get("source_root", "/"),
+        config_dict.get("preserve_package_paths", False),
     )
     image_config.validate_serial_txt_existence()
+    image_config.validate_source_layout()
     return image_config
 
 
@@ -251,11 +270,18 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
     return "\n".join(dockerfile_base_parts)
 
 
+def _container_package_path(config: OfrakImageConfig, package_path: str) -> str:
+    if config.preserve_package_paths:
+        return str(PurePosixPath(package_path))
+    return os.path.basename(package_path)
+
+
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
+    source_root = str(PurePosixPath(config.source_root))
     dockerfile_finish_parts = [
         f"FROM {full_base_image_name}:{config.image_revision}\n\n",
-        f"ARG OFRAK_SRC_DIR=/\n",
+        f"ARG OFRAK_SRC_DIR={source_root}\n",
     ]
 
     # Extract OFRAK_DIR from extra_build_args if present
@@ -268,40 +294,54 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
                     ofrak_dir_prefix += "/"
                 break
 
-    package_names = list()
+    packages = list()
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
-        package_names.append(package_name)
-        dockerfile_finish_parts.append(f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n")
-    dockerfile_finish_parts.append("\nWORKDIR /\n")
+        container_path = _container_package_path(config, package_path)
+        packages.append((package_name, container_path))
+        dockerfile_finish_parts.append(f"ADD {package_path} $OFRAK_SRC_DIR/{container_path}\n")
+    dockerfile_finish_parts.append("\nWORKDIR $OFRAK_SRC_DIR\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
     if config.install_target is InstallTarget.DEVELOP:
-        dockerfile_finish_parts.append(f"ADD {ofrak_dir_prefix}requirements-dev.txt /\n")
-        dockerfile_finish_parts.append("RUN python3 -m pip install -r requirements-dev.txt\n")
+        if config.preserve_package_paths:
+            requirements_dev_path = f"{ofrak_dir_prefix}requirements-dev.txt"
+            pytest_ofrak_path = f"{ofrak_dir_prefix}pytest_ofrak"
+        else:
+            requirements_dev_path = "requirements-dev.txt"
+            pytest_ofrak_path = "pytest_ofrak"
         dockerfile_finish_parts.append(
-            f"ADD '{ofrak_dir_prefix}pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n"
+            f"ADD {ofrak_dir_prefix}requirements-dev.txt $OFRAK_SRC_DIR/{requirements_dev_path}\n"
         )
-        dockerfile_finish_parts.append(f"RUN make -C $OFRAK_SRC_DIR/pytest_ofrak develop\n")
+        dockerfile_finish_parts.append(
+            f"RUN python3 -m pip install -r $OFRAK_SRC_DIR/{requirements_dev_path}\n"
+        )
+        dockerfile_finish_parts.append(
+            f"ADD '{ofrak_dir_prefix}pytest_ofrak' $OFRAK_SRC_DIR/{pytest_ofrak_path}\n"
+        )
+        dockerfile_finish_parts.append(f"RUN make -C $OFRAK_SRC_DIR/{pytest_ofrak_path} develop\n")
     develop_makefile = "\\n\\\n".join(
         [
             "$INSTALL_TARGET:",
             "\\n\\\n".join(
-                [f"\t\\$(MAKE) -C {package_name} $INSTALL_TARGET" for package_name in package_names]
+                [
+                    f"\t\\$(MAKE) -C {container_path} $INSTALL_TARGET"
+                    for _, container_path in packages
+                ]
             ),
             "\\n",
         ]
     )
     dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
     dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
-    test_names = " ".join([f"test_{package_name}" for package_name in package_names])
+    test_names = " ".join([f"test_{package_name}" for package_name, _ in packages])
     finish_makefile = "\\n\\\n".join(
         [
             ".PHONY: test " + test_names,
             "test: " + test_names,
         ]
         + [
-            f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
-            for package_name in package_names
+            f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {container_path} test"
+            for package_name, container_path in packages
         ]
         + ["\\n"]
     )
