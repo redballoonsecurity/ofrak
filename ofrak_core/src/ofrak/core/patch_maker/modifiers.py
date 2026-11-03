@@ -377,11 +377,19 @@ class FastSegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                     ):  # break once we find a candidate that has data
                         break
             if target_region is None:
+                if segment.is_bss:
+                    # uninitialized section like .bss mapped to arbitrary memory range without
+                    # corresponding MemoryRegion resource, no patch needed.
+                    continue
                 raise ValueError(
                     f"Cannot inject patch because the memory region at vaddr "
                     f"{hex(segment.vm_address)} is None"
                 )
             if target_region.resource.get_data_id() is None:
+                if segment.is_bss:
+                    # uninitialized section like .bss mapped to a memory region without
+                    # corresponding data (e.g. RAM), no patch needed.
+                    continue
                 raise ValueError(
                     f"Cannot inject patch because the memory region at vaddr "
                     f"{hex(segment.vm_address)} is dataless"
