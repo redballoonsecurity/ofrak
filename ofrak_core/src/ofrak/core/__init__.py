@@ -48,6 +48,7 @@ from ofrak.core.lzo import *
 from ofrak.core.magic import *
 from ofrak.core.memory_region import *
 from ofrak.core.openwrt import *
+from ofrak.core.obsbot import *
 from ofrak.core.seven_zip import *
 from ofrak.core.program import *
 from ofrak.core.program_section import *
