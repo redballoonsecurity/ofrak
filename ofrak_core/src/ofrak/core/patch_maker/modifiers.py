@@ -317,8 +317,9 @@ class FastSegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
     """
     Optimized segment injection modifier that applies multiple segment patches in a single bulk
     operation. Unlike SegmentInjectorModifier which runs BinaryInjectorModifier separately for each
-    segment, this modifier collects all segment patches and applies them to the root resource data
-    in one pass, improving performance for multi-segment injections.
+    segment, this modifier queues one patch per segment on its target memory region within a single
+    component run, so all patches are applied in one batch, improving performance for
+    multi-segment injections.
 
     **WARNING: This modifier does NOT delete stale descendant resources.** After patching, the
     resource tree may contain outdated descendants that no longer match the modified data. This is a
@@ -349,7 +350,7 @@ class FastSegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             )
         )
 
-        patches_to_resource: List[Tuple[int, bytes]] = list()
+        patches_to_resource: List[Tuple[Resource, Range, bytes]] = list()
 
         for segment, segment_data in config.segments_and_data:
             # Skip bss, rela, got, etc
@@ -395,21 +396,34 @@ class FastSegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                     f"{hex(segment.vm_address)} is dataless"
                 )
 
-            # Calculate the offset in the root resource
-            range_in_root = await target_region.resource.get_data_range_within_root()
-            offset = range_in_root.start + segment.vm_address - target_region.virtual_address
-            patches_to_resource.append((offset, segment_data))
+            # Queue one patch per segment, on the target region itself, rather than a single patch
+            # covering the whole program's data. All queued patches are still applied together in
+            # one batch when this component exits, so this stays a single modifier run. Patching
+            # the target region directly is needed for two reasons:
+            # 1. Correctness: some regions are not mapped into the program's data. For example,
+            #    IhexUnpacker creates CodeRegions with their own data (`data=`, not `data_range=`),
+            #    while the Ihex program's data is the ASCII hex text. Computing an offset into the
+            #    program's data would write the segment into the wrong buffer. Patching the region
+            #    works for both mapped and unmapped regions; OFRAK propagates mapped patches to the
+            #    root.
+            # 2. Dependency invalidation: OFRAK invalidates component results whose data
+            #    dependencies overlap a patched range. A patch over the whole program invalidates
+            #    every analysis result in the tree (e.g. MemoryRegion attributes produced by
+            #    unpackers), which forces later view_as() calls to re-run analyzers, possibly ones
+            #    that require an explicit config. Small per-segment patches only invalidate results
+            #    that depend on the injected bytes.
+            patches_to_resource.append(
+                (
+                    target_region.resource,
+                    Range.from_size(
+                        segment.vm_address - target_region.virtual_address, len(segment_data)
+                    ),
+                    segment_data,
+                )
+            )
 
-        # Apply segment patches in-memory
-        resource_data = bytearray(await resource.get_data())
-        for offset, segment_data in patches_to_resource:
-            resource_data[offset : offset + len(segment_data)] = segment_data
-
-        # Patch OFRAK resource
-        resource.queue_patch(
-            Range.from_size(0, await resource.get_data_length()),
-            bytes(resource_data),
-        )
+        for target_resource, patch_range, segment_data in patches_to_resource:
+            target_resource.queue_patch(patch_range, segment_data)
 
 
 @dataclass
