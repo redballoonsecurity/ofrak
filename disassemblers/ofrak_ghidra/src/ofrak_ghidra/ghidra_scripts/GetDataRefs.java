@@ -53,7 +53,10 @@ public class GetDataRefs extends HeadlessScript {
             final List<Long> alreadyAdded = new ArrayList<Long>();
             while (iterator.hasNext()) {
                 Reference ref = iterator.next();
-                if (ref.getReferenceType().isData()){
+                // Only references within the program's memory: Ghidra also marks up structures
+                // like the ELF headers in a non-loaded address space, whose offsets would read as
+                // addresses of the program
+                if (ref.getReferenceType().isData() && ref.getToAddress().isLoadedMemoryAddress()){
                     ResultDataRef data_ref = new GetDataRefs.ResultDataRef(ref);
                     if (!alreadyAdded.contains(data_ref.data_address) && !data_ref.xrefs.isEmpty()){
                         this.dataRefs.add(data_ref);
@@ -82,7 +85,10 @@ public class GetDataRefs extends HeadlessScript {
                 // We have to try/catch this because: getReferencesTo not supported for stack/register addresses
                 ReferenceIterator iterator = currentProgram.getReferenceManager().getReferencesTo(ref.getToAddress());
                 while (iterator.hasNext()) {
-                    this.xrefs.add(iterator.next().getFromAddress().getOffset());
+                    Address from = iterator.next().getFromAddress();
+                    if (from.isLoadedMemoryAddress()) {
+                        this.xrefs.add(from.getOffset());
+                    }
                 }
             } catch(UnsupportedOperationException e) {
                 // don't care about the stack/register addresses

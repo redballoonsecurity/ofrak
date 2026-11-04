@@ -7,12 +7,14 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 
 from ofrak.component.analyzer import Analyzer
+from ofrak.component.modifier import Modifier
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.addressable import Addressable
 from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.data import DataWord
 from ofrak.core.memory_region import MemoryRegion
+from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes, index
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 
@@ -105,6 +107,55 @@ class ComplexBlock(MemoryRegion):
 
 class ComplexBlockStructureError(RuntimeError):
     pass
+
+
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class AnalystNameAttributes(ResourceAttributes):
+    """
+    Provenance marker recording that a [ComplexBlock][ofrak.core.complex_block.ComplexBlock] was
+    named by an analyst, through
+    [RenameComplexBlockModifier][ofrak.core.complex_block.RenameComplexBlockModifier], rather than
+    by a disassembler backend. Names a disassembler assigns (like Ghidra's `FUN_00401000`) never
+    carry this marker.
+
+    :ivar name: The name the analyst gave the complex block
+    """
+
+    name: str
+
+
+@dataclass
+class RenameComplexBlockModifierConfig(ComponentConfig):
+    """
+    :ivar name: The new name of the complex block
+    """
+
+    name: str
+
+
+class RenameComplexBlockModifier(Modifier[RenameComplexBlockModifierConfig]):
+    """
+    Renames a function ([ComplexBlock][ofrak.core.complex_block.ComplexBlock]) by replacing its view
+    with one that has the new name and the same virtual address and size. This also updates the
+    `ComplexBlock.Symbol` index, so
+    [Program.get_function_complex_block][ofrak.core.program.Program.get_function_complex_block]
+    finds the function by its new name. The complex block's data is not changed. Also records
+    [AnalystNameAttributes][ofrak.core.complex_block.AnalystNameAttributes] so that names applied
+    by an analyst can be told apart from the default names a disassembler assigns. Use for
+    reverse-engineering markup, such as naming functions after their purpose. Raises a
+    `ValueError` if the new name is empty.
+    """
+
+    targets = (ComplexBlock,)
+
+    async def modify(self, resource: Resource, config: RenameComplexBlockModifierConfig) -> None:
+        if not config.name:
+            raise ValueError("Cannot rename a complex block to an empty name")
+        complex_block = await resource.view_as(ComplexBlock)
+        resource.add_view(
+            ComplexBlock(complex_block.virtual_address, complex_block.size, config.name)
+        )
+        resource.add_attributes(AnalystNameAttributes(config.name))
 
 
 class ComplexBlockUnpacker(Unpacker[None], ABC):

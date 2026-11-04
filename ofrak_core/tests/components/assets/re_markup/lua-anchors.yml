@@ -1,0 +1,37 @@
+# Anchor set for Lua 5.4.7: each anchor names a function of the interpreter by a string literal it
+# references, so the same set applies to every build of it (see the README in this directory).
+# Used by the anchored markup tests, the `ofrak markup` command tests and the portable RE markup
+# example.
+apply_to_all: false
+anchors:
+  - name: luaL_checkversion_
+    value: "core and library have incompatible numeric types"
+    comment: Checks that the Lua core and the C library were built with the same numeric types.
+  - name: luaL_argerror
+    value: "bad argument #%d to '%s' (%s)"
+    comment: Raises the standard error for a bad argument to a C function.
+  - name: luaL_typeerror
+    value: "%s expected, got %s"
+    comment: Raises the standard error for an argument of the wrong type.
+  - name: luaL_traceback
+    value: "\n\t...\t(skipping %d levels)"
+    comment: Appends a stack traceback to an error message.
+  - name: luaG_ordererror
+    value: "attempt to compare two %s values"
+    comment: Raises the error for comparing values without an order.
+  - name: str_format
+    value: "invalid conversion '%s' to 'format'"
+    comment: Implements string.format.
+  - name: os_date
+    value: "date result cannot be represented in this installation"
+    comment: Implements os.date.
+  - name: tinsert
+    value: "wrong number of arguments to 'insert'"
+    comment: Implements table.insert.
+  - name: pmain
+    value: "Lua 5.4.7  Copyright (C) 1994-2024 Lua.org, PUC-Rio"
+    comment: Protected main function of the stand-alone interpreter.
+  # Referenced by luaL_typeerror, luaL_newmetatable, luaL_tolstring and luaT_objtypename: ambiguous,
+  # so it is reported and not applied.
+  - name: metatable_name_user
+    value: "__name"

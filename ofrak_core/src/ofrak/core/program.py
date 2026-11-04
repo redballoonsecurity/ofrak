@@ -15,6 +15,7 @@ from ofrak.service.resource_service_i import (
     ResourceSortDirection,
 )
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
+from ofrak.model.tag_model import ResourceTag
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -27,6 +28,16 @@ class Program(LinkableBinary):
     """
 
     async def get_function_complex_block(self, func_name: str) -> ComplexBlock:
+        """
+        Get the function of this program with the given name.
+
+        :param func_name: The function's name
+
+        :raises NotFoundError: if no function has that name
+        :raises MultipleResourcesFoundError: if several functions have that name
+
+        :return: The function's complex block
+        """
         return await self.resource.get_only_descendant_as_view(
             ComplexBlock,
             r_filter=ResourceFilter(
@@ -99,7 +110,7 @@ class ReferencedStringsAnalyzer(Analyzer[None, Tuple[ReferencedStringsAttributes
     StringsAnalyzer or StringsUnpacker for that.
     """
 
-    targets = (Program,)
+    targets: Tuple[ResourceTag, ...] = (Program,)
     outputs = (ReferencedStringsAttributes,)
 
     @abstractmethod

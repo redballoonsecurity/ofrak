@@ -13,6 +13,7 @@ from ofrak.core.patch_maker.linkable_symbol import *
 from ofrak.core.patch_maker.modifiers import *
 
 from ofrak.core.addressable import *
+from ofrak.core.anchored_markup import *
 from ofrak.core.android_sparse import *
 from ofrak.core.apk import *
 from ofrak.core.architecture import *
@@ -48,10 +49,12 @@ from ofrak.core.lzo import *
 from ofrak.core.magic import *
 from ofrak.core.memory_region import *
 from ofrak.core.openwrt import *
+from ofrak.core.portable_markup import *
 from ofrak.core.seven_zip import *
 from ofrak.core.program import *
 from ofrak.core.program_section import *
 from ofrak.core.rar import *
+from ofrak.core.referenced_strings import *
 from ofrak.core.squashfs import *
 from ofrak.core.strings import *
 from ofrak.core.strings_analyzer import *

@@ -91,6 +91,7 @@ setuptools.setup(
         "pycdlib>=1.12.0",
         "python-magic>=0.4.27;platform_system!='Windows'",
         "python-magic-bin>=0.4.14;platform_system=='Windows'",
+        "PyYAML>=6.0.3",
         "reedsolo>=1.7.0",
         "sortedcontainers>=2.2.2",
         "synthol~=0.1.1",

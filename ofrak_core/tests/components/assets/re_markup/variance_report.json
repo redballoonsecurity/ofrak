@@ -1,0 +1,240 @@
+{
+  "run": {
+    "analysis": "live Ghidra auto-analysis",
+    "assets": {
+      "lua-gcc11-O2": "553c0ffa8637b6586ce9131211da18a4717a5d0d9d56c2e6246a814d23ccb473",
+      "lua-gcc11-O2.gzf": "bc976b5c9285ec2c9f020d062d62ba5c90423c80df53da8e90a34d6a9fe21f0f",
+      "lua-gcc11-O2.unstripped": "4d8b099aa9c3c50af3d215c2bf96ed0d90543f188de5afa894f6557e6340b2e4",
+      "lua-gcc15-O2": "582b361265586e7df5ef85ce118b6e8ddac99babeb697929331a2b698d521ce2",
+      "lua-gcc15-O2.gzf": "03748ba14436bc236f768b645d8f89af9b44509a7903452eb4e7f9ec4e3a1c0a",
+      "lua-gcc15-O2.unstripped": "ecd5b4445466ca3aab90bf14c245a2543947085f8e24384b8c586269865394f3"
+    },
+    "ghidra_version": "11.3.2",
+    "harness_commit": "0ead669174b47c6657794b470999e4383da54c25",
+    "ofrak_commit": "0ead669174b47c6657794b470999e4383da54c25"
+  },
+  "runs": [
+    {
+      "address_keyed_reapply": {
+        "comment_recall": 0.0014,
+        "transfer_precision": 0.0189,
+        "transfer_recall": 0.0014
+      },
+      "anchored_markup": {
+        "comment_recall": 0.2301,
+        "transfer_precision": 0.9939,
+        "transfer_recall": 0.2301
+      },
+      "ofrak_project_replay": {
+        "survival": 1.0
+      },
+      "portable_import": {
+        "comment_recall": 0.3381,
+        "transfer_precision": 1.0,
+        "transfer_recall": 0.3381
+      },
+      "portable_import_partial": {
+        "precision_mean": 1.0,
+        "precision_min": 1.0,
+        "recall_mean": 0.3472,
+        "recall_min": 0.2029
+      },
+      "portable_round_trip": {
+        "survival": 1.0
+      },
+      "serialize_restore": {
+        "survival": 1.0
+      },
+      "symbol_export_reapply": {
+        "comment_recall": 0.0,
+        "transfer_precision": 0.0033,
+        "transfer_recall": 0.0014
+      }
+    },
+    {
+      "address_keyed_reapply": {
+        "comment_recall": 0.0014,
+        "transfer_precision": 0.0189,
+        "transfer_recall": 0.0014
+      },
+      "anchored_markup": {
+        "comment_recall": 0.2301,
+        "transfer_precision": 0.9939,
+        "transfer_recall": 0.2301
+      },
+      "ofrak_project_replay": {
+        "survival": 1.0
+      },
+      "portable_import": {
+        "comment_recall": 0.3381,
+        "transfer_precision": 1.0,
+        "transfer_recall": 0.3381
+      },
+      "portable_import_partial": {
+        "precision_mean": 1.0,
+        "precision_min": 1.0,
+        "recall_mean": 0.3472,
+        "recall_min": 0.2029
+      },
+      "portable_round_trip": {
+        "survival": 1.0
+      },
+      "serialize_restore": {
+        "survival": 1.0
+      },
+      "symbol_export_reapply": {
+        "comment_recall": 0.0,
+        "transfer_precision": 0.0033,
+        "transfer_recall": 0.0014
+      }
+    },
+    {
+      "address_keyed_reapply": {
+        "comment_recall": 0.0014,
+        "transfer_precision": 0.0189,
+        "transfer_recall": 0.0014
+      },
+      "anchored_markup": {
+        "comment_recall": 0.2301,
+        "transfer_precision": 0.9939,
+        "transfer_recall": 0.2301
+      },
+      "ofrak_project_replay": {
+        "survival": 1.0
+      },
+      "portable_import": {
+        "comment_recall": 0.3381,
+        "transfer_precision": 1.0,
+        "transfer_recall": 0.3381
+      },
+      "portable_import_partial": {
+        "precision_mean": 1.0,
+        "precision_min": 1.0,
+        "recall_mean": 0.3472,
+        "recall_min": 0.2029
+      },
+      "portable_round_trip": {
+        "survival": 1.0
+      },
+      "serialize_restore": {
+        "survival": 1.0
+      },
+      "symbol_export_reapply": {
+        "comment_recall": 0.0,
+        "transfer_precision": 0.0033,
+        "transfer_recall": 0.0014
+      }
+    },
+    {
+      "address_keyed_reapply": {
+        "comment_recall": 0.0014,
+        "transfer_precision": 0.0189,
+        "transfer_recall": 0.0014
+      },
+      "anchored_markup": {
+        "comment_recall": 0.2301,
+        "transfer_precision": 0.9939,
+        "transfer_recall": 0.2301
+      },
+      "ofrak_project_replay": {
+        "survival": 1.0
+      },
+      "portable_import": {
+        "comment_recall": 0.3381,
+        "transfer_precision": 1.0,
+        "transfer_recall": 0.3381
+      },
+      "portable_import_partial": {
+        "precision_mean": 1.0,
+        "precision_min": 1.0,
+        "recall_mean": 0.3472,
+        "recall_min": 0.2029
+      },
+      "portable_round_trip": {
+        "survival": 1.0
+      },
+      "serialize_restore": {
+        "survival": 1.0
+      },
+      "symbol_export_reapply": {
+        "comment_recall": 0.0,
+        "transfer_precision": 0.0033,
+        "transfer_recall": 0.0014
+      }
+    },
+    {
+      "address_keyed_reapply": {
+        "comment_recall": 0.0014,
+        "transfer_precision": 0.0189,
+        "transfer_recall": 0.0014
+      },
+      "anchored_markup": {
+        "comment_recall": 0.2301,
+        "transfer_precision": 0.9939,
+        "transfer_recall": 0.2301
+      },
+      "ofrak_project_replay": {
+        "survival": 1.0
+      },
+      "portable_import": {
+        "comment_recall": 0.3381,
+        "transfer_precision": 1.0,
+        "transfer_recall": 0.3381
+      },
+      "portable_import_partial": {
+        "precision_mean": 1.0,
+        "precision_min": 1.0,
+        "recall_mean": 0.3472,
+        "recall_min": 0.2029
+      },
+      "portable_round_trip": {
+        "survival": 1.0
+      },
+      "serialize_restore": {
+        "survival": 1.0
+      },
+      "symbol_export_reapply": {
+        "comment_recall": 0.0,
+        "transfer_precision": 0.0033,
+        "transfer_recall": 0.0014
+      }
+    }
+  ],
+  "spread": {
+    "address_keyed_reapply": {
+      "comment_recall": 0.0,
+      "transfer_precision": 0.0,
+      "transfer_recall": 0.0
+    },
+    "anchored_markup": {
+      "comment_recall": 0.0,
+      "transfer_precision": 0.0,
+      "transfer_recall": 0.0
+    },
+    "ofrak_project_replay": {
+      "survival": 0.0
+    },
+    "portable_import": {
+      "comment_recall": 0.0,
+      "transfer_precision": 0.0,
+      "transfer_recall": 0.0
+    },
+    "portable_import_partial": {
+      "precision_mean": 0.0,
+      "precision_min": 0.0,
+      "recall_mean": 0.0,
+      "recall_min": 0.0
+    },
+    "portable_round_trip": {
+      "survival": 0.0
+    },
+    "serialize_restore": {
+      "survival": 0.0
+    },
+    "symbol_export_reapply": {
+      "comment_recall": 0.0,
+      "transfer_precision": 0.0,
+      "transfer_recall": 0.0
+    }
+  }
+}

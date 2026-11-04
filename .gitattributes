@@ -8,6 +8,9 @@ ofrak_core/tests/components/assets/**/Makefile !filter !diff !merge text
 ofrak_core/tests/components/assets/**/*.md !filter !diff !merge text
 ofrak_core/tests/components/assets/**/*.c !filter !diff !merge text
 ofrak_core/tests/components/assets/**/*.sh !filter !diff !merge text
+ofrak_core/tests/components/assets/re_markup/*.json !filter !diff !merge text
+ofrak_core/tests/components/assets/re_markup/*.yml !filter !diff !merge text
+ofrak_core/tests/components/assets/re_markup/*.java !filter !diff !merge text
 ofrak_tutorial/assets/* filter=lfs diff=lfs merge=lfs -text
 docs/user-guide/gui/assets/* filter=lfs diff=lfs merge=lfs -text
 frontend/public/themes/**/* filter=lfs diff=lfs merge=lfs -text

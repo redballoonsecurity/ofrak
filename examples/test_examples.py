@@ -226,3 +226,41 @@ def test_example_9(tmp_path):
         assert (
             md5sum == expected_md5
         ), f"md5sum for '{str(file)}' {md5sum} (expected {expected_md5})"
+
+
+def test_example_10(tmp_path):
+    """
+    Test that ex10_portable_re_markup.py carries markup from build A to build B of Lua.
+
+    This test verifies that:
+    - The anchor set names the expected functions of build A, and reports the ambiguous anchor
+    - The exported portable markup document is written
+    - The import names the same functions of build B, at their (different) addresses in build B
+    - Build B, repacked after the markup was applied, is written out unchanged
+    """
+    file = tmp_path / "example_10_markup.json"
+    binary = tmp_path / "example_10_lua"
+    command = [
+        "python3",
+        "ex10_portable_re_markup.py",
+        "--output-file-name",
+        str(file),
+        "--output-binary",
+        str(binary),
+    ]
+    # Only capture stdout: the Ghidra analysis server outlives the script and inherits its stderr
+    stdout = subprocess.run(command, check=True, stdout=subprocess.PIPE, text=True).stdout
+    assert "Build A: anchored luaL_argerror at 0x406990" in stdout
+    assert (
+        "Build A: anchor metatable_name_user matches 4 functions, so it was not applied" in stdout
+    )
+    assert f"Exported the markup of 9 functions to {file}" in stdout
+    assert os.path.isfile(file)
+    assert "Build B: imported luaL_argerror at 0x406af0 (similarity 1.00)" in stdout
+    assert "Build B: imported pmain at 0x429910" in stdout
+    assert "Build B: did not find" not in stdout
+    assert (
+        "Build B: luaL_argerror at 0x406af0: Raises the standard error for a bad argument to a C "
+        "function." in stdout
+    )
+    assert f"Repacked build B to {binary}: unchanged" in stdout
