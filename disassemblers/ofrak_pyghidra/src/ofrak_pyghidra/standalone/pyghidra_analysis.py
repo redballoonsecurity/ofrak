@@ -47,11 +47,7 @@ def unpack(
         with pyghidra.open_program(program_file, language=language) as flat_api:
             LOGGER.info("Analysis completed. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
-            from ghidra.app.decompiler import DecompInterface, DecompileOptions
             from ghidra.util.task import TaskMonitor
-            from ghidra.program.model.block import BasicBlockModel
-            from ghidra.program.model.symbol import RefType
-            from java.math import BigInteger
             from java.io import ByteArrayInputStream
 
             # If memory_regions are provided, delete all data and create new regions:
@@ -111,91 +107,9 @@ def unpack(
                 program.setImageBase(new_base_addr, True)
                 LOGGER.info(f"Rebased program address to {hex(base_address)}")
 
-            main_dictionary: Dict[str, Any] = {}
-            code_regions = _unpack_program(flat_api)
-            main_dictionary["metadata"] = {}
-            main_dictionary["metadata"]["backend"] = "ghidra"
-            main_dictionary["metadata"]["decompiled"] = decompiled
-            main_dictionary["metadata"]["path"] = program_file
-            if base_address is not None:
-                main_dictionary["metadata"]["base_address"] = base_address
-            with open(program_file, "rb") as fh:
-                data = fh.read()
-                md5_hash = hashlib.md5(data, usedforsecurity=False)
-                main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
-
-            LOGGER.info(f"Program contains {len(code_regions)} code regions")
-            for code_region in code_regions:
-                seg_key = f"seg_{code_region['virtual_address']}"
-                main_dictionary[seg_key] = code_region
-                func_cbs = _unpack_code_region(code_region, flat_api)
-                code_region["children"] = []
-
-                decomp_interface = DecompInterface()
-                prog_options = DecompileOptions()
-                prog_options.grabFromProgram(flat_api.getCurrentProgram())
-                decomp_interface.setOptions(prog_options)
-                init = decomp_interface.openProgram(flat_api.getCurrentProgram())
-                if not init:
-                    raise RuntimeError("Could not open program for decompilation")
-
-                LOGGER.info(f"Code region {seg_key} contains {len(func_cbs)} complex blocks")
-                if len(func_cbs) == 0:
-                    continue
-
-                for func, cb in tqdm(func_cbs, unit="CB", smoothing=0, disable=not show_progress):
-                    cb_key = f"func_{cb['virtual_address']}"
-                    code_region["children"].append(cb_key)
-                    if decompiled:
-                        try:
-                            decompilation = _decompile(func, decomp_interface, TaskMonitor.DUMMY)
-                        except Exception as e:
-                            print(e, traceback.format_exc())
-                            decompilation = ""
-                        cb["decompilation"] = decompilation
-                    bb_model = BasicBlockModel(flat_api.getCurrentProgram())
-                    basic_blocks, data_words = _unpack_complex_block(
-                        func, flat_api, bb_model, BigInteger.ONE
-                    )
-                    cb["children"] = []
-                    for block, bb in basic_blocks:
-                        if bb["size"] == 0:
-                            raise Exception(f"Basic block 0x{bb['virtual_address']:x} has no size")
-
-                        if (
-                            bb["virtual_address"] < cb["virtual_address"]
-                            or (bb["virtual_address"] + bb["size"])
-                            > cb["virtual_address"] + cb["size"]
-                        ):
-                            LOGGER.warning(
-                                f"Basic Block 0x{bb['virtual_address']:x} does not fall within "
-                                f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
-                            )
-                            continue
-                        bb_key = f"bb_{bb['virtual_address']}"
-                        instructions = _unpack_basic_block(block, flat_api, RefType, BigInteger.ONE)
-                        bb["children"] = []
-                        for instruction in instructions:
-                            instr_key = f"instr_{instruction['virtual_address']}"
-                            bb["children"].append(instr_key)
-                            main_dictionary[instr_key] = instruction
-                        cb["children"].append(bb_key)
-                        main_dictionary[bb_key] = bb
-                    for dw in data_words:
-                        if (
-                            dw["virtual_address"] < cb["virtual_address"]
-                            or (dw["virtual_address"] + dw["size"])
-                            > cb["virtual_address"] + cb["size"]
-                        ):
-                            LOGGER.warning(
-                                f"Data Word 0x{dw['virtual_address']:x} does not fall within "
-                                f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
-                            )
-                            continue
-                        dw_key = f"dw_{dw['virtual_address']}"
-                        cb["children"].append(dw_key)
-                        main_dictionary[dw_key] = dw
-                    main_dictionary[cb_key] = cb
+            main_dictionary = extract_analysis(
+                flat_api, program_file, decompiled, base_address, show_progress
+            )
     # Loading the file into Ghidra can result in a LoadException. This may occur if Ghidra cannot
     # detect the language. Ideally we would `except LoadException` directly, but it is from Java
     # and can't be imported outside of the `with pyghidra.open_program()` block
@@ -209,6 +123,125 @@ def unpack(
             )
         else:
             raise PyGhidraComponentException(e)
+    return main_dictionary
+
+
+def extract_analysis(
+    flat_api,
+    program_file: str,
+    decompiled: bool,
+    base_address: Optional[int] = None,
+    show_progress: bool = False,
+) -> Dict[str, Any]:
+    """
+    Walk an open Ghidra program and serialize its code regions, complex blocks, basic blocks,
+    instructions, and data words into a cache dictionary compatible with the
+    `CachedAnalysisStore`.
+
+    This must be called while the pyghidra program is still open (i.e. inside a
+    `pyghidra.open_program` context). It is used by `unpack` for initial analysis and can be
+    called again after a script has modified the Ghidra program state to refresh the cache.
+
+    :param flat_api: the `ghidra.program.flatapi.FlatProgramAPI` of the open program
+    :param program_file: path of the file the program was loaded from, recorded in the cache
+        metadata and hashed for cache validation
+    :param decompiled: if True, decompile every function and include the decompilation in the
+        cache
+    :param base_address: base address the program was rebased to, recorded in the cache metadata
+    :param show_progress: if True, display a progress bar while walking functions
+
+    :return: the cache dictionary
+    """
+    # Java packages must be imported after pyghidra.start or pyghidra.open_program
+    from ghidra.app.decompiler import DecompInterface, DecompileOptions
+    from ghidra.util.task import TaskMonitor
+    from ghidra.program.model.block import BasicBlockModel
+    from ghidra.program.model.symbol import RefType
+    from java.math import BigInteger
+
+    main_dictionary: Dict[str, Any] = {}
+    code_regions = _unpack_program(flat_api)
+    main_dictionary["metadata"] = {}
+    main_dictionary["metadata"]["backend"] = "ghidra"
+    main_dictionary["metadata"]["decompiled"] = decompiled
+    main_dictionary["metadata"]["path"] = program_file
+    if base_address is not None:
+        main_dictionary["metadata"]["base_address"] = base_address
+    with open(program_file, "rb") as fh:
+        data = fh.read()
+        md5_hash = hashlib.md5(data, usedforsecurity=False)
+        main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
+
+    LOGGER.info(f"Program contains {len(code_regions)} code regions")
+    for code_region in code_regions:
+        seg_key = f"seg_{code_region['virtual_address']}"
+        main_dictionary[seg_key] = code_region
+        func_cbs = _unpack_code_region(code_region, flat_api)
+        code_region["children"] = []
+
+        decomp_interface = DecompInterface()
+        prog_options = DecompileOptions()
+        prog_options.grabFromProgram(flat_api.getCurrentProgram())
+        decomp_interface.setOptions(prog_options)
+        init = decomp_interface.openProgram(flat_api.getCurrentProgram())
+        if not init:
+            raise RuntimeError("Could not open program for decompilation")
+
+        LOGGER.info(f"Code region {seg_key} contains {len(func_cbs)} complex blocks")
+        if len(func_cbs) == 0:
+            continue
+
+        for func, cb in tqdm(func_cbs, unit="CB", smoothing=0, disable=not show_progress):
+            cb_key = f"func_{cb['virtual_address']}"
+            code_region["children"].append(cb_key)
+            if decompiled:
+                try:
+                    decompilation = _decompile(func, decomp_interface, TaskMonitor.DUMMY)
+                except Exception as e:
+                    print(e, traceback.format_exc())
+                    decompilation = ""
+                cb["decompilation"] = decompilation
+            bb_model = BasicBlockModel(flat_api.getCurrentProgram())
+            basic_blocks, data_words = _unpack_complex_block(
+                func, flat_api, bb_model, BigInteger.ONE
+            )
+            cb["children"] = []
+            for block, bb in basic_blocks:
+                if bb["size"] == 0:
+                    raise Exception(f"Basic block 0x{bb['virtual_address']:x} has no size")
+
+                if (
+                    bb["virtual_address"] < cb["virtual_address"]
+                    or (bb["virtual_address"] + bb["size"]) > cb["virtual_address"] + cb["size"]
+                ):
+                    LOGGER.warning(
+                        f"Basic Block 0x{bb['virtual_address']:x} does not fall within "
+                        f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
+                    )
+                    continue
+                bb_key = f"bb_{bb['virtual_address']}"
+                instructions = _unpack_basic_block(block, flat_api, RefType, BigInteger.ONE)
+                bb["children"] = []
+                for instruction in instructions:
+                    instr_key = f"instr_{instruction['virtual_address']}"
+                    bb["children"].append(instr_key)
+                    main_dictionary[instr_key] = instruction
+                cb["children"].append(bb_key)
+                main_dictionary[bb_key] = bb
+            for dw in data_words:
+                if (
+                    dw["virtual_address"] < cb["virtual_address"]
+                    or (dw["virtual_address"] + dw["size"]) > cb["virtual_address"] + cb["size"]
+                ):
+                    LOGGER.warning(
+                        f"Data Word 0x{dw['virtual_address']:x} does not fall within "
+                        f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
+                    )
+                    continue
+                dw_key = f"dw_{dw['virtual_address']}"
+                cb["children"].append(dw_key)
+                main_dictionary[dw_key] = dw
+            main_dictionary[cb_key] = cb
     return main_dictionary
 
 

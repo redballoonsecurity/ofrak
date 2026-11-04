@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from tempfile312 import mkdtemp
 import os
-from typing import Dict
+from typing import Dict, Optional
 from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
@@ -15,11 +15,13 @@ from ofrak_type import ArchInfo, Endianness, InstructionSet
 
 
 from ofrak.component.identifier import Identifier
+from ofrak.component.modifier import Modifier
 from ofrak.core.elf.model import Elf
 from ofrak.core.ihex import Ihex
 from ofrak.core.pe.model import Pe
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource, ResourceFactory
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
@@ -31,6 +33,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedDecompilationAnalyzer,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
+from ofrak_pyghidra.standalone.pyghidra_script import run_script
 from ofrak_type.error import NotFoundError
 
 
@@ -335,6 +338,105 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
             self.analysis_store.store_analysis(program_r.get_id(), analysis)
 
         return await super().analyze(resource, config)
+
+
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class PyGhidraScriptResults(ResourceAttributes):
+    """
+    The result of the most recent script run by the `PyGhidraScriptModifier`.
+
+    :param script_result: `repr` of the value the script returned (the `result` variable)
+    """
+
+    script_result: str
+
+
+@dataclass
+class PyGhidraScriptConfig(ComponentConfig):
+    """
+    Config for the `PyGhidraScriptModifier`. Exactly one of `script` or `script_path` must be
+    provided.
+
+    :param script: Python source to execute with `flat_api`, `currentProgram`, and `monitor` in
+        scope. The script can set a variable named `result` to return a value.
+    :param script_path: path to a file containing the script source, as an alternative to
+        passing the source directly
+    :param refresh_analysis: if True (default), re-extract the analysis cache after the
+        script runs so subsequent unpacking and decompilation reflect the modified Ghidra state
+    """
+
+    script: Optional[str] = None
+    script_path: Optional[str] = None
+    refresh_analysis: bool = True
+
+
+class PyGhidraScriptModifier(Modifier[PyGhidraScriptConfig]):
+    """
+    Runs an arbitrary user-supplied PyGhidra script against the Ghidra program for a resource.
+    The saved Ghidra project from previous analysis is reused, so the script sees all existing
+    analysis state, and any changes the script makes (renames, applied types, forced
+    disassembly, etc.) are saved back to the project when it finishes. Afterwards the cached
+    analysis is refreshed so subsequent unpacking and decompilation reflect the modified state.
+    The script's result is stored on the resource as `PyGhidraScriptResults` attributes. Use to
+    run custom Ghidra analyses.
+    """
+
+    id = b"PyGhidraScriptModifier"
+    targets = (PyGhidraProject,)
+
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+    ):
+        super().__init__(resource_factory, data_service, resource_service)
+        self.analysis_store = analysis_store
+
+    async def modify(self, resource: Resource, config: PyGhidraScriptConfig):
+        if config is not None and config.script is not None and config.script_path is None:
+            script_source = config.script
+        elif config is not None and config.script is None and config.script_path is not None:
+            with open(config.script_path) as script_file:
+                script_source = script_file.read()
+        else:
+            raise ValueError(
+                "PyGhidraScriptConfig requires exactly one of `script` or `script_path`"
+            )
+
+        decompiled = False
+        base_address: Optional[int] = None
+        language: Optional[str] = None
+        if self.analysis_store.id_exists(resource.get_id()):
+            # Reuse the Ghidra project saved by the previous analysis of this resource
+            metadata = self.analysis_store.get_analysis(resource.get_id())["metadata"]
+            program_file = metadata["path"]
+            decompiled = metadata.get("decompiled", False)
+            base_address = metadata.get("base_address")
+        else:
+            tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
+            program_file = os.path.join(tempdir, "program")
+            await resource.flush_data_to_disk(program_file, pack=False)
+            try:
+                program_attrs = resource.get_attributes(ProgramAttributes)
+                language = _arch_info_to_processor_id(program_attrs)
+            except NotFoundError:
+                language = None
+
+        result, analysis = run_script(
+            program_file,
+            script_source,
+            language=language,
+            refresh_analysis=config.refresh_analysis,
+            decompiled=decompiled,
+            base_address=base_address,
+        )
+
+        if analysis is not None:
+            self.analysis_store.store_analysis(resource.get_id(), analysis)
+        resource.add_attributes(PyGhidraScriptResults(script_result=repr(result)))
+        await resource.save()
 
 
 def _arch_info_to_processor_id(processor: ArchInfo):
