@@ -51,4 +51,10 @@ for i, path in enumerate(sorted(Path("examples").glob("ex*.py"))):
         )
 
 with mkdocs_gen_files.open("examples/SUMMARY.md", "w") as f:
+    f.write("# Examples\n\n")
     f.writelines(example_nav.build_literate_nav())
+    f.write(
+        '\n<div align="right">\n'
+        '<img width="125" height="125" src="../assets/square_03.png">\n'
+        "</div>\n"
+    )

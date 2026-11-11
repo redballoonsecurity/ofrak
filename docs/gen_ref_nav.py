@@ -75,4 +75,10 @@ generate_docs(["ofrak_ghidra"], "disassemblers/ofrak_ghidra/src")
 
 # Add generated files to reference/SUMMARY.md. mkdocs.yml uses this to display these docs.
 with mkdocs_gen_files.open("reference/SUMMARY.md", "w") as nav_file:
+    nav_file.write("# Code Reference\n\n")
     nav_file.writelines(nav.build_literate_nav())
+    nav_file.write(
+        '\n<div align="right">\n'
+        '<img width="125" height="125" src="../assets/square_04.png">\n'
+        "</div>\n"
+    )
