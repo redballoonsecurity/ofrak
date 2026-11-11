@@ -78,10 +78,10 @@ The official documentation for the most up-to-date OFRAK lives at <https://ofrak
 
 Some sections of interest include:
 
-- **[User Guide](user-guide/)** - Detailed explanations of OFRAK concepts
-- **[Examples](user-guide/examples)** - Common tasks and use cases
-- **[Code Reference](reference/)** - API documentation
-- **[Contributor Guide](contributor-guide/)** - For those wanting to contribute
+- **[User Guide](user-guide/SUMMARY.md)** - Detailed explanations of OFRAK concepts
+- **[Examples](examples/SUMMARY.md)** - Common tasks and use cases
+- **[Code Reference](reference/SUMMARY.md)** - API documentation
+- **[Contributor Guide](contributor-guide/SUMMARY.md)** - For those wanting to contribute
 
 
 ## Frequently Asked Questions (FAQ)

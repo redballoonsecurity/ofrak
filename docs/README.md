@@ -48,7 +48,10 @@ OFRAK documentation comes from two sources: manually-written markdown files in `
 
 For writing docstrings that will display well, see the [contributor guidelines](https://ofrak.com/docs/contributor-guide/getting-started.html#docstrings). The list of packages whose docstrings are extracted can be found [in the script that does the extraction](https://github.com/redballoonsecurity/ofrak/blob/master/docs/gen_ref_nav.py#L69-L74).
 
-To add a markdown file to the docs, first write the documentation as a markdown file in the `docs/` directory of the repo. Then, add it to the documentation nav bar by [editing the `nav` property of `mkdocs.yml`](https://github.com/redballoonsecurity/ofrak/blob/master/mkdocs.yml#L50).
+To add a markdown file to the docs, first write the documentation as a markdown file in the `docs/` directory of the repo. Then, add it to the documentation nav bar:
+
+- Pages in the User Guide and Contributor Guide are listed in the `SUMMARY.md` file of their section ([`docs/user-guide/SUMMARY.md`](user-guide/SUMMARY.md), [`docs/contributor-guide/SUMMARY.md`](contributor-guide/SUMMARY.md)). That file defines the section's part of the nav bar and is also built as the section's index page.
+- Other pages are listed in [the `nav` property of `mkdocs.yml`](https://github.com/redballoonsecurity/ofrak/blob/master/mkdocs.yml#L50).
 
 ### Decorative Footer Images
 
