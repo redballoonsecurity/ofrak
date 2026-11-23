@@ -3,6 +3,7 @@ import os
 
 from ofrak import OFRAKContext
 from ofrak.core import Program, ProgramAttributes, CodeRegion, ComplexBlock
+from ofrak.core.data import DataWord, ReferencedDataAttributes
 from ofrak.core.decompilation import DecompilationAnalyzer, DecompilationAnalysis
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_ghidra.ghidra_model import GhidraProject, GhidraCustomLoadProject
@@ -59,3 +60,26 @@ async def test_get_decompilation_large_address(ofrak_context: OFRAKContext):
     decomp = await cb.resource.view_as(DecompilationAnalysis)
     # "foo" is a function defined in large_address_program.c
     assert "foo" in decomp.decompilation
+
+
+async def test_xrefs_unsigned_above_signed_long_range(ofrak_context: OFRAKContext):
+    """
+    Test that GetDataWords.java and GetDataRefs.java report cross-references from addresses
+    >= 2^63 as unsigned.
+    """
+    # `kernel_address_program` is linked at 0xffffffff80000000 and reads from a literal pool
+    root = await ofrak_context.create_root_resource_from_file(
+        os.path.join(ASSETS_DIR, "kernel_address_program")
+    )
+    await root.unpack_recursively()
+
+    data_words = await root.get_descendants_as_view(
+        DataWord,
+        r_filter=ResourceFilter(tags=[DataWord]),
+    )
+    data_word_xrefs = [xref for data_word in data_words for xref in data_word.xrefs_to]
+    data_refs = await root.analyze(ReferencedDataAttributes)
+
+    assert len(data_word_xrefs) > 0
+    assert all(xref >= 0 for xref in data_word_xrefs)
+    assert all(address >= 0 for address in data_refs.referencing_addresses)
