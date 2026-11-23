@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix duplicate import and integer overflow in CreateMemoryBlocks.java and GetDecompilation.java ([#700](https://github.com/redballoonsecurity/ofrak/pull/700))
 - Fix issue installing JDK in AARCH64 Docker build ([#718](https://github.com/redballoonsecurity/ofrak/pull/718))
 - Pass `usedforsecurity=False` to non-cryptographic `hashlib` calls to prevent failures when Python links against FIPS OpenSSL ([#744](https://github.com/redballoonsecurity/ofrak/pull/744))
-- Report cross-reference and call graph addresses >= 2^63 as unsigned instead of negative ([#PRNUM](https://github.com/redballoonsecurity/ofrak/pull/PRNUM))
+- Report cross-reference and call graph addresses >= 2^63 as unsigned instead of negative ([#768](https://github.com/redballoonsecurity/ofrak/pull/768))
 
 ## 0.1.1 - 2024-02-15
 ### Added
