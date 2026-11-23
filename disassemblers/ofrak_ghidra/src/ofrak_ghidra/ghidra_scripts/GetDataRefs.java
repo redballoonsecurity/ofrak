@@ -95,7 +95,7 @@ public class GetDataRefs extends HeadlessScript {
             return String.format(
                 "{\"data_address\":%s,\"xrefs\":%s}", 
                 Long.toUnsignedString(data_address), 
-                xrefs.toString()
+                xrefs.stream().map(Long::toUnsignedString).collect(Collectors.joining(", ", "[", "]"))
             );
         }
     }

@@ -104,7 +104,7 @@ public class GetDataWords extends HeadlessScript {
                 "{\"word_vaddr\":%s,\"word_size\":%s,\"xrefs\":%s}", 
                 Long.toUnsignedString(word_vaddr), 
                 Long.toUnsignedString(word_size), 
-                xrefs.toString()
+                xrefs.stream().map(Long::toUnsignedString).collect(Collectors.joining(", ", "[", "]"))
             );
         }
     }

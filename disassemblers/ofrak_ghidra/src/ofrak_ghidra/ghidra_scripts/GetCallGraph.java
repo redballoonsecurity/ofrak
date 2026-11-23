@@ -77,10 +77,10 @@ public class GetCallGraph extends HeadlessScript {
         }
 
         String kvToStr(Map.Entry<Long, List<Long>> entry) {
-            String addrStr = String.valueOf(entry.getKey());
+            String addrStr = Long.toUnsignedString(entry.getKey());
 
             String succStr = entry.getValue().stream()
-                                .map(off -> String.valueOf(off))
+                                .map(Long::toUnsignedString)
                                 .collect(Collectors.joining(", "));
 
             return String.format("{\"addr\": %s, \"succs\": [%s]}", addrStr, succStr);
