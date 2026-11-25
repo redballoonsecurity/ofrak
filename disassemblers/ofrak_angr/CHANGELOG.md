@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Removed
 - Remove dead `_create_dependencies` no-op override from `AngrAnalyzer` ([#727](https://github.com/redballoonsecurity/ofrak/pull/727))
 
+### Added
+- Add a `requirements.txt` file for docker build optimization ([#689](https://github.com/redballoonsecurity/ofrak/pull/689))
+
 ### Fixed
 - Pin `bitstring==4.3.1` to avoid the `tibs` type stubs pulled in by newer releases, which are incompatible with the pinned mypy version ([#766](https://github.com/redballoonsecurity/ofrak/pull/766))
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
