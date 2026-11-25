@@ -1,6 +1,8 @@
 __pycache__/
 venv/
+.venv*/
 .idea/
+.vscode/
 test/
 .DS_Store
 *.iml
@@ -21,4 +23,5 @@ build/
 dist/
 .coverage*
 **/license.json
+*.license
 assets/*_ghidra
