@@ -1,0 +1,394 @@
+name: Build OFRAK Packages (deb + AppImage)
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash -euxo pipefail {0}
+
+env:
+  APP_NAME: OFRAK
+  INSTALL_DIR: /opt/ofrak
+
+jobs:
+  build:
+    name: Build .deb + .AppImage
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build GUI frontend
+        run: |
+          cd frontend
+          npm ci --no-audit --no-fund
+          npm run build
+          cd ..
+          mkdir -p ofrak_core/src/ofrak/gui/public
+          cp -r frontend/dist/* ofrak_core/src/ofrak/gui/public/
+          ls ofrak_core/src/ofrak/gui/public/ | head
+
+      - name: Get version
+        id: ver
+        run: |
+          RAW=$(python3 -c "exec(open('ofrak_core/version.py').read()); print(VERSION)")
+          # Debian-friendly version (rc -> ~rc)
+          DEB_VER=$(echo "$RAW" | sed 's/rc/~rc/')
+          echo "raw=$RAW" >> "$GITHUB_OUTPUT"
+          echo "deb=$DEB_VER" >> "$GITHUB_OUTPUT"
+          echo "OFRAK version: $RAW (deb: $DEB_VER)"
+
+      - name: Download standalone Python 3.13
+        id: pydl
+        run: |
+          URL=$(gh api repos/astral-sh/python-build-standalone/releases/latest \
+            --jq '.assets[].browser_download_url' \
+            | grep 'x86_64-unknown-linux-gnu-install_only.tar.gz' \
+            | grep -v 'sha256' | head -1)
+          echo "Downloading $URL"
+          mkdir -p /tmp/pydist && cd /tmp/pydist
+          curl -sL "$URL" -o python.tar.gz
+          tar xf python.tar.gz
+          mv python /tmp/python-standalone
+          /tmp/python-standalone/bin/python3 --version
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Install OFRAK into staging tree
+        run: |
+          PY=/tmp/python-standalone/bin/python3
+          STAGE=/tmp/stage/opt/ofrak
+          mkdir -p "$STAGE/lib"
+          cp -r /tmp/python-standalone "$STAGE/python"
+          # Compile & install all local packages + deps into lib/ofrak
+          "$PY" -m pip install --upgrade pip --quiet
+          for pkg in ofrak_type ofrak_io ofrak_patch_maker; do
+            "$PY" -m pip install --target="$STAGE/lib/ofrak" "./$pkg" --no-compile --quiet
+          done
+          "$PY" -m pip install --target="$STAGE/lib/ofrak" ./ofrak_core --no-compile --quiet
+          # Safety net: force GUI static files into installed package
+          rm -rf "$STAGE/lib/ofrak/ofrak/gui/public"
+          mkdir -p "$STAGE/lib/ofrak/ofrak/gui/public"
+          cp -r frontend/dist/* "$STAGE/lib/ofrak/ofrak/gui/public/"
+          test -f "$STAGE/lib/ofrak/ofrak/gui/public/index.html" && echo "GUI assets OK"
+          du -sh "$STAGE"
+
+      - name: Create launcher scripts, desktop file, icon
+        run: |
+          STAGE=/tmp/stage
+          mkdir -p "$STAGE/usr/bin" \
+                   "$STAGE/opt/ofrak" \
+                   "$STAGE/usr/share/applications" \
+                   "$STAGE/usr/share/icons/hicolor/256x256/apps" \
+                   "$STAGE/usr/share/doc/ofrak"
+
+          # Real launcher lives next to python/ and lib/ so BASE resolves correctly
+          # both in .deb (/opt/ofrak) and relocatable AppImage
+          cat > "$STAGE/opt/ofrak/run-ofrak.sh" << 'EOF'
+          #!/usr/bin/env bash
+          BASE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+          export PYTHONHOME="$BASE/python"
+          export PYTHONPATH="$BASE/lib/ofrak${PYTHONPATH:+:$PYTHONPATH}"
+          export LD_LIBRARY_PATH="$BASE/python/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          exec "$BASE/python/bin/python3" -m ofrak "$@"
+          EOF
+          sed -i 's/^          //' "$STAGE/opt/ofrak/run-ofrak.sh"
+          chmod +x "$STAGE/opt/ofrak/run-ofrak.sh"
+
+          # Relative symlink so it works identically in .deb and AppDir
+          ln -sf ../../opt/ofrak/run-ofrak.sh "$STAGE/usr/bin/ofrak"
+          # Terminal UI menu - no browser needed
+          cp scripts/ofrak-menu.sh "$STAGE/opt/ofrak/ofrak-menu"
+          chmod +x "$STAGE/opt/ofrak/ofrak-menu"
+          ln -sf ../../opt/ofrak/ofrak-menu "$STAGE/usr/bin/ofrak-menu"
+
+          # AppRun entrypoint for the AppImage
+          cat > /tmp/AppRun << 'EOF'
+          #!/usr/bin/env bash
+          HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+          exec "$HERE/opt/ofrak/run-ofrak.sh" "$@"
+          EOF
+          sed -i 's/^          //' /tmp/AppRun
+          chmod +x /tmp/AppRun
+
+          cat > "$STAGE/usr/share/applications/ofrak.desktop" << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=OFRAK
+          GenericName=Binary Analysis & Modification Platform
+          Comment=Unpack, analyze, modify and repack binaries
+          Exec=ofrak gui
+          Icon=ofrak
+          Terminal=true
+          Categories=Development;Security;Utility;System;
+          Keywords=reversing;firmware;binary;elf;analysis;
+          EOF
+          sed -i 's/^          //' "$STAGE/usr/share/applications/ofrak.desktop"
+
+          # Generate icon with PIL
+          /tmp/python-standalone/bin/python3 - << 'EOF'
+          try:
+              from PIL import Image, ImageDraw, ImageFont
+          except ImportError:
+              import subprocess, sys
+              subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "pillow"], check=True)
+              from PIL import Image, ImageDraw, ImageFont
+          img = Image.new("RGBA", (256, 256), (16, 24, 40, 255))
+          d = ImageDraw.Draw(img)
+          # Hexagon outline motif
+          import math
+          cx, cy, r = 128, 128, 100
+          hexpts = [(cx + r * math.cos(math.radians(a)), cy + r * math.sin(math.radians(a)))
+                    for a in range(30, 391, 60)]
+          d.polygon(hexpts, outline=(64, 220, 160, 255), width=10)
+          try:
+              font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 72)
+          except Exception:
+              font = ImageFont.load_default()
+          text = "OF"
+          bbox = d.textbbox((0, 0), text, font=font)
+          tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+          d.text((128 - tw / 2, 128 - th / 2 - bbox[1]), text, fill=(240, 250, 255, 255), font=font)
+          img.save("/tmp/ofrak-icon.png")
+          print("icon generated")
+          EOF
+          cp /tmp/ofrak-icon.png "$STAGE/usr/share/icons/hicolor/256x256/apps/ofrak.png"
+          cp LICENSE "$STAGE/usr/share/doc/ofrak/copyright"
+
+      - name: Build .deb package
+        run: |
+          STAGE=/tmp/stage
+          mkdir -p "$STAGE/DEBIAN"
+          cat > "$STAGE/DEBIAN/control" << EOF
+          Package: ofrak
+          Version: ${{ steps.ver.outputs.deb }}
+          Section: devel
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Opanxxc <opanxxc@users.noreply.github.com>
+          Installed-Size: $(du -sk /tmp/stage/opt | cut -f1)
+          Depends: libc6 (>= 2.17)
+          Description: OFRAK - unpack, modify, and repack binaries
+           Open Firmware Reverse Analysis Konsole. Binary analysis and
+           modification platform with GUI and Python API.
+           Bundled with standalone Python - no system Python needed.
+           Run 'ofrak license --community --i-agree' on first use.
+          Homepage: https://github.com/Opanxxc/ofrak
+          EOF
+          sed -i 's/^          //' "$STAGE/DEBIAN/control"
+
+          # postinst: fix permissions
+          cat > "$STAGE/DEBIAN/postinst" << 'EOF'
+          #!/bin/sh
+          set -e
+          chmod -R go-w /opt/ofrak
+          exit 0
+          EOF
+          sed -i 's/^          //' "$STAGE/DEBIAN/postinst"
+          chmod 755 "$STAGE/DEBIAN/postinst"
+
+          cd /tmp
+          dpkg-deb --root-owner-group --build stage "ofrak_${{ steps.ver.outputs.deb }}_amd64.deb"
+          dpkg-deb --info "ofrak_${{ steps.ver.outputs.deb }}_amd64.deb" | head -20
+          mkdir -p /tmp/artifacts
+          cp "ofrak_${{ steps.ver.outputs.deb }}_amd64.deb" /tmp/artifacts/
+
+      - name: Build AppImage
+        run: |
+          APPDIR=/tmp/AppDir
+          rm -rf "$APPDIR"
+          mkdir -p "$APPDIR/usr"
+          # Reuse staged tree (opt/ofrak + usr/*) inside AppDir
+          cp -r /tmp/stage/opt "$APPDIR/"
+          cp -r /tmp/stage/usr/share "$APPDIR/usr/"
+          cp /tmp/AppRun "$APPDIR/AppRun"
+          chmod +x "$APPDIR/AppRun"
+
+          # AppImage top-level desktop entry + icon + AppStream hint
+          cp "$APPDIR/usr/share/applications/ofrak.desktop" "$APPDIR/ofrak.desktop"
+          mkdir -p "$APPDIR/usr/share/metainfo"
+          cat > "$APPDIR/usr/share/metainfo/ofrak.appdata.xml" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <component type="desktop-application">
+            <id>ofrak</id>
+            <name>OFRAK</name>
+            <summary>Unpack, modify, and repack binaries</summary>
+            <metadata_license>FSFAP</metadata_license>
+            <project_license>Proprietary</project_license>
+            <description>
+              <p>OFRAK (Open Firmware Reverse Analysis Konsole) is a binary analysis
+              and modification platform with a web GUI and Python API.</p>
+            </description>
+            <launchable type="desktop-id">ofrak.desktop</launchable>
+          </component>
+          EOF
+          sed -i 's/^          //' "$APPDIR/usr/share/metainfo/ofrak.appdata.xml"
+
+          # .DirIcon must point to the icon
+          rm -f "$APPDIR/.DirIcon"
+          cp "$APPDIR/usr/share/icons/hicolor/256x256/apps/ofrak.png" "$APPDIR/.DirIcon"
+          # appimagetool requires <name>.png at AppDir root
+          cp "$APPDIR/usr/share/icons/hicolor/256x256/apps/ofrak.png" "$APPDIR/ofrak.png"
+
+          # Download appimagetool (no FUSE build-time requirement)
+          curl -sL -o /tmp/appimagetool.AppImage \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp
+          /tmp/appimagetool.AppImage --appimage-extract-and-run \
+            "$APPDIR" "OFRAK-${{ steps.ver.outputs.raw }}-x86_64.AppImage"
+          ls -la OFRAK-*.AppImage
+          cp OFRAK-*.AppImage /tmp/artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ofrak-packages
+          path: /tmp/artifacts/*
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG" /tmp/artifacts/* \
+            --title "OFRAK $TAG" \
+            --notes "OFRAK packages: .deb (Debian/Ubuntu) and .AppImage (universal Linux).
+
+          **Install .deb:**
+          \`\`\`
+          sudo apt install ./ofrak_*_amd64.deb
+          ofrak license --community --i-agree
+          ofrak gui
+          \`\`\`
+
+          **Run .AppImage:**
+          \`\`\`
+          chmod +x OFRAK-*.AppImage
+          ./OFRAK-*.AppImage gui
+          \`\`\`
+
+          Both bundles include standalone Python 3.13 + full GUI frontend.
+          Fork enhanced by Panxcz & Freebuff." \
+            --repo "$GITHUB_REPOSITORY"
+
+      - name: Update continuous release
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view continuous --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create continuous --title "OFRAK Continuous Build" \
+              --notes "Latest master build. .deb + .AppImage + Termux .deb included." \
+              --repo "$GITHUB_REPOSITORY" || true
+          gh release upload continuous /tmp/artifacts/* --clobber --repo "$GITHUB_REPOSITORY"
+
+  build-termux-deb:
+    name: Build Termux .deb (aarch64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build GUI frontend
+        run: |
+          cd frontend
+          npm ci --no-audit --no-fund
+          npm run build
+          cd ..
+          mkdir -p ofrak_core/src/ofrak/gui/public
+          cp -r frontend/dist/* ofrak_core/src/ofrak/gui/public/
+
+      - name: Get version
+        id: ver
+        run: |
+          RAW=$(python3 -c "exec(open('ofrak_core/version.py').read()); print(VERSION)")
+          DEB_VER=$(echo "$RAW" | sed 's/rc/~rc/')
+          echo "deb=$DEB_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Build inside Termux container (native aarch64)
+        run: |
+          chmod +x scripts/build-termux-deb-inside.sh
+          docker pull --platform linux/arm64 termux/termux-docker:aarch64
+          CONTAINER_ID=$(docker create --platform linux/arm64 --user root \
+            -e OFRAK_DEB_VERSION="${{ steps.ver.outputs.deb }}" \
+            -v "$GITHUB_WORKSPACE":/work \
+            termux/termux-docker:aarch64 \
+            bash /work/scripts/build-termux-deb-inside.sh)
+          docker start -a "$CONTAINER_ID" || EXIT_CODE=$?
+          # docker cp doesn't support globs — copy the whole home dir then find locally
+          docker cp "$CONTAINER_ID":/data/data/com.termux/files/home/ ./termux-home/ || true
+          docker rm -f "$CONTAINER_ID" >/dev/null 2>&1 || true
+          # Move any .deb found to workspace root
+          DEB_FOUND=$(find ./termux-home -name '*.deb' -print -quit 2>/dev/null || true)
+          if [ -n "$DEB_FOUND" ]; then
+            mv "$DEB_FOUND" ./
+          fi
+          rm -rf ./termux-home
+          ls -la ofrak_*_aarch64.deb 2>/dev/null || echo '[!] No .deb found'
+          if [ -n "${EXIT_CODE:-}" ] && [ "$EXIT_CODE" -ne 0 ]; then exit "$EXIT_CODE"; fi
+
+      - name: Auto-test Termux .deb (fresh container)
+        run: |
+          chmod +x scripts/test-termux-deb-inside.sh
+          docker run --rm --platform linux/arm64 \
+            -v "$GITHUB_WORKSPACE":/work \
+            termux/termux-docker:aarch64 \
+            bash /work/scripts/test-termux-deb-inside.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ofrak-termux-deb
+          path: ofrak_*_aarch64.deb
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release upload "$TAG" ofrak_*_aarch64.deb --clobber --repo "$GITHUB_REPOSITORY" 2>/dev/null || \
+            gh release create "$TAG" ofrak_*_aarch64.deb --title "OFRAK $TAG" --notes "Termux .deb included." --repo "$GITHUB_REPOSITORY"
+
+      - name: Update continuous release
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view continuous --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create continuous --title "OFRAK Continuous Build" \
+              --notes "Latest master build." --repo "$GITHUB_REPOSITORY" || true
+          gh release upload continuous ofrak_*_aarch64.deb --clobber --repo "$GITHUB_REPOSITORY"
