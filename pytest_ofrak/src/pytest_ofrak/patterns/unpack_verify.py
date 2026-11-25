@@ -105,7 +105,7 @@ class UnpackAndVerifyPattern(ABC):
         missing_optional_set = optional_set - unpacked_set
 
         ## Build an info string about this test case
-        info_str = [f"{'item':<20}{'unpacked':<20}{'expected':<20}{'optional':<20}"]
+        info_lines = [f"{'item':<20}{'unpacked':<20}{'expected':<20}{'optional':<20}"]
         for item in sorted(unpacked_set | expected_set | optional_set):
             item_fmt = str(_hexlify(item))
             row = (
@@ -114,8 +114,8 @@ class UnpackAndVerifyPattern(ABC):
                 f"{item_fmt if item in expected_set else '':<20}"
                 f"{item_fmt if item in optional_set else '':<20}"
             )
-            info_str.append(row)
-        info_str = "\n".join(info_str)
+            info_lines.append(row)
+        info_str = "\n".join(info_lines)
 
         ## Sanity check to ensure that optional and expected sets are exclusive
         assert expected_set & optional_set == set(), (
@@ -185,7 +185,7 @@ class UnpackAndVerifyPattern(ABC):
     @pytest.fixture
     async def optional_results(
         self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
-    ) -> Dict[K, V]:
+    ) -> Set[K]:
         """
         Extract the optional results from the test case.
 
